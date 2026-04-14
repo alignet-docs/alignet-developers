@@ -1,0 +1,101 @@
+---
+title: "API de Pagos"
+sidebarTitle: "Introducción"
+description: "Conoce la API de Orquestador de Pay-me — un único punto de integración para procesar pagos en múltiples métodos y países."
+icon: "book-open-reader"
+---
+
+La API de Orquestador de Pay-me es una solución que te permite integrar pagos a través de un único punto de conexión.
+
+Con esta API puedes procesar transacciones en múltiples países y métodos de pago — como tarjetas, transferencias, billeteras digitales y más — sin necesidad de integrarte con cada proveedor por separado.
+
+Incluye capacidades de:
+
+- Orquestación de pagos
+- Evaluación de riesgo
+- Autenticación 3DS
+
+---
+
+## ¿Qué puedes hacer?
+
+<CardGroup cols={2}>
+  <Card title="PayIn" icon="arrow-down-to-line" href="/payin/introduccion">
+    Acepta pagos con múltiples métodos: tarjeta, QR, transferencia, Yape, Cuotéalo y más.
+  </Card>
+
+  <Card title="Pagos Recurrentes" icon="rotate" href="/pagos-recurrentes/introduccion">
+    Automatiza cobros periódicos mediante afiliaciones y ejecuciones programadas.
+  </Card>
+
+  <Card title="Devoluciones" icon="arrow-up-from-line" href="/devoluciones/introduccion">
+    Gestiona reembolsos totales o parciales de transacciones procesadas.
+  </Card>
+
+  <Card title="Onboarding de Comercios" icon="buildings" href="/onboarding/introduccion">
+    Registra comercios de forma individual o masiva — exclusivo para Facilitadores de Pago.
+  </Card>
+</CardGroup>
+
+---
+
+## Ambientes
+
+| Ambiente | Base URL |
+| :-- | :-- |
+| Pre-Producción | `https://api.preprod.alignet.io/` |
+| Producción | `https://api.alignet.io/` |
+
+<Note>
+  Utiliza el ambiente de **Pre-Producción** para realizar pruebas antes de pasar a Producción.
+</Note>
+
+---
+
+## Flujo de integración
+
+<Steps>
+  <Step title="Obtén tu Access Token">
+    Genera un token de acceso usando el [API de Autenticación](/autenticacion).
+  </Step>
+  <Step title="Elige tu módulo">
+    Selecciona el módulo que necesitas — [PayIn](/payin/introduccion), [Pagos Recurrentes](/pagos-recurrentes/introduccion), [Devoluciones](/devoluciones/introduccion) u [Onboarding](/onboarding/introduccion).
+  </Step>
+  <Step title="Realiza tu primera transacción">
+    Ejecuta un request en Pre-Producción utilizando los [Datos de prueba](/flujos-de-pago) disponibles.
+  </Step>
+  <Step title="Configura notificaciones">
+    Implementa tu endpoint para recibir [Notificaciones Server-to-Server](/notificaciones).
+  </Step>
+  <Step title="Pasa a Producción">
+    Una vez validadas tus pruebas, cambia la Base URL al ambiente de Producción.
+  </Step>
+</Steps>
+
+---
+
+## Consideraciones generales
+
+<Note>
+  Todos los montos se expresan en **centavos**. Ejemplo: S/. 10.50 → `"1050"`.
+</Note>
+
+<Note>
+  El Access Token tiene una duración limitada. Renuévalo antes de que expire para evitar errores de autenticación.
+</Note>
+
+<Note>
+  Todas las fechas devueltas por la API están en formato **UTC** y **Unix time**.
+</Note>
+
+<Note>
+  Todos los requests deben enviarse en formato **JSON** utilizando el header `Content-Type: application/json`.
+</Note>
+
+---
+
+## Siguiente paso
+
+<Card title="Autenticación" icon="shield-check" href="/autenticacion">
+  Genera tu Access Token para comenzar a usar la API.
+</Card>
