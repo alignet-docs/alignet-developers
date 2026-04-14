@@ -1,0 +1,15 @@
+{
+  "name": "Alignet Developers",
+  "navigation": [
+    {
+      "group": "API de Pagos",
+      "pages": [
+        "introduccion",
+        "autenticacion"
+      ]
+    }
+  ],
+  "openapi": {
+    "source": "/openapi.json"
+  }
+}
