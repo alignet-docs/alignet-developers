@@ -1,0 +1,127 @@
+---
+title: "Autenticación"
+sidebarTitle: "Autenticación"
+icon: "shield-check"
+description: "Genera tu Access Token para autenticarte en todos los endpoints de la API de Pay-me."
+---
+
+Todos los endpoints de la API de Pay-me requieren un **Access Token** vigente.
+
+Este token se genera mediante el API de autenticación utilizando tus credenciales `client_id` y `client_secret`.
+
+---
+
+## Endpoints
+
+| Ambiente | URL |
+| :-- | :-- |
+| Pre-Producción | `https://auth.preprod.alignet.io/token` |
+| Producción | `https://auth.alignet.io/token` |
+
+---
+
+## Scopes disponibles
+
+El *scope* define los permisos que tendrá tu token.
+
+Solicita únicamente los scopes necesarios según los endpoints que vayas a utilizar.
+
+<CardGroup cols={2}>
+  <Card title="create:token" icon="key">
+    Crear tokens de acceso. Requerido en todos los casos.
+  </Card>
+  <Card title="post:charges" icon="plus">
+    Crear cargos y autorizaciones. Necesario para PayIn.
+  </Card>
+  <Card title="get:charges" icon="search">
+    Consultar transacciones.
+  </Card>
+  <Card title="delete:charges" icon="trash">
+    Cancelar transacciones.
+  </Card>
+</CardGroup>
+
+<Note>
+El scope `create:token` es obligatorio. Los demás dependen de los endpoints que implementes.
+</Note>
+
+---
+
+## Generar Access Token
+
+<Note>
+Puedes probar este endpoint directamente desde la documentación usando el botón **Try it**.
+</Note>
+
+```api
+post https://auth.preprod.alignet.io/token
+```
+
+### Body
+
+```json
+{
+  "client_id": "tu_client_id",
+  "client_secret": "tu_client_secret",
+  "scope": "create:token post:charges"
+}
+```
+
+---
+
+### Respuesta
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "token_type": "Bearer",
+  "expires_in": 8600
+}
+```
+
+---
+
+## Uso del Access Token
+
+Incluye el token en el header de cada request:
+
+```bash
+Authorization: Bearer {access_token}
+```
+
+---
+
+## Headers obligatorios
+
+```bash
+Content-Type: application/json
+ALG-API-VERSION: 1709847567
+```
+
+---
+
+## Consideraciones
+
+<Warning>
+El Access Token expira en **8600 segundos (~2.4 horas)**. Renuévalo antes de que venza para evitar errores `401 Unauthorized`.
+</Warning>
+
+<Note>
+Incluye siempre el header `ALG-API-VERSION` en todas las peticiones.
+</Note>
+
+---
+
+## Referencia técnica
+
+<Card title="Ver ejemplos en GitHub" icon="github" href="https://github.com/alignet">
+  SDKs · Ejemplos · Colección Postman
+</Card>
+
+---
+
+## Siguiente paso
+
+<Card title="PayIn — Introducción" icon="arrow-right" href="/payin/introduccion">
+  Conoce cómo crear tu primera transacción de pago.
+</Card>
