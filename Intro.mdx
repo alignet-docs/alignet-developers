@@ -1,0 +1,70 @@
+---
+title: "WooCommerce"
+sidebarTitle: "Introducción"
+description: "Integra la pasarela de pagos Pay-me en tu tienda WordPress de forma rápida y segura."
+---
+
+<Frame>
+  <img
+    src="/images/image-65.png"
+    alt="Image"
+    title="Image"
+    className="mx-auto"
+    style={{ width:"45%" }}
+  />
+</Frame>
+
+Pay-me WooCommerce es el plugin oficial para **cobrar en tu tienda WordPress** con los métodos de pago más importantes del mercado local (Perú y región) desde una sola integración.
+
+### Métodos de Pago Disponibles
+
+Dependiendo de tu configuración, podrás habilitar:
+
+- **Tarjetas:** Visa, Mastercard, American Express, Diners.
+- **Billeteras:** Yape, Plin.
+- **Pagos con QR.**
+- **Transferencias y Efectivo:** PagoEfectivo, Cuotéalo BCP.
+
+### Flujo General de Pago
+
+Comprender cómo viaja la información es clave para una integración exitosa. El plugin gestiona todo el ciclo de vida de la transacción automáticamente.
+
+![Image](/images/image-53.png)
+
+### ¿Cómo funciona?
+
+1. **Selección:** El cliente elige Pay-me como método de pago en el checkout de WooCommerce.
+2. **Envío:** El plugin envía de forma cifrada la información de la transacción a la pasarela Pay-me.
+3. **Validación:** Pay-me valida el pago con los emisores y procesadores bajo estándares de seguridad PCI-DSS.
+4. **Respuesta:** - **Síncrona:** El cliente recibe una confirmación inmediata en pantalla.
+   - **Asíncrona (Webhook):** Pay-me notifica a tu tienda mediante un webhook para actualizar el estado del pedido automáticamente.
+
+---
+
+## Ciclo de Vida del Pedido
+
+Para que tu logística sea eficiente, el plugin mapea los estados de la pasarela con los estados nativos de WooCommerce:
+
+<Steps>
+  <Step title="Registro y Pendiente">
+    El pedido se crea en WooCommerce como **"Pendiente de pago"**.
+  </Step>
+  <Step title="Autorización">
+    Si el pago es exitoso, el estado cambia a **"Procesando"** (o "Completado" según tu configuración), notificando al cliente por correo.
+  </Step>
+  <Step title="Fallo o Abandono">
+    Si el pago es rechazado o el cliente cierra la ventana, el pedido se marca como **"Fallido"** o **"Cancelado"**.
+  </Step>
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Instalación" icon="download" href="/wordpress-woocommerce/instalacion">
+    Descarga el plugin y sigue los pasos para subirlo a tu WordPress.
+  </Card>
+
+  <Card title="Configuración" icon="gear" href="/wordpress-woocommerce/configuracion">
+    Ingresa tus credenciales de producción y activa los métodos de pago.
+  </Card>
+</CardGroup>
