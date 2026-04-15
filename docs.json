@@ -1,0 +1,355 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Mint Starter Kit",
+
+  "colors": {
+    "primary": "#0d704c",
+    "light": "#198960",
+    "dark": "#1a4a6a"
+  },
+
+  "favicon": "/favicon.svg",
+
+  "navigation": {
+    "products": [
+      {
+        "product": "Pagos Virtuales",
+        "icon": "cart-shopping",
+        "tabs": [
+          {
+            "tab": "Guìa",
+            "groups": [
+              {
+                "group": "Primeros pasos",
+                "icon": "shoe-prints",
+                "pages": [
+                  "index",
+                  "metodos-de-integracion",
+                  "inicio-rapido",
+                  "buenas-practicas",
+                  "technical-certification-checklist"
+                ]
+              },
+              {
+                "group": "Integración",
+                "icon": "wrench",
+                "pages": [
+                  {
+                    "group": "E-commerce",
+                    "pages": [
+                      {
+                        "group": "WooCommerce",
+                        "pages": [
+                          "Intro",
+                          "instalacion",
+                          "configura",
+                          "experiencia-de-checkout",
+                          "gestion-de-pedidos-y-transacciones",
+                          "pruebas-y-certificacion",
+                          "solucion-de-problemas"
+                        ]
+                      },
+                      {
+                        "group": "Prestashop",
+                        "pages": [
+                          "intro-prestashop",
+                          "instalacion-y-activacion",
+                          "configuracion-del-modulo",
+                          "experiencia-del-cliente",
+                          "gestion-de-pedidos-y-transacciones-1",
+                          "pruebas-y-certificacion-1",
+                          "solucion-de-problemas-1"
+                        ]
+                      },
+                      {
+                        "group": "VTEX",
+                        "pages": [
+                          "introduccion-vtex",
+                          {
+                            "group": "Instalación VTEX",
+                            "pages": [
+                              "instalacion-1",
+                              "configuracion-vtex",
+                              "configuracion-de-credenciales-y-metodos-de-pago",
+                              "configuracion-de-condiciones-de-pago-en-vtex"
+                            ]
+                          },
+                          "flujo-de-pago-vtex",
+                          "pruebas-vtex"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "group": "Checkout Web",
+                    "pages": [
+                      "introduccion-2",
+                      "requisitos-de-negocio",
+                      {
+                        "group": "Flex",
+                        "pages": [
+                          "introduccion-3",
+                          "api-nonce",
+                          {
+                            "group": "Inicializar Pay Me Flex",
+                            "pages": [
+                              "incluir-libreria-y-estilos-basicos",
+                              "funcionalidad-de-cobros",
+                              "funcionalidad-debito-automatica"
+                            ]
+                          },
+                          "datos-de-prueba-1"
+                        ]
+                      },
+                      {
+                        "group": "Modal",
+                        "pages": [
+                          "requisitos-tecnicos-1",
+                          "ambientes-de-integracion-1",
+                          "configuracion-inicial",
+                          {
+                            "group": "Integración con V-POS2",
+                            "pages": [
+                              "parametros-de-envio-y-respuesta",
+                              "notificaciones-de-respuesta"
+                            ]
+                          },
+                          "personalizacion-de-formulario",
+                          "otros-medios-de-pago"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "group": "SDK Mobile",
+                    "pages": [
+                      {
+                        "group": "SDK Android",
+                        "pages": [
+                          "introduccion",
+                          "requisitos-sdk-android",
+                          "instalacion-2",
+                          {
+                            "group": "Flujo de cobro",
+                            "pages": [
+                              "flujo-de-cobro",
+                              "flujo-de-afiliacion",
+                              "cobros-mensajes-de-errores-de-pay-me-sdk"
+                            ]
+                          },
+                          {
+                            "group": "Función de afiliaciones",
+                            "pages": [
+                              "inicializar-sdk-android",
+                              "parametros-de-entrada-y-salida-de-sdk-android",
+                              "mensajes-de-errores-de-sdk"
+                            ]
+                          },
+                          "datos-de-prueba"
+                        ]
+                      },
+                      {
+                        "group": "SDK IOS",
+                        "pages": [
+                          "introduccion-ios",
+                          "requisitos-ios",
+                          "instalacion-3",
+                          {
+                            "group": "Flujo de cobro",
+                            "pages": [
+                              "inicializar-pay-me-sdk-i-os",
+                              "parametros-de-entrada-y-salida-de-pay-me-sdk-i-os",
+                              "mensajes-de-errores-de-sdk-1"
+                            ]
+                          },
+                          {
+                            "group": "Función de afiliaciones",
+                            "pages": [
+                              "inicializar-sdk-i-os",
+                              "parametros-de-entrada-y-salida-de-sdk-i-os",
+                              "mensajes-de-errores-de-sdk-2"
+                            ]
+                          },
+                          "sandbox-y-datos-de-prueba"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "group": "API de Pagos",
+                    "pages": [
+                      "introduccion-5",
+                      "autenticacion",
+                      {
+                        "group": "PayIn",
+                        "pages": [
+                          "introduccion-6",
+                          "autorizacion",
+                          "consulta",
+                          "cancelacion",
+                          "notificaciones",
+                          "referencia"
+                        ]
+                      },
+                      {
+                        "group": "Pagos Recurrentes",
+                        "pages": [
+                          "introduc",
+                          "afiliaciones",
+                          "cobros",
+                          "codigos-de-respuesta-1"
+                        ]
+                      },
+                      {
+                        "group": "Devoluciones",
+                        "pages": [
+                          "introduccion-7",
+                          "referencia-1"
+                        ]
+                      },
+                      {
+                        "group": "Onboarding de Comercios",
+                        "pages": [
+                          "introduccion-8",
+                          "registro-individual",
+                          "registro-masivo"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Pagos",
+                "icon": "credit-card",
+                "pages": [
+                  {
+                    "group": "Conceptos Fundamentales",
+                    "pages": [
+                      "operaciones-inteligentes",
+                      "estados-de-transaccion"
+                    ]
+                  },
+                  {
+                    "group": "Sandbox y pruebas",
+                    "pages": [
+                      "flujos-de-pago",
+                      "codigos-de-respuesta"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "Gestión y Operaciones",
+                "icon": "clipboard-user",
+                "pages": [
+                  {
+                    "group": "Dashboard",
+                    "pages": [
+                      "dashboard",
+                      "consulta-operaciones",
+                      "estados-de-transaccion-1",
+                      "reporte-y-exportacion",
+                      "extornos",
+                      "devoluciones",
+                      "recuperacion-de-contrasena"
+                    ]
+                  },
+                  {
+                    "group": "Gestión de devoluciones",
+                    "pages": [
+                      "introduccion-4",
+                      "referencia-del-api-de-devoluciones"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "product": "Pagos Fisicos",
+        "icon": "credit-card",
+        "pages": [
+          {
+            "group": "Guía",
+            "icon": "folder-bookmark",
+            "pages": [
+              {
+                "group": "PaymePOS",
+                "icon": "credit-card-front",
+                "pages": [
+                  "introduccion-1",
+                  "primeros-pasos",
+                  "operacion-diaria",
+                  "administracion"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:soporte@pay-me.com"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://dashboard.mintlify.com"
+    }
+  },
+
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
+  },
+
+  "footer": {
+    "socials": {
+      "github": "https://github.com/mintlify",
+      "linkedin": "https://linkedin.com/company/mintlify"
+    }
+  },
+
+  "fonts": {
+    "family": "Roboto"
+  },
+
+  "logo": {
+    "light": "/images/AlgDocs.png",
+    "dark": "/images/Algdocswhite.png"
+  },
+
+  "appearance": {
+    "strict": false,
+    "default": "light"
+  },
+
+  "background": {
+    "color": {
+      "dark": "#000000"
+    },
+    "decoration": "windows"
+  },
+  "banner": {
+    "content": "Estamos mejorando esta documentación para ti",
+    "dismissible": true
+  }
+}

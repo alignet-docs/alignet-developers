@@ -1,0 +1,74 @@
+---
+title: "Cobros"
+sidebarTitle: "Cobros"
+description: "Procesa cobros recurrentes en lote y consulta los resultados de cada operación en Pay-me."
+---
+
+El módulo de Cobros permite procesar múltiples transacciones recurrentes en un solo envío mediante la carga de un archivo. Cada cobro se ejecuta contra una afiliación previamente registrada.
+
+---
+
+## Operaciones disponibles
+
+<Columns cols={2}>
+  <Column>
+    <Card title="Carga de cobros" icon="upload">
+      Envía un archivo con las operaciones a cobrar. Cada fila referencia una afiliación activa y el monto a procesar.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Reporte de cobros" icon="file-chart-line">
+      Descarga el reporte con el resultado detallado de cada cobro procesado — exitosos, rechazados y pendientes.
+    </Card>
+  </Column>
+</Columns>
+
+---
+
+## Flujo de un cobro recurrente
+
+<Steps>
+  <Step title="Prepara el archivo de cobros">
+    Genera el archivo con las operaciones a procesar. Cada fila debe incluir el identificador de afiliación y el monto en centavos.
+  </Step>
+  <Step title="Carga el archivo">
+    Envía el archivo al endpoint de carga de cobros. El sistema lo procesa en modo batch de forma asíncrona.
+  </Step>
+  <Step title="Consulta el reporte">
+    Una vez procesado, descarga el reporte de resultados para verificar el estado de cada operación y reconciliar con tu sistema.
+  </Step>
+</Steps>
+
+---
+
+## Consideraciones
+
+<Warning>
+  Los cobros se procesan en modo **batch asíncrono**. El resultado no es inmediato — usa el reporte de cobros para verificar el estado de cada operación.
+</Warning>
+
+<Note>
+  Solo se pueden procesar cobros contra afiliaciones en estado **activo**. Verifica el estado de cada afiliación antes de incluirla en el archivo.
+</Note>
+
+<Note>
+  Los montos deben expresarse en **centavos**. Ejemplo: S/. 10.50 → `"1050"`.
+</Note>
+
+---
+
+## Referencia técnica
+
+La especificación completa — estructura del archivo de carga, parámetros, formato del reporte y ejemplos — está publicada en GitHub.
+
+<Card title="Ver referencia en GitHub" icon="github" href="https://github.com/alignet">
+  Carga de cobros · Reporte de resultados · Ejemplos
+</Card>
+
+---
+
+## Siguiente paso
+
+<Card title="Códigos de Respuesta" icon="arrow-right">
+  Consulta los códigos de respuesta específicos del módulo de Pagos Recurrentes.
+</Card>

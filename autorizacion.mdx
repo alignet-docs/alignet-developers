@@ -1,0 +1,122 @@
+---
+title: "Autorización"
+sidebarTitle: "Autorización"
+description: "Endpoints de autorización para todos los métodos de pago disponibles en Pay-me."
+---
+
+El endpoint de autorización inicia el flujo de pago. Dependiendo del método elegido, la respuesta puede ser inmediata o requerir una redirección del usuario para completar el proceso.
+
+---
+
+## Endpoint
+
+| Ambiente | URL | Método |
+| :-- | :-- | :-- |
+| Pre-Producción | `https://api.preprod.alignet.io/charges` | `POST` |
+| Producción | `https://api.alignet.io/charges` | `POST` |
+
+---
+
+## Métodos soportados
+
+<CardGroup cols={2}>
+  <Card title="Tarjeta" icon="credit-card">
+    Síncrono · Sin redirección
+  </Card>
+  <Card title="Tarjeta Presente" icon="cash-register">
+    Síncrono · Sin redirección
+  </Card>
+  <Card title="Yape" icon="mobile">
+    Síncrono · Sin redirección
+  </Card>
+  <Card title="QR" icon="qrcode">
+    Asíncrono · Con redirección
+  </Card>
+  <Card title="Transferencia Bancaria" icon="building-columns">
+    Asíncrono · Con redirección
+  </Card>
+  <Card title="Cuotéalo" icon="receipt">
+    Asíncrono · Con redirección
+  </Card>
+  <Card title="PagoEfectivo" icon="money-bill">
+    Asíncrono · Con redirección
+  </Card>
+</CardGroup>
+
+---
+
+## Métodos con redirección
+
+Los métodos **QR, Transferencia Bancaria, Cuotéalo y PagoEfectivo** requieren redirigir al usuario a una página externa para completar el pago. El flujo es el siguiente:
+
+<Steps>
+  <Step title="Recibe la URL de redirección">
+    La respuesta del `POST` de autorización incluye una URL a la que debes redirigir al usuario para que complete el pago en la plataforma correspondiente.
+  </Step>
+  <Step title="Redirige al usuario">
+    Redirige al usuario a esa URL. El proceso de pago ocurre fuera de tu plataforma.
+  </Step>
+  <Step title="Recibe el retorno">
+    Una vez que el usuario completa o cancela el pago, es redirigido de vuelta a tu `redirect_url` con dos parámetros:
+    - `authorization_result` — JSON en Base64 con el resultado de la autorización
+    - `signature` — firma digital para verificar la autenticidad del resultado
+  </Step>
+  <Step title="Verifica el signature">
+    Antes de procesar el resultado, verifica el `signature` usando la llave pública de Pay-me. Consulta el proceso completo en [Notificaciones](/payin/notificaciones).
+  </Step>
+  <Step title="Confirma con notificación S2S">
+    Adicionalmente Pay-me envía una [notificación Server-to-Server](/payin/notificaciones) a tu endpoint con el resultado final — úsala como confirmación adicional.
+  </Step>
+</Steps>
+
+<Warning>
+  El parámetro `authorization_result` viene en **Base64** — decodifícalo antes de procesarlo.
+</Warning>
+
+<Warning>
+  Los códigos `14` y `15` de los [códigos de respuesta](/payin/referencia) indican que el usuario regresó sin completar el pago o que lo canceló explícitamente. Maneja estos casos en tu flujo de retorno.
+</Warning>
+
+---
+
+## Headers requeridos
+
+| Campo | Valor | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `Authorization` | `Bearer <Access Token>` | `String` | SI |
+| `ALG-API-VERSION` | `1709847567` | `String` | SI |
+| `payment-facilitator-code` | Código del PF — solo para Facilitadores de Pago | `String` | NO |
+
+---
+
+## Consideraciones generales
+
+<Note>
+  Los montos siempre se expresan en **centavos**. Ejemplo: S/. 10.50 → `"1050"`.
+</Note>
+
+<Note>
+  Para métodos asíncronos el estado final llega vía [notificación S2S](/payin/notificaciones) o mediante la [API de Consulta](/payin/consulta). No dependas únicamente de la respuesta del `POST` inicial.
+</Note>
+
+<Note>
+  El campo `transaction.processor_response` varía según el método de pago — tómalo como referencial ya que puede cambiar en el tiempo.
+</Note>
+
+---
+
+## Referencia técnica
+
+La especificación completa — esquemas JSON por método, parámetros detallados, ejemplos de request y response, y colección Postman — está publicada en GitHub.
+
+<Card title="Ver referencia en GitHub" icon="github" href="https://github.com/alignet">
+  Tarjeta · Tarjeta Presente · Yape · QR · Transferencia · Cuotéalo · PagoEfectivo
+</Card>
+
+---
+
+## Siguiente paso
+
+<Card title="Consulta" icon="arrow-right">
+  Verifica el estado de una transacción después de la autorización.
+</Card>

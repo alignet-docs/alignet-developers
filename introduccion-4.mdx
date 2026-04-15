@@ -1,0 +1,63 @@
+---
+title: "Gestión de Devoluciones"
+sidebarTitle: "Introducción"
+description: "Aprende cómo funciona el API de Devoluciones de Pay-me y qué necesitas para integrarla."
+---
+
+El API de Devoluciones de Pay-me permite solicitar el reembolso de una o más transacciones que se encuentren en estado `LIQUIDADO`.
+
+---
+
+## Métodos de pago soportados
+
+<Columns cols={3}>
+  <Column>
+    <Card title="CARD" icon="credit-card">
+      Tarjetas de crédito y débito.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="YAPE" icon="mobile">
+      Pagos realizados con Yape.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="CUOTEALO" icon="banknote">
+      Pagos en cuotas con Cuotéalo BCP.
+    </Card>
+  </Column>
+</Columns>
+
+---
+
+## Tipos de devolución
+
+| Tipo | Descripción |
+| :-- | :-- |
+| `TOTAL` | Devuelve el monto completo de la transacción. |
+| `PARTIAL` | Devuelve un monto parcial de la transacción. |
+
+---
+
+## Requisitos previos
+
+<Check>
+  Contar con un Access Token vigente del [API de Seguridad](/es/pay-me-api-orquestador/v2/api-de-seguridad).
+</Check>
+
+<Check>
+  La transacción debe estar en estado `LIQUIDADO`.
+</Check>
+
+<Check>
+  El método de pago debe ser `CARD`, `YAPE` o `CUOTEALO`.
+</Check>
+
+
+---
+
+## Siguiente paso
+
+<Card title="Referencia del API" icon="arrow-right">
+  Consulta el endpoint, parámetros y ejemplos de request y response.
+</Card>

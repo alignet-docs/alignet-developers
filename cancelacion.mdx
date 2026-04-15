@@ -1,0 +1,77 @@
+---
+title: "Cancelación"
+sidebarTitle: "Cancelación"
+description: "Cancela una transacción autorizada antes de que sea liquidada en la API de Pay-me."
+---
+
+El endpoint de cancelación permite anular una transacción que se encuentre en estado `AUTORIZADO` antes de que sea procesada para liquidación.
+
+---
+
+## Endpoint
+
+| Ambiente | URL | Método |
+| :-- | :-- | :-- |
+| Pre-Producción | `https://api.preprod.alignet.io/charges` | `DELETE` |
+| Producción | `https://api.alignet.io/charges` | `DELETE` |
+
+---
+
+## ¿Cuándo usar la cancelación?
+
+<Warning>
+  Solo puedes cancelar transacciones en estado **`AUTORIZADO`**. Una vez que la transacción pasa a estado `LIQUIDADO` debes usar el [API de Devoluciones](/devoluciones/introduccion).
+</Warning>
+
+---
+
+## Métodos soportados
+
+| Método | Cancelación disponible |
+| :-- | :-- |
+| Tarjeta | ✅ |
+| Transferencia Bancaria | ✅ |
+| Yape | ✅ |
+| QR | ✅ |
+| Cuotéalo | ✅ |
+| PagoEfectivo | ✅ |
+
+---
+
+## Headers requeridos
+
+| Campo | Valor | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `Authorization` | `Bearer <Access Token>` | `String` | SI |
+| `ALG-API-VERSION` | `1709847567` | `String` | SI |
+| `payment-facilitator-code` | Código del PF — solo para Facilitadores de Pago | `String` | NO |
+
+---
+
+## Consideraciones
+
+<Note>
+  La cancelación es irreversible. Una vez ejecutada, la transacción pasa a estado `CANCELADO` y no puede recuperarse.
+</Note>
+
+<Note>
+  Si la transacción ya fue **liquidada**, usa el [API de Devoluciones](/devoluciones/introduccion) en su lugar.
+</Note>
+
+---
+
+## Referencia técnica
+
+La especificación completa — parámetros, esquema JSON y ejemplos de request y response — está publicada en GitHub.
+
+<Card title="Ver referencia en GitHub" icon="github" href="https://github.com/alignet">
+  Esquema JSON · Ejemplos · Colección Postman
+</Card>
+
+---
+
+## Siguiente paso
+
+<Card title="Notificaciones" icon="arrow-right">
+  Configura tu endpoint para recibir confirmaciones Server-to-Server.
+</Card>

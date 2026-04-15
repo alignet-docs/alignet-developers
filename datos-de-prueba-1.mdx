@@ -1,0 +1,63 @@
+---
+title: "Datos de prueba"
+description: "Tarjetas y credenciales ficticias para pruebas en entornos controlados"
+---
+
+<Warning>
+Las tarjetas y credenciales listadas a continuación son **ficticias** y se utilizan exclusivamente con fines de prueba en entornos controlados. No son válidas para transacciones reales, no cumplen con el algoritmo de validación de Luhn y no pertenecen a ningún BIN real ni entidad emisora. **No deben utilizarse en sistemas productivos.**
+</Warning>
+
+## Tarjetas
+
+<Tabs>
+  <Tab title="VISA">
+    | Número de Tarjeta | Fecha de Expiración | CVV | Resultado Esperado |
+    |---|---|---|---|
+    | 4474118355632240 | 03/28 | 111 | ✅ Autorización Exitosa |
+    | 4041650444437904 | 03/28 | 111 | ❌ Autorización Denegada |
+  </Tab>
+  <Tab title="Mastercard">
+    | Número de Tarjeta | Fecha de Expiración | CVV | Resultado Esperado |
+    |---|---|---|---|
+    | 5455460920094260 | 03/28 | 111 | ✅ Autorización Exitosa |
+    | 5115422225052734 | 03/28 | 111 | ❌ Autorización Denegada |
+  </Tab>
+  <Tab title="AMEX">
+    | Número de Tarjeta | Fecha de Expiración | CVV | Resultado Esperado |
+    |---|---|---|---|
+    | 371064649323968 | 03/28 | 1111 | ✅ Autorización Exitosa |
+    | 371327381068590 | 03/28 | 1111 | ❌ Autorización Denegada |
+  </Tab>
+  <Tab title="Diners">
+    | Número de Tarjeta | Fecha de Expiración | CVV | Resultado Esperado |
+    |---|---|---|---|
+    | 36006616055724 | 03/28 | 111 | ✅ Autorización Exitosa |
+    | 36344311372031 | 03/28 | 111 | ❌ Autorización Denegada |
+  </Tab>
+</Tabs>
+
+---
+
+## Yape
+
+| Teléfono | Código de Aprobación | Resultado Esperado |
+|---|---|---|
+| 969929157 | 557454 | ✅ Autorización Exitosa |
+| 999999999 | 284563 | ❌ Autorización Denegada |
+
+---
+
+## Transferencia Bancaria
+
+| Número de Tarjeta | Clave | Nro de Documento | Token Digital | Resultado Esperado |
+|---|---|---|---|---|
+| 123456 | 123456 | 123456 | 123456 | ✅ Autorización Exitosa |
+| 123456 | 123456 | 123456 | 222222 | ❌ Autorización Denegada |
+
+---
+
+## Cuotéalo
+
+| Nro de Documento DNI | Número de Tarjeta | Clave | Monto Soles | Resultado Esperado |
+|---|---|---|---|---|
+| 46699676 | 4557885801589196 | 111111 | 100.00 | ✅ Autorización Exitosa |

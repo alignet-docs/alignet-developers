@@ -1,0 +1,133 @@
+---
+title: "Extornos"
+sidebarTitle: "Extornos"
+description: "Aprende a revertir transacciones desde Dashboard Metrix."
+---
+
+Un extorno permite **revertir una transacción autorizada**, evitando que el cargo se concrete o continúe su proceso.
+
+---
+
+### ¿Cuándo usar un extorno?
+
+<Check>
+  Error en el monto o en la operación
+</Check>
+
+<Check>
+  Cancelación de la compra por parte del cliente
+</Check>
+
+<Check>
+  Transacción duplicada
+</Check>
+
+---
+
+### Consideraciones previas
+
+<Note>
+  Solo se pueden extornar transacciones que hayan sido **autorizadas**.
+</Note>
+
+<Check>
+  El extorno debe realizarse dentro del mismo día o según configuración del procesador
+</Check>
+
+<Check>
+  Una transacción extornada no puede volver a procesarse
+</Check>
+
+---
+
+### ¿Cómo realizar un extorno?
+
+<Steps>
+  <Step title="Buscar la operación">
+    Ingresa a **Consultar operaciones** y ubica la transacción que deseas revertir.
+  </Step>
+  <Step title="Abrir el detalle">
+    Haz clic sobre la operación y luego en la transacción correspondiente.
+  </Step>
+  <Step title="Ejecutar el extorno">
+    Selecciona la opción **Extornar** dentro del detalle.
+  </Step>
+  <Step title="Confirmar acción">
+    Valida la información y confirma la operación.
+  </Step>
+</Steps>
+
+### **Proceso grafico:**
+
+Busca el botón de "**Extorno"** en el detalle de la operación.
+
+<Frame>
+  ![Image](/images/image-75.png)
+</Frame>
+
+Confirma el extorno.
+
+<Frame>
+  ![Image](/images/image-76.png)
+</Frame>
+
+Espera lel resultado de la ejecución de extorno, el mismo que aparece en la parte superior de la pantalla.
+
+<Frame>
+  ![Image](/images/image-74.png)
+</Frame>
+
+### Resultado esperado
+
+<Columns cols={2}>
+  <Column>
+    <Card title="Extorno exitoso" icon="check-circle">
+      La transacción cambia a estado **Extornado**.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Extorno no permitido" icon="notdef">
+      Puede fallar si la transacción ya fue liquidada o no cumple condiciones.
+    </Card>
+  </Column>
+</Columns>
+
+---
+
+### Restricciones
+
+<Check>
+  No se puede extornar una transacción ya liquidada
+</Check>
+
+<Check>
+  No aplica para todos los métodos de pago
+</Check>
+
+<Check>
+  Depende de reglas del procesador y la marca
+</Check>
+
+---
+
+### Recomendaciones
+
+<Columns cols={3}>
+  <Column>
+    <Card title="Actúa rápido" icon="clock">
+      Realiza el extorno lo antes posible.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Valida el estado" icon="search">
+      Asegúrate que esté en autorizado.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Evita duplicados" icon="copy">
+      Revisa si ya existe un extorno previo.
+    </Card>
+  </Column>
+</Columns>
+
+---

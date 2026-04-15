@@ -1,0 +1,116 @@
+---
+title: "Requisitos SDK iOS"
+sidebarTitle: "Requisitos"
+description: "Conoce los requisitos necesarios para integrar Pay-me SDK en iOS."
+---
+
+## Requisitos para integrar Pay-me SDK
+
+Antes de iniciar la integración, asegúrate de cumplir con los siguientes requisitos.
+
+---
+
+## Requisitos de negocio
+
+<Columns cols={2}>
+  <Column>
+    <Card title="Entidad legal" icon="building">
+      Contar con Razón Social registrada (RUC activo).
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Presencia digital" icon="globe">
+      Página web o presencia digital activa.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Seguridad" icon="lock">
+      Sitio con certificado SSL.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Cuenta bancaria" icon="banknote">
+      Cuenta a nombre de la Razón Social.
+    </Card>
+  </Column>
+</Columns>
+
+---
+
+## Requisitos técnicos iOS
+
+Para utilizar Pay-me SDK, debes cumplir con:
+
+<Check>
+  iOS 13.0 o superior
+</Check>
+
+<Check>
+  Xcode 14.2 o superior
+</Check>
+
+<Check>
+  Swift 5.5 o superior
+</Check>
+
+<Check>
+  Conectividad a internet disponible
+</Check>
+
+<Check>
+  Consumo del API de Seguridad para Access Token
+</Check>
+
+---
+
+## Librerías necesarias
+
+El SDK requiere los siguientes componentes:
+
+<Columns cols={2}>
+  <Column>
+    <Card title="Payme SDK" icon="credit-card">
+      Librería principal de pagos (Payme.xcframework).
+    </Card>
+  </Column>
+  <Column>
+    <Card title="SecureKey3DS" icon="shield-check">
+      Autenticación 3DS 2.2 (SecureKey3DS.xcframework).
+    </Card>
+  </Column>
+  <Column>
+    <Card title="VisaSensoryBranding" icon="sparkles">
+      Experiencia de pago Visa (VisaSensoryBranding.xcframework).
+    </Card>
+  </Column>
+  <Column>
+    <Card title="MastercardSonic" icon="music">
+      Branding Mastercard (MastercardSonic.xcframework).
+    </Card>
+  </Column>
+</Columns>
+
+---
+
+## Consideraciones de entorno
+
+<Note>
+  El ambiente de pruebas (Sandbox) está disponible 24/7.\
+  El soporte se brinda en horario laboral.
+</Note>
+
+<Note>
+  Todas las horas indicadas en la integración están basadas en GMT-5 (Perú).
+</Note>
+
+<Note>
+  **Análisis de resultados de pruebas** Los resultados de las pruebas deben ser enviados por correo a los integradores responsables.
+</Note>
+
+---
+
+## Siguiente paso
+
+<Card title="Instalar SDK" icon="arrow-right">
+  Configura las dependencias y frameworks necesarios en tu proyecto Xcode.
+</Card>

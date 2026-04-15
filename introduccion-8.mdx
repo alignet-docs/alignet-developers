@@ -1,0 +1,71 @@
+---
+title: "Onboarding de Comercios"
+sidebarTitle: "Introducción"
+description: "Registra comercios de forma individual o masiva en Pay-me — exclusivo para Facilitadores de Pago."
+---
+
+El módulo de Onboarding de Comercios permite a los **Facilitadores de Pago (PF)** registrar nuevos comercios en la plataforma de Pay-me, habilitando sus métodos de pago y generando sus credenciales de acceso.
+
+<Note>
+  Este módulo es de uso **exclusivo para Facilitadores de Pago**. Si eres un comercio directo, este módulo no aplica para tu integración.
+</Note>
+
+---
+
+## Modalidades de registro
+
+<CardGroup cols={2}>
+  <Card title="Registro Individual" icon="building" href="/onboarding/registro-individual">
+    Registra un comercio en tiempo real mediante una solicitud `POST`. Ideal para integraciones backend donde el alta debe ser inmediata.
+  </Card>
+  <Card title="Registro Masivo" icon="buildings" href="/onboarding/registro-masivo">
+    Registra múltiples comercios cargando un archivo Excel a S3. Ideal para altas en volumen donde la inmediatez no es crítica.
+  </Card>
+</CardGroup>
+
+---
+
+## ¿Cuál modalidad usar?
+
+| Criterio | Individual | Masivo |
+| :-- | :-- | :-- |
+| Volumen de registros | Uno a la vez | Cientos por archivo |
+| Tipo de respuesta | Síncrona — inmediata | Asíncrona — archivo de resultados |
+| Canal de envío | API REST `POST` | Archivo Excel → S3 |
+| Caso de uso típico | Alta en tiempo real | Migración o carga inicial |
+
+---
+
+## Requisitos previos
+
+<Check>
+  Contar con un Access Token vigente del [API de Autenticación](/autenticacion).
+</Check>
+
+<Check>
+  Tener configurado tu `payment-facilitator-code` — el UUID de tu organización como Facilitador de Pago.
+</Check>
+
+<Check>
+  Para registro masivo: tener acceso al bucket S3 asignado a tu organización.
+</Check>
+
+---
+
+## Credenciales generadas
+
+<Warning>
+  Las credenciales `client_id` y `client_secret` de cada comercio se generan **una sola vez** — en la respuesta del `POST` para el registro individual, o en el archivo de salida para el registro masivo. Almacénalas de forma segura de inmediato — no pueden recuperarse posteriormente.
+</Warning>
+
+<Note>
+  En operaciones `UPDATE`, las credenciales no se regeneran — se conservan las creadas en el `INSERT` original.
+</Note>
+
+---
+
+## Siguiente paso
+
+<Card title="Registro Individual" icon="arrow-right" href="/onboarding/registro-individual">
+  Registra un comercio en tiempo real mediante el API REST.
+</Card>

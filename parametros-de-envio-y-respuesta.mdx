@@ -1,0 +1,106 @@
+---
+title: "Parámetros de envío y respuesta"
+description: "Parámetros de envío y respuesta del Checkout Modal con V-POS2"
+---
+
+## Procedimiento de integración
+
+Para el envío de la solicitud de pago se deberá generar una solicitud POST HTTPS, usando un formulario HTML, implementado en el lenguaje de programación del comercio o tienda virtual. Dependiendo del ambiente de integración, se deberá definir la URL del JavaScript correspondiente:
+
+| Ambiente | Dirección URL |
+|---|---|
+| Integración | https://integracion.alignetsac.com/VPOS2/js/modalcomercio.js |
+| Producción | https://vpayment.verifika.com/VPOS2/js/modalcomercio.js |
+
+La forma de integración entre el comercio y el V-POS2 es a través de JavaScript, donde este crea la función para invocar el diseño modal para el V-POS2.
+```javascript
+<head>
+  <script type="text/javascript" src="https://integracion.alignetsac.com/VPOS2/js/modalcomercio.js"></script>
+</head>
+```
+
+El comercio en su formulario de envío deberá agregar un tag "class" para identificar los parámetros de envío:
+```javascript
+<form name="f1" id="f1" action="#" method="post" class="alignet-form-vpos2">
+```
+
+El comercio en su botón de pago deberá llamar a la función JavaScript `AlignetVPOS2.openModal(Dominio del ambiente)`:
+
+| Ambiente | Ejemplo |
+|---|---|
+| Integración | `<a href="javascript:AlignetVPOS2.openModal('https://integracion.alignetsac.com/','[TipoDeDiseño]')">Comprar</a>` |
+| Integración | `<input type="button" onclick="javascript:AlignetVPOS2.openModal('https://integracion.alignetsac.com/','[TipoDeDiseño]')" value="Comprar">` |
+| Producción | `<a href="javascript:AlignetVPOS2.openModal('','[TipoDeDiseño]')">Comprar</a>` |
+| Producción | `<input type="button" onclick="javascript:AlignetVPOS2.openModal('','[TipoDeDiseño]')" value="Comprar">` |
+
+<Note>
+Para el ambiente de producción no es necesario indicar en la función JavaScript el dominio. Además, tendrá la opción de seleccionar el tipo de diseño a utilizar. Deberá ingresar el código del diseño (1, 2, o 3) en la función openModal, en la sección "[TipoDeDiseño]".
+</Note>
+
+<Note>
+La clave SHA-2 descargada en el paso de Generar Llaves del Comercio es necesaria para el envío de información.
+</Note>
+
+---
+
+## Parámetros de envío
+
+| Campo | Tipo | Ancho máximo | Descripción | Req. |
+|---|---|---|---|---|
+| acquirerId | Numérico | 4 | Código de adquirente proporcionado por la entidad afiliadora. | SI |
+| idCommerce | Numérico | 4 | Código único de comercio proporcionado por la entidad afiliadora. Valor fijo. | SI |
+| purchaseOperationNumber | Numérico | 6 | Identificador único por cada transacción, generado por el comercio. Considerar que deberán ser enviados los 6 caracteres obligatoriamente. | SI |
+| purchaseAmount | Numérico | 10 | Valor total de la compra. Debe ir sin separador decimal (Si el monto es 100.30 dólares entonces la cantidad a enviar es 10030). | SI |
+| purchaseCurrencyCode | Numérico | 3 | Moneda según Estándar numérico ISO. Soles: 604 / Dólares: 840. | SI |
+| language | Alfanumérico | 2 | Idioma usado: español (SP), inglés (EN). Valor por defecto Español. | SI |
+| billingFirstName | Alfanumérico | 30 | Nombre del tarjetahabiente como aparece en la tarjeta de crédito. | NO |
+| billingLastName | Alfanumérico | 50 | Apellido del tarjetahabiente como aparece en la tarjeta de crédito. | NO |
+| billingEMail | Cadena | 50 | Dirección electrónica del tarjetahabiente. | SI |
+| billingAddress | Alfanumérico | 50 | Dirección del tarjetahabiente. | NO |
+| billingZIP | Alfanumérico | 10 | Código Postal del tarjetahabiente. | NO |
+| billingCity | Alfanumérico | 50 | Nombre de la ciudad del tarjetahabiente. | NO |
+| billingState | Alfanumérico | 2 | Primeros 2 caracteres del Estado, Departamento o Localidad del tarjetahabiente. | NO |
+| billingCountry | Alfanumérico | 2 | Código ISO del país del tarjetahabiente. | NO |
+| billingPhone | Alfanumérico | 15 | Teléfono del tarjetahabiente. | NO |
+| shippingFirstName | Alfanumérico | 30 | Nombre de la persona que recibirá los bienes. | SI |
+| shippingLastName | Alfanumérico | 50 | Apellido de la persona que recibirá los bienes. | SI |
+| shippingEmail | Cadena | 50 | Email de la persona que recibirá los bienes. | SI |
+| shippingAddress | Alfanumérico | 50 | Dirección de entrega del pedido del tarjetahabiente. | SI |
+| shippingZIP | Alfanumérico | 10 | Código Postal de la entrega. | SI |
+| shippingCity | Alfanumérico | 50 | Nombre de la ciudad de entrega. | SI |
+| shippingState | Alfanumérico | 15 | Nombre del estado/región o departamento de entrega. | SI |
+| shippingCountry | Alfanumérico | 2 | Código ISO del país de entrega. | SI |
+| shippingPhone | Alfanumérico | 15 | Teléfono del lugar de entrega. | NO |
+| shippingDNI | Alfanumérico | 10 | DNI de la persona que recibe los bienes. | NO |
+| HTTPSessionId | Alfanumérico | 30 | Sesión HTTP solo en el caso que el comercio lo requiera. | NO |
+| terminalCode | Alfanumérico | 12 | Código de terminal de la compra. | NO |
+| userCommerce | Alfanumérico | 20 | Código de usuario del tarjetahabiente en el comercio. En Wallet el parámetro es codCardHolderCommerce. | SI |
+| userCodePayme | Alfanumérico | 30 | Código de asociación con Wallet para el usuario. En Wallet el parámetro es codAsoCardHolderWallet. | SI |
+| descriptionProducts | Alfanumérico | 30 | Descripción del producto o servicio comprado por el tarjetahabiente. | SI |
+| programmingLanguage | Alfanumérico | 15 | Estipula el lenguaje de programación utilizado por el Comercio. Ejemplo: JAVA, PHP, VB.NET, PYTHON, RUBY, etc. | SI |
+| purchaseVerification | Alfanumérico | Longitud no fija | Firma digital de la trama de solicitud de pago. Contiene el valor cifrado de los campos acquirerId, idCommerce, purchaseOperationNumber, purchaseAmount, purchaseCurrencyCode y la clave SHA-2 para la pasarela. | SI |
+| reserved1 – reserved21 | Alfanumérico | 30 | Campos para datos adicionales no contemplados en el V-POS2. | NO |
+| reserved24 – reserved40 | Alfanumérico | 30 | Campos para datos adicionales no contemplados en el V-POS2. | NO |
+
+---
+
+## Parámetros de respuesta
+
+| Campo | Tipo | Ancho máximo | Descripción |
+|---|---|---|---|
+| authorizationResult | Numérico | 2 | Resultado de la autorización: **00** transacción autorizada / **01** transacción denegada en el Banco Emisor / **05** transacción rechazada por el V-POS. |
+| authorizationCode | Alfanumérico | 6 | Código de autorización de la transacción. Solo se devuelve en caso de transacción autorizada. |
+| errorCode | Alfanumérico | 4 | Código de error en caso de denegación o rechazo. Este código no debe ser mostrado al tarjetahabiente. |
+| errorMessage | Alfanumérico | - | Descripción del código de error en caso de producirse un rechazo. Este mensaje no debe ser mostrado al tarjetahabiente. |
+| answerCode | Alfanumérico | - | Código de respuesta de la procesadora con la cual se efectuó el pago. |
+| answerMessage | Alfanumérico | - | Mensaje de respuesta que describe el valor del campo answerCode. |
+| bin | Alfanumérico | 6 | Primeros 6 números de la tarjeta de pago. Solo se envía en caso de estar disponible. |
+| brand | Alfanumérico | 12 | Descripción de la marca. Valores posibles: VISA, MC, AMEX, DN. |
+| paymentReferenceCode | Alfanumérico | - | Número de tarjeta enmascarado (ejemplo: 414243\*\*\*\*\*\*1234). Para otros medios se devolverá el código respectivo. |
+| purchaseVerification | Alfanumérico | Longitud no fija | Firma generada con SHA-2 en base a los campos: acquirerId, idCommerce, purchaseOperationNumber, purchaseAmount, purchaseCurrencyCode, authorizationResult y la clave SHA-2 para la pasarela. |
+| reserved1 – reserved21 | Alfanumérico | 30 | Campos para datos adicionales no revisados por el V-POS2. |
+| reserved22 | Alfanumérico | 30 | Retorna el tipo de tarjeta: DEBIT o CREDIT. Contenido opcional sujeto a disponibilidad. |
+| reserved23 | Alfanumérico | 30 | Retorna el nombre del Banco Emisor de la tarjeta. Contenido opcional sujeto a disponibilidad. |
+| reserved24 - reserved40 | Alfanumérico | 30 | Campos para datos adicionales no revisados por el V-POS2. |
+| IDTransaction | Alfanumérico | 28 | Id de la transacción generada por Alignet para identificación del pedido con fines de trazabilidad. |
+| txDateTime | Alfanumérico | 19 | Fecha y hora de registro de la transacción con el formato: **DD/MM/AAAA HHMMSS**. |

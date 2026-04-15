@@ -1,0 +1,106 @@
+---
+title: "Notificaciones de respuesta"
+description: "Opciones de notificación de pago del Checkout Modal"
+---
+
+Pay-me Checkout ofrece a los comercios integrados múltiples opciones de notificación para los pagos realizados por los compradores. Cada una de estas opciones presenta ventajas, desventajas y requisitos necesarios que deben ser evaluados por el comercio.
+
+<Note>
+Toda notificación al comercio está estructurada según los Parámetros de respuesta.
+</Note>
+
+## Notificaciones a través del navegador del cliente
+
+Este grupo de opciones de notificación consiste en utilizar el navegador del cliente como intermediario entre Pay-me Checkout y el comercio, donde para notificar al comercio se envía un POST hacia la URL de respuesta definida por el comercio.
+
+<Note>
+En el escenario que una notificación hecha por cliente no llegue al comercio, el comercio puede realizar una "Consulta" (a través de un servicio web) o ingresar al Vpayment para verificar el estado final de la transacción.
+</Note>
+
+<Tabs>
+  <Tab title="Simple">
+    Pay-me Checkout, luego de recibir la respuesta de autorización del procesador, muestra el resultado en el formulario de la pasarela y notifica al comercio por medio del navegador del cliente por uno de los dos siguientes eventos:
+
+    - Notifica la respuesta al comercio cuando el cliente selecciona el botón "Finalizar".
+    - Notifica la respuesta al comercio de forma automática después de 10 segundos.
+
+    <Tip>
+    Independencia operativa: debido a que el POST se realiza por medio del navegador, no se requiere registro de certificados en los servidores de Alignet.
+    </Tip>
+
+    <Warning>
+    Requiere terminar el flujo en el navegador del cliente. Si el cliente perdiera conexión o cerrara el navegador, la respuesta no llegará hasta el servidor del comercio.
+    </Warning>
+
+    <Note>
+    Esta es la notificación por defecto para todos los comercios en ambos ambientes.
+    </Note>
+  </Tab>
+
+  <Tab title="Directa">
+    Pay-me Checkout, luego de recibir la respuesta de autorización del procesador, notifica al comercio por medio del navegador del cliente sin pre visualizar el resultado de la autorización:
+
+    - Notifica la respuesta al comercio de forma automática durante la pre-carga del formulario de la pasarela, sin embargo, no se muestra el resultado al cliente.
+
+    <Tip>
+    Independencia operativa: debido a que el POST se realiza por medio del navegador, no se requiere registro de certificados en los servidores de Alignet.
+    </Tip>
+
+    <Tip>
+    No requiere terminar el flujo en el navegador del cliente.
+    </Tip>
+
+    <Warning>
+    Si el cliente perdiera conexión o cerrara el navegador, la respuesta no llegará hasta el servidor del comercio.
+    </Warning>
+  </Tab>
+
+  <Tab title="Múltiple">
+    Pay-me Checkout, luego de recibir la respuesta de autorización del procesador, muestra el resultado en el formulario de la pasarela y notifica al comercio por medio del navegador del cliente en ambos de los siguientes eventos:
+
+    - Notifica la respuesta al comercio de forma automática durante la pre-carga del formulario de la pasarela.
+    - Notifica la respuesta al comercio cuando el cliente selecciona el botón "Finalizar".
+
+    <Tip>
+    Independencia operativa: debido a que el POST se realiza por medio del navegador, no se requiere registro de certificados en los servidores de Alignet.
+    </Tip>
+
+    <Tip>
+    No requiere terminar el flujo en el navegador del cliente, sin embargo, el comercio debe soportar más de una notificación.
+    </Tip>
+
+    <Warning>
+    Si el cliente perdiera conexión o cerrara el navegador, la respuesta no llegará hasta el servidor del comercio.
+    </Warning>
+
+    <Warning>
+    El comercio debe soportar más de una notificación, ya que si el cliente selecciona el botón "Finalizar" se envía una segunda notificación al comercio.
+    </Warning>
+  </Tab>
+</Tabs>
+
+---
+
+## Notificación de servidor a servidor
+
+Este grupo de opciones de notificación consiste en enviar la notificación directamente desde los servidores de Pay-me Checkout hacia los servidores del comercio. Pay-me Checkout envía un POST hacia la URL de respuesta definida por el comercio.
+
+<Note>
+Este esquema de notificación puede ser utilizado como complemento con cualquiera de las opciones de "Notificación a través del Cliente", utilizando esta como canal informativo al comprador.
+</Note>
+
+<Note>
+En el escenario que una notificación no llegue al comercio, Pay-me Checkout realiza 3 re-intentos de notificación cada 5 minutos para garantizar la integridad de las transacciones con el comercio.
+</Note>
+
+Pay-me Checkout, luego de recibir la respuesta de autorización del procesador, notifica enviando un POST a los servidores del comercio:
+
+- Notifica la respuesta a la URL definida por el comercio por medio de comunicación segura HTTPS servidor a servidor (Pay-me – Comercio).
+
+<Tip>
+No requiere terminar el flujo en el navegador del cliente, debido a que es una comunicación servidor a servidor.
+</Tip>
+
+<Warning>
+Dependencia operativa: debido a que el POST se realiza de servidor a servidor utilizando protocolo seguro (HTTPS), se requiere el registro de certificados en los servidores de Alignet. El comercio debe comunicar y enviar con anticipación el nuevo certificado para actualizarlo en los servidores de Alignet.
+</Warning>

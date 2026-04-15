@@ -1,0 +1,127 @@
+---
+title: "Reporte y exportación"
+sidebarTitle: "Reportes y exportación"
+description: "Exporta y analiza tus transacciones desde Dashboard Metrix en formatos CSV y XLS."
+---
+
+Metrix permite exportar información de transacciones para **conciliación, análisis y auditoría**.
+
+---
+
+### ¿Qué puedes hacer?
+
+<Columns cols={3}>
+  <Column>
+    <Card title="Exportar datos" icon="download">
+      Descarga transacciones en formato CSV o XLS.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Analizar información" icon="bar-chart">
+      Utiliza los archivos en Excel o herramientas externas.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Conciliar operaciones" icon="money-bill-transfer">
+      Cruza información con tus sistemas internos.
+    </Card>
+  </Column>
+</Columns>
+
+---
+
+### ¿Cómo generar un reporte?
+
+<Steps>
+  <Step title="Aplicar filtros">
+    Realiza una búsqueda desde **Consultar operaciones** usando los filtros necesarios.
+  </Step>
+  <Step title="Seleccionar exportación">
+    Haz clic en la opción de descarga disponible en la pantalla de resultados.
+  </Step>
+  <Step title="Descargar archivo">
+    El archivo se generará en formato CSV o XLS según la opción elegida.
+  </Step>
+</Steps>
+
+---
+
+### Formatos disponibles
+
+<Columns cols={2}>
+  <Column>
+    <Card title="CSV" icon="file-text">
+      Formato ligero y compatible con múltiples herramientas.
+
+      Recomendado para grandes volúmenes de datos.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="XLS" icon="file-spreadsheet">
+      Formato Excel listo para análisis manual.
+
+      Recomendado para revisión operativa.
+    </Card>
+  </Column>
+</Columns>
+
+---
+
+### Información incluida
+
+Los reportes pueden incluir:
+
+| Campo | Descripción |
+| --- | --- |
+| Fecha | Fecha de la transacción |
+| ID Operación | Identificador de la operación |
+| ID Transacción | Identificador del intento |
+| Método de pago | Tarjeta, Yape, etc. |
+| Estado | Resultado de la transacción |
+| Monto | Importe procesado |
+| Moneda | Tipo de moneda |
+| Canal | POS / E-commerce |
+
+---
+
+### Consideraciones
+
+<Check>
+  El reporte incluye solo la información filtrada en la búsqueda
+</Check>
+
+<Check>
+  Archivos grandes pueden tardar algunos segundos en generarse
+</Check>
+
+<Check>
+  Para grandes volúmenes, se recomienda usar CSV
+</Check>
+
+<Check>
+  La información exportada refleja el estado al momento de la descarga
+</Check>
+
+---
+
+### Buenas prácticas
+
+<Columns cols={3}>
+  <Column>
+    <Card title="Filtra primero" icon="filter">
+      Reduce el volumen de datos antes de exportar.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Usa CSV" icon="database">
+      Para análisis masivo o integraciones.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Valida estados" icon="check-circle">
+      Asegúrate de interpretar correctamente los estados.
+    </Card>
+  </Column>
+</Columns>
+
+---

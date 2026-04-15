@@ -1,0 +1,62 @@
+---
+title: "Configuración inicial"
+description: "Acceso a la plataforma y generación de llaves del Checkout Modal"
+---
+
+## Acceso a la plataforma
+
+Para configurar el Pay-me Modal, debe contactarse previamente con el contacto de Pay-me y solicitar:
+
+<Steps>
+  <Step title="Solicitar credenciales">
+    Contactarse con el equipo de Pay-me para obtener:
+    - ID Adquirente
+    - ID Comercio
+    - Acceso al VPayment web (acceso administrador del comercio)
+
+    <Note>Todos los datos son brindados por el contacto de Pay-me.</Note>
+  </Step>
+  <Step title="Acceder al VPayment web">
+    Ingresar al sistema VPayment web con las credenciales recibidas según el ambiente:
+
+    | Ambiente | Dirección URL |
+    |---|---|
+    | Integración | https://integracion.alignetsac.com/vpaymentweb/index.jsp |
+    | Producción | https://vpayment.verifika.com/vpaymentweb/index.jsp |
+  </Step>
+</Steps>
+
+---
+
+## Generar llaves del comercio
+
+<Warning>
+No es recomendable realizar el proceso para descarga de llaves más de una vez, debido a que cada vez que se generan Llaves ("LlavesSHA2.zip"), estas reemplazan a la actual de manera inmediata y tendrá que iniciar el proceso para registro de llaves nuevamente.
+</Warning>
+
+Con la finalidad de que la transmisión de información entre el comercio y Pay-me se realice de manera segura, guardando los tres principios de seguridad: Protección, Integridad y Autenticidad de datos, el comercio generará un par de claves SHA-2.
+
+<Steps>
+  <Step title="Ingresar al VPayment web">
+    Acceda con sus credenciales. Posiblemente le solicite actualizar su contraseña.
+  </Step>
+  <Step title="Ir a Llaves Públicas y Privadas">
+    Dentro del sistema, navegue a **Administración / Llaves Públicas y Privadas** y haga click en el botón **Registrar Llaves**.
+  </Step>
+  <Step title="Registrar y descargar">
+    En la pantalla de confirmación, haga click en **Registrar y Descargar**. Obtendrá un archivo comprimido **LlavesSHA2.zip** que contiene dos archivos:
+
+    | Archivo | Nomenclatura | Contenido |
+    |---|---|---|
+    | Archivo 1 | `****_PASARELA_****.txt` | Llave Pasarela de Pagos asociada con el comercio. |
+    | Archivo 2 | `****_WALLET_****.txt` | Llave Wallet asociada con el comercio. Solo usarla si fue solicitada al asesor comercial. |
+  </Step>
+</Steps>
+
+<Tip>
+Es una buena práctica almacenar la llave generada en un lugar seguro, a fin de poder reutilizarla para el mismo comercio.
+</Tip>
+
+<Tip>
+Es una buena política de seguridad generar nuevas llaves cada año o periodo que determine su negocio.
+</Tip>

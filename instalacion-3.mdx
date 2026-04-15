@@ -1,0 +1,24 @@
+---
+title: "Inicializar SDK"
+sidebarTitle: "Instalación"
+description: "Configura tu proyecto iOS para integrar Pay-me SDK."
+---
+
+<Note>
+  Contar con la última versión del SDK, [descargar aquí.](https://docs.pay-me.com/__attachments/165052417/SDK_Payme_iOS_v3.3_.zip?inst-v=d51f22dc-2194-4463-876b-25cb1b1dfd18)
+</Note>
+
+Se debe agregar las librerías (Payme, SecureKey3DS, VisaSensoryBranding y MastercardSonic) al proyecto iOS. También se debe agregar el SDK de autenticación entregado por Alignet.
+
+Se recomienda usar **"Copy items…"** y **"Create groups…"** al momento de agregar los frameworks al proyecto.
+
+<Frame>
+  ![Image 20221003 172047](/images/image-20221003-172047.png)
+</Frame>
+
+Ir a la sección **Frameworks, Libraries, and Embedded Content** que se encuentra en el Target del proyecto iOS. Asegurarse de que cada SDK tenga la opción **"Embed Without Signing"**.
+
+<Frame>
+  ![Image 20221003 172057](/images/image-20221003-172057.png)
+</Frame>
+

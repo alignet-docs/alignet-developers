@@ -1,0 +1,96 @@
+---
+title: "Inicializar SDK Android"
+---
+
+A continuación, se detallan los pasos para inicializar el SDK.
+
+Es necesario los datos del paso [Cobros: Parámetros de Entrada y Salida de Pay-me SDK Android](https://docs.pay-me.com/es/sdk/v3.2/Android/parametros-de-entrada-y-salida-de-pay-me-sdk-andro) y obtener el Access Token del [API de Seguridad](https://docs.pay-me.com/es/pay-me-api-orquestador/v2/api-de-seguridad).
+
+### Importar PaymeSDK
+
+Para utilizar las funcionalidades del SDK, se debe incluir la siguientes lineas en el controlador donde se hará la invocación
+
+```text
+import com.alignet.payme.PaymeClient;
+import com.alignet.payme.PaymeClientDelegate;
+import com.alignet.payme.util.PaymeEnvironment;
+import com.alignet.payme.model.*
+class MainActivity : AppCompatActivity() {}
+```
+
+### Invocar PaymeSDK
+
+El comercio debe interactuar con la clase `PaymeClient` quien se encargará de iniciar el flujo. La clase se inicia con los siguientes parámetros:
+
+- `delegate`: Activity que se encargará de implementar los métodos del delegado.
+- `merchantCode`: Código del comercio entregado por Alinget
+
+Luego de crear un objeto de la clase `PaymeClient`, el comercio debe interactuar con la función:
+
+- `setEnvironment`: Función que recibe el ambiente donde se hará la autorización.
+- `invokeAffiliationForm`: Función que se encarga de invocar al SDK para que el usuario pueda escoger o ingresar una tarjeta para el registro o actualización de una afiliación. Esta función recibe los siguientes parámetros:
+  - `from`: Es el activity donde se realizará la invocación del SDK.
+  - `sessionToken`: Token de acceso que se debe obtener cada vez que se requiera invocar al SDK del [API de Seguridad](https://docs.pay-me.com/es/pay-me-api-orquestador/v2/api-de-seguridad).
+  - `paymeAffiliationRequest`: El objeto de entrada que contiene toda la información de la afiliación.
+
+**setEnvironment**: Este parámetro nos permitirá seleccionar el ambiente:
+
+- Development
+- Production
+
+```text
+val beneficiary = PAYMEAddressData(
+  firstName = "Producto",
+  lastName = "Alignet",
+  email= "producto@alignet.com",
+  phone= "51-999999999",
+  identityDocument = PAYMEIdentityDocument(
+    type = "DNI",
+    identifier = "77777777",
+    country = "PE"
+  ),
+  addressLine1 = "Av casimiro Ulloa 333",
+  addressLine2 = null,
+  city = "Lima",
+  state = "Lima",
+  country = "PE"
+)
+
+val additionalFields = HashMap<String, String>()
+additionalFields["FACTURACION_ID"] = "LEV_72661927"
+additionalFields["reserved1"] = "Reservado 1"
+
+val affiliation = PAYMEAffiliationData(
+    type = PAYMEAffiliationType.MANUAL,
+    amount = nil,
+    currency = "604",
+    additionalFields = additionalFields,
+    beneficiary = beneficiary
+)
+
+val paymeRequest = PAYMEAffiliationRequest(
+    action = PAYMEAffiliationAction.CREATE,
+    affiliationCode = "AFFILIATION_CODE",
+    affiliation = affiliation,
+    setting = PAYMESettingData(
+        locale = self.inputLocale.text!,
+        walletUserID = "WALLET_USER_CODE"
+    )
+)
+
+val paymeClient = PaymeClient(delegate=this, merchantCode="MERCHANT_CODE")
+paymeClient.setEnvironment(environment=PaymeEnvironment.DEVELOPMENT)
+paymeClient.invokeCaptureForm(from=this, sessionToken="TOKEN_GENERADO_PARA_ESTA_SOLICITUD", paymeRequest=paymeRequest)
+```
+
+## Agregar metodos delegates
+
+Para completar la integración, es necesario agregar los métodos del delegado PaymeClientDelegate. Para este flujo se debe implementar la función:
+
+- `onAffiliationResponse` -\> Función que entrega el resultado final de la afiliación
+
+```text
+class MainActivity: AppCompatActivity(), PaymeClientDelegate {
+    override fun onAffiliationResponse(response: PAYMEAffiliationResponse) {}
+}
+```

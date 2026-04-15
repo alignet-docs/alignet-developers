@@ -1,0 +1,283 @@
+---
+title: "Códigos de Retorno"
+description: "Guía técnica para la interpretación de respuestas de autorización de Pay-me."
+icon: "book"
+---
+
+### Validación de Éxito
+
+Para asegurar una correcta validación de pagos en su sistema, es imperativo que su lógica de negocio discrimine los estados basándose estrictamente en los códigos oficiales.
+
+<Warning>
+  **Lógica de Aprobación Crítica**
+
+  Considere **únicamente** los siguientes códigos como estados de **Aprobación**:
+
+  - `00` (Para procesamiento directo en Alignet)
+  - `000` (Para procesadores externos)
+
+  Cualquier otro código recibido debe ser tratado automáticamente como una transacción **No Aprobada**.
+</Warning>
+
+### Códigos Visa
+
+Utilice la siguiente tabla para gestionar las respuestas de tarjetas Visa. La acción recomendada por defecto para estados denegados es solicitar al cliente intentar con otro medio de pago.
+
+<AccordionGroup>
+  <Accordion title="Códigos de Éxito y Reintento" icon="check-double">
+    | Código | Mensaje de Retorno | Estado | Acción |
+    | :-- | :-- | :-- | :-- |
+    | **00** | Pago Exitoso | `EXITOSO` | Proceder con la entrega del producto/servicio. |
+    | **19** | Reintentar la transacción | `REINTENTAR` | Solicitar al cliente intentar nuevamente. |
+    | **21** | Reintentar la transacción | `REINTENTAR` | Solicitar al cliente intentar nuevamente. |
+    | **25** | Reintentar la transacción | `REINTENTAR` | Solicitar al cliente intentar nuevamente. |
+    | **28** | Reintentar la transacción | `REINTENTAR` | Solicitar al cliente intentar nuevamente. |
+  </Accordion>
+
+  <Accordion title="Denegaciones por el Emisor (Fondos, PIN, Expiración)" icon="bank">
+    | Código | Mensaje de Retorno | Estado |
+    | :-- | :-- | :-- |
+    | **01** | Contactar al banco | DENEGADO |
+    | **05** | Pago no aceptado por el emisor | DENEGADO |
+    | **51** | Fondos insuficientes | DENEGADO |
+    | **54** | Tarjeta expirada | DENEGADO |
+    | **55** | PIN incorrecto | DENEGADO |
+    | **61** | Supera el límite de monto | DENEGADO |
+    | **75** | Intentos de PIN excedidos | DENEGADO |
+    | **N7** | Rechazo por clave CVV2 | DENEGADO |
+  </Accordion>
+
+  <Accordion title="Restricciones de Seguridad y Fraude" icon="shield-exclamation">
+    | Código | Mensaje de Retorno | Estado |
+    | :-- | :-- | :-- |
+    | **04** | Retener Tarjeta | DENEGADO |
+    | **07** | Retener tarjeta (posible fraude) | DENEGADO |
+    | **41** | Tarjeta reportada como perdida | DENEGADO |
+    | **43** | Tarjeta reportada | DENEGADO |
+    | **59** | Sospecha de fraude | DENEGADO |
+    | **63** | Violación de seguridad | DENEGADO |
+    | **64** | No se cumple requisitos de AML | DENEGADO |
+  </Accordion>
+
+  <Accordion title="Técnicos y de Configuración" icon="gears">
+    | Código | Mensaje de Retorno | Estado |
+    | :-- | :-- | :-- |
+    | **03** | Código de comercio inválido | DENEGADO |
+    | **06** | Error general en procesamiento | DENEGADO |
+    | **12** | Transacción inválida | DENEGADO |
+    | **14** | Número de cuenta inválido | DENEGADO |
+    | **91** | Emisor no disponible | DENEGADO |
+    | **96** | Error de sistema | DENEGADO |
+    | **Z3** | No se puede conectar a línea | DENEGADO |
+  </Accordion>
+
+  <Accordion title="Ver Lista Completa Visa (Otros Códigos)" icon="list-ol">
+    | Código | Mensaje | Código | Mensaje |
+    | :-- | :-- | :-- | :-- |
+    | **02** | Contactar al banco | **78** | Bloqueado por primer uso |
+    | **10** | Aprobación parcial (No hab.) | **79** | Reintentar transacción |
+    | **11** | Aprobado VIP (No hab.) | **80** | Op. sin impacto financiero |
+    | **13** | Monto inválido | **81** | Error criptográfico PIN |
+    | **15** | Código de emisor incorrecto | **82** | Autenticación inválida |
+    | **39** | Cuenta crédito no disp. | **85** | Rechazo por verificaciones |
+    | **46** | Cuenta vinculada cerrada | **86** | PIN no verificado |
+    | **52** | No existe cuenta corriente | **92** | ID institución inválida |
+    | **53** | No existe cuenta ahorros | **93** | Transacción no completada |
+    | **57** | Transacción no permitida | **94** | Transmisión duplicada |
+    | **58** | Pago no permitido en terminal | **1A** | Autenticación requerida |
+    | **62** | Tarjeta restringida | **6P** | Verificación fallida |
+    | **65** | Excedió límite frecuencia | **B1** | Cargo adicional no permitido |
+    | **70** | PIN es requerido | **N0** | Reintentar transacción |
+    | **74** | Error en la transacción | **P5** | Desbloqueo PIN denegado |
+    | **76** | Reversión no solicitada | **Q1** | Fallo autenticación tarjeta |
+  </Accordion>
+</AccordionGroup>
+
+---
+
+### Códigos Mastercard
+
+Respuestas específicas para el procesador Mastercard.
+
+<AccordionGroup>
+  <Accordion title="Códigos Principales Mastercard" defaultOpen icon="credit-card">
+    | Código | Mensaje de Retorno | Estado Sugerido |
+    | :-- | :-- | :-- |
+    | **00** | Pago Exitoso | **APROBADO** |
+    | **01** | Denegado por el emisor | DENEGADO |
+    | **03** | Datos de comercio Inválidos | DENEGADO |
+    | **13** | Monto invalido | DENEGADO |
+    | **14** | Número de cuenta no válido | DENEGADO |
+    | **51** | Fondos insuficientes | DENEGADO |
+    | **54** | Tarjeta expirada | DENEGADO |
+    | **55** | PIN incorrecto | DENEGADO |
+  </Accordion>
+
+  <Accordion title="De origen de procesamiento Emisor" icon="server">
+    | Código | Mensaje de Retorno |
+    | :-- | :-- |
+    | **30** | Error durante el proceso emisor |
+    | **65** | Error durante el proceso emisor |
+    | **76** | Error durante el proceso emisor |
+    | **77** | Error durante el proceso emisor |
+    | **78** | Error durante el proceso emisor |
+    | **86** | Error durante el proceso emisor |
+    | **91** | Error durante el proceso emisor |
+    | **96** | Error durante el proceso emisor |
+  </Accordion>
+
+  <Accordion title="Otros Errores Mastercard" icon="triangle-exclamation">
+    | Código | Mensaje de Retorno |
+    | :-- | :-- |
+    | **08** | Denegado por el emisor |
+    | **10** | Aprobación Parcial Denegada |
+    | **62** | Denegado por el emisor |
+    | **79** | Denegado por la marca |
+    | **82** | Denegado por la marca |
+    | **94** | Numero pedido duplicado |
+  </Accordion>
+</AccordionGroup>
+
+<Card title="Sugerencia de Implementación" color="#00ff00" icon="lightbulb">
+  Para mejorar la experiencia del usuario (UX), asocie los códigos denegados a mensajes amigables en su frontend, evitando mostrar códigos técnicos directamente al cliente.
+</Card>
+
+---
+
+## Códigos de Retorno por Procesador
+
+Guía detallada de códigos de respuesta para Visa, Mastercard, Niubiz e Izipay.
+
+### Validación General de Éxito
+
+Independientemente del procesador utilizado, la lógica de su sistema debe ser estricta para evitar fraudes o errores de entrega.
+
+<CardGroup cols={2}>
+  <Card title="Aprobación Alignet" color="#10b981" icon="circle-check">
+    Código **00**
+  </Card>
+
+  <Card title="Procesadores Externos" color="#3b82f6" icon="envelopes-bulk">
+    Código **000**
+  </Card>
+</CardGroup>
+
+<Note>
+  Cualquier código distinto a los mencionados arriba debe ser tratado automáticamente por su lógica de negocio como una transacción **No Aprobada**.
+</Note>
+
+### Diccionario de Códigos (otros procesadores)
+
+Seleccione el procesador o marca de tarjeta para ver el detalle de los mensajes de retorno.
+
+<Tabs>
+  <Tab title="Visa / Mastercard">
+    ### Marcas Principales
+
+    Gestión de respuestas directas para tarjetas Visa y Mastercard.
+
+    <AccordionGroup>
+      <Accordion title="Visa: Detalle de respuestas" icon="cc-visa">
+        | Código | Mensaje | Estado |
+        | :-- | :-- | :-- |
+        | **000** | Pago Exitoso | \[EXITOSO\] |
+        | **01/02** | Contactar al banco | \[DENEGADO\] |
+        | **05** | Pago no aceptado por el emisor | \[DENEGADO\] |
+        | **19/21/25** | Reintentar la transacción | \[REINTENTAR\] |
+        | **51** | Fondos insuficientes | \[DENEGADO\] |
+        | **54** | Tarjeta expirada | \[DENEGADO\] |
+        | **N7** | Rechazo por clave CVV2 | \[DENEGADO\] |
+      </Accordion>
+
+      <Accordion title="Mastercard: Detalle de respuestas" icon="cc-mastercard">
+        | Código | Mensaje | Estado |
+        | :-- | :-- | :-- |
+        | **000** | Pago Exitoso | \[EXITOSO\] |
+        | **01** | Denegado por el emisor | \[DENEGADO\] |
+        | **13** | Monto inválido | \[DENEGADO\] |
+        | **30** | Error durante el proceso emisor | \[DENEGADO\] |
+        | **51** | Fondos insuficientes | \[DENEGADO\] |
+        | **94** | Número pedido duplicado | \[DENEGADO\] |
+      </Accordion>
+    </AccordionGroup>
+  </Tab>
+  <Tab title="Niubiz">
+    ### Procesador Niubiz
+
+    Si procesa a través de Niubiz, considere estos códigos adicionales para el control de su terminal.
+
+    <AccordionGroup>
+      <Accordion title="Aprobación y Errores Comunes" defaultOpen icon="star">
+        | Código | Descripción |
+        | :-- | :-- |
+        | **000** | Transacción aprobada |
+        | **111** | Sobre límite de monto internet |
+        | **116** | Saldo Insuficiente |
+        | **129** | CVV2 incorrecto |
+        | **265** | Clave OTP incorrecta |
+      </Accordion>
+
+      <Accordion title="Seguridad y Fraude (Niubiz)" icon="shield-halved">
+        | Código | Descripción |
+        | :-- | :-- |
+        | **102** | Sospecha de fraude |
+        | **208/209** | Tarjeta Perdida / Robada |
+        | **290** | Tarjeta en lista negra por emisor |
+        | **670** | Antifraude |
+      </Accordion>
+
+      <Accordion title="Errores Técnicos y Parámetros" icon="code">
+        | Código | Descripción |
+        | :-- | :-- |
+        | **300** | Numero de pedido duplicado |
+        | **402** | Tienda con rango de IP no válido |
+        | **666** | Problemas de comunicación |
+        | **909** | Error de sistema |
+      </Accordion>
+
+      <Accordion title="Ver todos los códigos Niubiz" icon="list">
+        (Aquí puedes incluir la lista completa o los más de 100 códigos restantes en una tabla simple para búsqueda rápida)
+      </Accordion>
+    </AccordionGroup>
+  </Tab>
+  <Tab title="Izipay">
+    ### Procesador Izipay
+
+    Códigos específicos para la red Izipay.
+
+    <AccordionGroup>
+      <Accordion title="Estados de Tarjeta" icon="credit-card">
+        | Código | Descripción |
+        | :-- | :-- |
+        | **00** | Transacción aprobada |
+        | **41/43** | Tarjeta caliente (Lost/Stolen) |
+        | **54** | Tarjeta vencida |
+        | **62** | Tarjeta restringida |
+      </Accordion>
+
+      <Accordion title="Errores de Usuario / Operación" icon="user-xmark">
+        | Código | Descripción |
+        | :-- | :-- |
+        | **13** | Importe no válido |
+        | **51** | No hay fondos disponibles |
+        | **55** | PIN incorrecto |
+        | **75** | Excede los reintentos de PIN |
+      </Accordion>
+
+      <Accordion title="Errores de Red e IST/Switch" icon="network-wired">
+        | Código | Descripción |
+        | :-- | :-- |
+        | **08** | Tiempo de espera del emisor |
+        | **91** | IST/Switch no disponible |
+        | **96** | Error del sistema |
+        | **102** | Tiempo de respuesta excedido |
+      </Accordion>
+    </AccordionGroup>
+  </Tab>
+</Tabs>
+
+### Notas Importantes sobre Marcas
+
+<Info>
+  Si su comercio utiliza **Niubiz** o **Izipay**, es fundamental que también implemente la lógica para las marcas **Visa** y **Mastercard**, así como para **Diners Club** y **American Express**, ya que estos procesadores actúan como puente para dichas marcas.
+</Info>

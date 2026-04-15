@@ -1,0 +1,132 @@
+---
+title: "Inicializar Pay-me SDK Android"
+---
+
+La función Cobros de Pay-me SDK permite cobrar con los siguientes métodos de pago disponibles:
+
+- Tarjetas Crédito / Débito
+- Yape
+- Billetera móviles con QR
+- Transferencia Bancaria
+- Cuotéalo
+- PagoEfectivo
+
+# Cobros: Inicializar Pay-me SDK Android
+
+A continuación, se detallan los pasos para inicializar el SDK.
+
+<Note>
+  Es necesario los datos del paso [Cobros: Parámetros de Entrada y Salida de Pay-me SDK Android](https://docs.pay-me.com/es/sdk/v3.2/Android/parametros-de-entrada-y-salida-de-pay-me-sdk-andro) y obtener el Access Token del [API de Seguridad](https://docs.pay-me.com/es/pay-me-api-orquestador/v2/api-de-seguridad).
+</Note>
+
+### Importar PaymeSDK
+
+Para utilizar las funcionalidades del SDK, se debe incluir la siguientes lineas en el controlador donde se hará la invocación
+
+```text
+import com.alignet.payme.PaymeClient;
+import com.alignet.payme.PaymeClientDelegate;
+import com.alignet.payme.util.PaymeEnvironment;
+import com.alignet.payme.model.*
+
+class MainActivity : AppCompatActivity() {}
+```
+
+### Invocar PaymeSDK
+
+El comercio debe interactuar con la clase `PaymeClient` quien se encargará de iniciar el flujo. La clase se inicia con los siguientes parámetros:
+
+- `delegate`: Activity que se encargará de implementar los métodos del delegado.
+- `merchantCode`: Código del comercio entregado por Alinget
+
+Luego de crear un objeto de la clase `PaymeClient`, el comercio debe interactuar con dos funciones:
+
+- `setEnvironment`: Función que recibe el ambiente donde se hará la autorización.
+- `invokeCaptureForm`: Función que se encarga de invocar al SDK para que el usuario pueda realizar el pago. Esta función recibe los siguientes parámetros:
+  - `from`: Es el activity donde se realizará la invocación del SDK.
+  - `sessionToken`: Token de acceso que se debe obtener cada vez que se requiera invocar al SDK del [API de Seguridad](https://docs.pay-me.com/es/pay-me-api-orquestador/v2/api-de-seguridad)
+  - `paymeChargesRequest`: El objeto de entrada que contiene toda la información de la transacción.
+
+<Check>
+  **setEnvironment**: Este parámetro nos permitirá seleccionar el ambiente:
+
+  - Development
+  - Production
+</Check>
+
+```text
+val customer = PAYMEAddressData(
+  firstName = "Levis",
+  lastName = "Silvestre",
+  email= "levis.silvestre@alignet.com",
+  phone= "51-958435685",
+  identityDocument = PAYMEDocumentIdentity(
+    type = "DNI",
+    identifier = "72661927",
+    country = "PE"
+  ),
+  addressLine1 = "Av casimiro Ulloa 333",
+  addressLine2 = null,
+  city = "Lima",
+  state = "Lima",
+  country = "PE"
+)
+
+val billingShipping = PAYMEAddressData(
+  firstName = "Levis",
+  lastName = "Silvestre",
+  email= "levis.silvestre@alignet.com",
+  phone= "51-958435685",
+  addressLine1 = "Av casimiro Ulloa 333",
+  addressLine2 = null,
+  city = "Lima",
+  state = "Lima",
+  country = "PE"
+)
+
+val reservedData = HashMap<String, String>()
+reservedData["reserved1"] = "Reservado 1"
+reservedData["reserved2"] = "Reservado 2"
+reservedData["reserved30"] = "Reservado 30"
+
+val paymeChargesRequest = PAYMEChargesRequest(
+  transaction = PAYMETransactionData(
+    operationNumber= "0000001",
+    amount= "1000",
+    currency= "604",
+    additionalFields = reservedData,
+    customer = customer,
+    billing = billingShipping,
+    shipping = billingShipping
+  ),
+  setting = PAYMESettingData(
+    locale = "es_PE",
+    paymentMethods = listOf("CARD","YAPE","CUOTEALO"),
+    walletUserID = null
+  )
+)
+
+val paymeClient = PaymeClient(delegate=this, merchantCode="MERCHANT_CODE")
+paymeClient.setEnvironment(environment=PaymeEnvironment.DEVELOPMENT)
+paymeClient.invokeCaptureForm(from=this, sessionToken="TOKEN_GENERADO_PARA_ESTA_SOLICITUD", paymeChargesRequest=paymeChargesRequest)
+```
+
+## Agregar metodos delegates
+
+Para completar la integración, es necesario agregar los métodos del delegado `PaymeClientDelegate`. El delegado tiene dos funciones que deben ser implementados por el comercio:
+
+- `onRespondsPayme` -\> Función que entrega el resultado final
+- `onPaymeEvents` -\> Función que entrega los eventos ocurridos dentro del SDK. Los eventos que puede entregar son los siguientes:
+  - `BUILD_FORM(methods:[String])`
+  - `CHOOSE_PAYMENT_METHOD(method: String)`
+  - `RETURN_LIST_PAYMENT_METHODS`
+  - `CANCEL_PAYMENT_METHOD(method: String)`
+  - `PRESS_PAY_BUTTON(method: String)`
+  - `CLOSE_PAYME`
+
+```text
+class MainActivity: AppCompatActivity(), PaymeClientDelegate {
+    override fun onRespondsPayme(response: PAYMEChargesResponse) {}
+    override fun onPaymeEvents(event: PaymeEvent) {}
+}
+```

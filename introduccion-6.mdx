@@ -1,0 +1,84 @@
+---
+title: "PayIn"
+sidebarTitle: "Introducción"
+description: "Conoce los métodos de pago disponibles en Pay-me y cómo funciona el flujo de autorización."
+---
+
+PayIn es el módulo de cobros de la API de Pay-me. Permite aceptar pagos de consumidores a través de múltiples métodos, todos orquestados desde un único punto de integración.
+
+---
+
+## Métodos disponibles
+
+<CardGroup cols={2}>
+  <Card title="Tarjeta con 3DS" icon="credit-card">
+    ecommerce · tarjeta presente · Síncrono
+  </Card>
+  <Card title="Yape" icon="mobile">
+    ecommerce · Síncrono
+  </Card>
+  <Card title="QR" icon="qrcode">
+    ecommerce · Asíncrono · Redirección
+  </Card>
+  <Card title="Transferencia Bancaria" icon="building-columns">
+    ecommerce · Asíncrono · Redirección
+  </Card>
+  <Card title="Cuotéalo" icon="receipt">
+    ecommerce · Asíncrono · Redirección
+  </Card>
+  <Card title="PagoEfectivo" icon="money-bill">
+    ecommerce · Asíncrono · Redirección
+  </Card>
+  <Card title="Powerpay" icon="bolt">
+    ecommerce · 🔜 Próximamente
+  </Card>
+</CardGroup>
+
+---
+
+## Flujo general de un pago
+
+<Steps>
+  <Step title="Obtén tu Access Token">
+    Genera un token vigente desde el [API de Autenticación](/autenticacion) antes de cada sesión de pago.
+  </Step>
+  <Step title="Envía la autorización">
+    Haz un `POST` al endpoint de autorización con los datos del pago y el método elegido.
+  </Step>
+  <Step title="Recibe la respuesta">
+    La API retorna el estado de la transacción: `AUTORIZADO`, `DENEGADO`, `PENDIENTE`, entre otros.
+  </Step>
+  <Step title="Confirma con la notificación">
+    Recibe la confirmación final en tu endpoint vía [notificación Server-to-Server](/payin/notificaciones).
+  </Step>
+</Steps>
+
+---
+
+## Contenido de esta sección
+
+<CardGroup cols={2}>
+  <Card title="Autorización" icon="credit-card" href="/payin/autorizacion">
+    Endpoints de autorización para todos los métodos de pago disponibles.
+  </Card>
+  <Card title="Consulta" icon="magnifying-glass" href="/payin/consulta">
+    Consulta el estado de una transacción por método de pago.
+  </Card>
+  <Card title="Cancelación" icon="xmark" href="/payin/cancelacion">
+    Cancela una transacción autorizada antes de su liquidación.
+  </Card>
+  <Card title="Notificaciones" icon="bell" href="/payin/notificaciones">
+    Configura tu endpoint para recibir confirmaciones Server-to-Server.
+  </Card>
+  <Card title="Referencia" icon="book" href="/payin/referencia">
+    Estados, códigos de respuesta y datos de prueba.
+  </Card>
+</CardGroup>
+
+---
+
+## Siguiente paso
+
+<Card title="Autorización" icon="arrow-right" href="/payin/autorizacion">
+  Revisa los endpoints y parámetros para iniciar una transacción.
+</Card>

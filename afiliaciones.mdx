@@ -1,0 +1,68 @@
+---
+title: "Afiliaciones"
+sidebarTitle: "Afiliaciones"
+description: "Crea, consulta y actualiza afiliaciones de clientes para el módulo de Pagos Recurrentes de Pay-me."
+---
+
+Una afiliación registra el método de pago de un cliente de forma segura, generando un identificador único que se usará en los cobros recurrentes futuros. No es necesario que el cliente ingrese sus datos de pago en cada cobro.
+
+---
+
+## Operaciones disponibles
+
+<Columns cols={2}>
+  <Column>
+    <Card title="Crear afiliación" icon="plus">
+      Registra un nuevo cliente y su método de pago. Retorna un identificador único de afiliación.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Consultar afiliación" icon="magnifying-glass">
+      Obtén el estado y los datos de una afiliación existente por su identificador.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Actualizar afiliación" icon="pen">
+      Modifica los datos de una afiliación existente — método de pago, estado u otros campos permitidos.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Reporte diario" icon="file-lines">
+      Descarga el reporte de afiliaciones procesadas en el día para reconciliación.
+    </Card>
+  </Column>
+</Columns>
+
+---
+
+## Consideraciones
+
+<Note>
+  El identificador de afiliación generado al crear es **único e irrepetible**. Almacénalo en tu sistema — es requerido para ejecutar cobros recurrentes.
+</Note>
+
+<Note>
+  En el método `PUT` de actualización, los datos fiscales (`tax_information`) no son modificables una vez creada la afiliación.
+</Note>
+
+<Warning>
+  Una afiliación inactiva o cancelada no puede usarse para procesar cobros. Verifica el estado antes de cargar un archivo de cobros.
+</Warning>
+
+---
+
+## Referencia técnica
+
+La especificación completa — endpoints de creación, consulta y actualización, esquemas JSON, estructura del reporte diario y colección Postman — está publicada en GitHub.
+
+<Card title="Ver referencia en GitHub" icon="github" href="https://github.com/alignet">
+  Crear · Consultar · Actualizar · Reporte diario
+</Card>
+
+---
+
+## Siguiente paso
+
+<Card title="Cobros" icon="arrow-right">
+  Carga archivos de cobros para procesar múltiples transacciones recurrentes.
+</Card>

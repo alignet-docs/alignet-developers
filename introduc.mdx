@@ -1,0 +1,64 @@
+---
+title: "Pagos Recurrentes"
+sidebarTitle: "Introducción"
+description: "Automatiza cobros periódicos con el módulo de Pagos Recurrentes de Pay-me."
+---
+
+El módulo de Pagos Recurrentes permite a los comercios automatizar la gestión de cobros periódicos, ofreciendo a los consumidores una experiencia de pago ágil y sin interrupciones.
+
+---
+
+## ¿Cómo funciona?
+
+<Steps>
+  <Step title="Crea una afiliación">
+    Registra al cliente y su método de pago mediante el [API de Afiliaciones](/pagos-recurrentes/afiliaciones). Esto genera un identificador único que se usará en los cobros futuros.
+  </Step>
+  <Step title="Programa los cobros">
+    Carga el archivo de cobros con las operaciones a procesar usando el [API de Cobros](/pagos-recurrentes/cobros). Puedes procesar múltiples cobros en un solo archivo.
+  </Step>
+  <Step title="Consulta los resultados">
+    Obtén el reporte de cobros realizados para reconciliar los resultados de cada operación procesada.
+  </Step>
+</Steps>
+
+---
+
+## Componentes del módulo
+
+<Columns cols={2}>
+  <Column>
+    <Card title="Afiliaciones" icon="user-plus">
+      Crea, consulta y actualiza afiliaciones de clientes. Cada afiliación almacena el método de pago de forma segura para cobros futuros.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Cobros" icon="money-bill">
+      Carga archivos de cobros para procesar múltiples transacciones en un solo envío. Obtén reportes detallados de resultados.
+    </Card>
+  </Column>
+</Columns>
+
+---
+
+## Consideraciones
+
+<Note>
+  Los Pagos Recurrentes requieren que el comercio tenga habilitado este módulo. Contacta a tu asesor comercial para activarlo.
+</Note>
+
+<Note>
+  Cada afiliación genera un identificador único que debe almacenarse en tu sistema — es requerido para ejecutar los cobros posteriores.
+</Note>
+
+<Warning>
+  Los cobros se procesan en modo batch. El resultado no es inmediato — consulta el reporte de cobros para verificar el estado de cada operación.
+</Warning>
+
+---
+
+## Siguiente paso
+
+<Card title="Afiliaciones" icon="arrow-right">
+  Registra y gestiona las afiliaciones de tus clientes.
+</Card>

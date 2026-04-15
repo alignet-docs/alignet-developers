@@ -1,0 +1,86 @@
+---
+title: "Registro Individual"
+sidebarTitle: "Registro Individual"
+description: "Registra un comercio en tiempo real mediante el API REST de Pay-me — exclusivo para Facilitadores de Pago."
+---
+
+El registro individual permite dar de alta un comercio de forma inmediata mediante una solicitud `POST`. El sistema valida los datos, habilita los métodos de pago configurados y retorna las credenciales del comercio en la misma respuesta.
+
+---
+
+## Endpoint
+
+| Ambiente | URL | Método |
+| :-- | :-- | :-- |
+| Desarrollo | `https://gz9zkw23la.execute-api.us-east-1.amazonaws.com/dev/onboarding/merchant` | `POST` |
+| Producción | Por definir | `POST` |
+
+---
+
+## Headers requeridos
+
+| Campo | Valor | Obligatorio |
+| :-- | :-- | :-- |
+| `Content-Type` | `application/json` | SI |
+| `Authorization` | `Bearer <Access Token>` | SI |
+| `payment-facilitator-code` | UUID del Facilitador de Pago | SI |
+
+---
+
+## Operaciones soportadas
+
+<CardGroup cols={2}>
+  <Card title="INSERT — Crear comercio" icon="plus">
+    Registra un nuevo comercio. Retorna `client_id` y `client_secret` en la respuesta.
+  </Card>
+  <Card title="UPDATE — Actualizar comercio" icon="pen">
+    Actualiza datos de un comercio existente usando su `merchant_code`. No regenera credenciales ni permite modificar datos fiscales.
+  </Card>
+</CardGroup>
+
+---
+
+## Datos requeridos
+
+<CardGroup cols={2}>
+  <Card title="Datos del comercio" icon="store">
+    Nombre, MCC, razón social y datos fiscales (RUC, tipo de documento, país).
+  </Card>
+  <Card title="Ubicación" icon="location-dot">
+    País, ciudad, estado, código postal y dirección legal del comercio.
+  </Card>
+  <Card title="Contactos" icon="address-book">
+    Representante legal y contacto operativo — nombre, documento, cargo, email y teléfono.
+  </Card>
+  <Card title="Métodos de pago" icon="credit-card">
+    Canal, código del método, monedas permitidas y marcas habilitadas (VISA, MSCD, etc.).
+  </Card>
+</CardGroup>
+
+---
+
+## Consideraciones
+
+<Note>
+  Si algún método de pago falla durante el registro, el comercio se crea igualmente. Los métodos fallidos se reportan en el campo `payment_methods_failed` de la respuesta.
+</Note>
+
+<Note>
+  En operaciones `UPDATE`, los datos fiscales (`tax_information`) no son modificables.
+</Note>
+
+---
+
+## Referencia técnica
+
+<Card title="Ver referencia en GitHub" icon="github" href="https://github.com/alignet">
+  Esquema JSON · Campos · Ejemplos INSERT y UPDATE · Colección Postman
+</Card>
+
+---
+
+## Siguiente paso
+
+<Card title="Registro Masivo" icon="arrow-right" href="/onboarding/registro-masivo">
+  Registra múltiples comercios en un solo archivo Excel.
+</Card>

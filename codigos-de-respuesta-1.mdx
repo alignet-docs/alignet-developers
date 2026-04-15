@@ -1,0 +1,44 @@
+---
+title: "Códigos de Respuesta"
+sidebarTitle: "Códigos de Respuesta"
+description: "Códigos de respuesta del módulo de Pagos Recurrentes de Pay-me."
+---
+
+Códigos retornados en los campos `result_code`, `result_description` y `meta.status.code` en todos los endpoints de Pagos Recurrentes.
+
+---
+
+## Códigos
+
+| Código | Descripción |
+| :-- | :-- |
+| `00` | Se procesó correctamente la petición |
+| `01` | Ocurrió un error |
+| `02` | Algunos datos no fueron enviados correctamente |
+| `03` | Comercio no existente |
+| `04` | Comercio requiere configuración |
+| `05` | La afiliación se encuentra registrada |
+| `06` | La afiliación no se encuentra registrada |
+| `07` | Afiliación requiere activación |
+| `08` | Usuario abandonó la afiliación |
+| `09` | Token de la tarjeta está vencido |
+
+---
+
+## Consideraciones
+
+<Note>
+  El código `00` es el único que indica éxito. Cualquier otro código representa un estado que requiere atención.
+</Note>
+
+<Note>
+  Los códigos `05` y `06` son mutuamente excluyentes — verifica el estado de la afiliación antes de ejecutar un cobro.
+</Note>
+
+---
+
+## Siguiente paso
+
+<Card title="Onboarding de Comercios" icon="arrow-right">
+  Registra comercios de forma individual o masiva — exclusivo para Facilitadores de Pago.
+</Card>

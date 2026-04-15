@@ -1,0 +1,154 @@
+---
+title: "Cod. respuesta | Visa / Mastercard"
+description: "Guía detallada de códigos de retorno de la red Visa y acciones recomendadas para el comercio."
+icon: "octagon-check"
+---
+
+## Resumen de Operación
+
+<CardGroup cols={3}>
+  <Card title="Éxito" color="#2ecc71" icon="check">
+    Código **00**. Única respuesta que permite la entrega del bien o servicio.
+  </Card>
+
+  <Card title="Reintentar" color="#3498db" icon="rotate">
+    Códigos **19, 21, 25, 28**. Problemas temporales; se sugiere reintentar la transaccion.
+  </Card>
+
+  <Card title="Denegado" color="#e74c3c" icon="xmark">
+    Cualquier otro código. No entregar producto; solicitar otro medio de pago (No reintentar).
+  </Card>
+</CardGroup>
+
+## Códigos de Acción Inmediata
+
+Estos códigos representan el 90% de las interacciones. Protagoniza estos en tu lógica de negocio.
+
+| Código | Mensaje de Retorno | Estado | Acción Sugerida |
+| :-- | :-- | :-- | :-- |
+| **00** | Pago Exitoso | <span style={{color: '#2ecc71'}}>**EXITOSO**</span> | Proceder con la entrega del producto/servicio. |
+| **19** | Reintentar la transacción | <span style={{color: '#3498db'}}>**REINTENTAR**</span> | Problema de comunicación. Intentar nuevamente. |
+| **21** | Reintentar la transacción | <span style={{color: '#3498db'}}>**REINTENTAR**</span> | Problema de comunicación. Intentar nuevamente. |
+| **25** | Reintentar la transacción | <span style={{color: '#3498db'}}>**REINTENTAR**</span> | Problema de comunicación. Intentar nuevamente. |
+| **28** | Reintentar la transacción | <span style={{color: '#3498db'}}>**REINTENTAR**</span> | Problema de comunicación. Intentar nuevamente. |
+| **51** | Fondos insuficientes | <span style={{color: '#e74c3c'}}>**DENEGADO**</span> | Solicitar al cliente usar otra tarjeta. |
+| **54** | Tarjeta expirada | <span style={{color: '#e74c3c'}}>**DENEGADO**</span> | Solicitar actualización de datos de tarjeta. |
+
+#### Listado Completo de Códigos Visa
+
+Utiliza esta tabla para mapear respuestas específicas en tus logs o dashboards de administración.
+
+<Accordion title="Ver lista completa de denegaciones y errores técnicos" icon="table-list">
+  | Código | Mensaje de Retorno | Estado | Acción del Comercio |
+  | :-- | :-- | :-- | :-- |
+  | **01** | Contactar al banco | DENEGADO | Solicitar otro medio de pago. |
+  | **02** | Contactar al banco | DENEGADO | Solicitar otro medio de pago. |
+  | **03** | Código de comercio inválido. | DENEGADO | Revisar credenciales de integración. |
+  | **04** | Retener Tarjeta | DENEGADO | No procesar. Solicitar otra tarjeta. |
+  | **05** | Pago no aceptado por el emisor | DENEGADO | El banco rechazó la operación. |
+  | **06** | Error general en procesamiento | DENEGADO | Error técnico. Intentar más tarde. |
+  | **07** | Retener tarjeta (posible fraude). | DENEGADO | Bloqueo por seguridad. |
+  | **10** | Aprobación parcial exitosa | DENEGADO | (No habilitado). |
+  | **11** | Aprobado (VIP) | DENEGADO | (No habilitado). |
+  | **12** | Transacción inválida. | DENEGADO | Error en los datos enviados. |
+  | **13** | Monto inválido | DENEGADO | Revisar formato de moneda/monto. |
+  | **14** | Número de cuenta inválido. | DENEGADO | El número de tarjeta es erróneo. |
+  | **15** | Código de emisor Incorrecto | DENEGADO | Error en el enrutamiento. |
+  | **39** | Cuenta de crédito no disponible. | DENEGADO | Usar otra tarjeta. |
+  | **41** | Tarjeta reportada (Perdida) | DENEGADO | Bloqueo por robo/pérdida. |
+  | **43** | Tarjeta reportada | DENEGADO | Bloqueo por robo/pérdida. |
+  | **46** | Cuenta vinculada cerrada | DENEGADO | La cuenta ya no existe. |
+  | **52** | No existe cuenta corriente | DENEGADO | Usar otra tarjeta. |
+  | **53** | No existe cuenta de ahorros | DENEGADO | Usar otra tarjeta. |
+  | **55** | PIN incorrecto | DENEGADO | El cliente erró su clave. |
+  | **57** | Transacción no permitida | DENEGADO | Contactar emisor. |
+  | **58** | Pago No Permitido en terminal | DENEGADO | Restricción de comercio. |
+  | **59** | Sospecha de fraude | DENEGADO | Bloqueo preventivo. |
+  | **61** | Supera el límite de monto | DENEGADO | El monto excede lo permitido por el banco. |
+  | **62** | Tarjeta restringida | DENEGADO | Tarjeta no habilitada para ecommerce. |
+  | **63** | Violación de seguridad | DENEGADO | Error en validación de seguridad. |
+  | **64** | No cumple requisitos AML | DENEGADO | Rechazo por prevención de lavado. |
+  | **65** | Excedió límite de frecuencia | DENEGADO | Demasiados intentos en poco tiempo. |
+  | **70** | PIN es requerido | DENEGADO | Transacción requiere PIN. |
+  | **74** | Error en la transacción | DENEGADO | Error técnico de red. |
+  | **75** | Intentos de PIN excedidos | DENEGADO | Tarjeta bloqueada por seguridad. |
+  | **76** | Reversión no solicitada | DENEGADO | Error de estado de transacción. |
+  | **78** | Bloqueado por primer uso | DENEGADO | Tarjeta requiere activación previa. |
+  | **79** | Reintentar la transacción | DENEGADO | Error temporal. |
+  | **80** | Operación sin impacto financiero | DENEGADO | Transacción nula. |
+  | **81** | Error criptográfico PIN | DENEGADO | Error de encriptación. |
+  | **82** | Autenticación inválida | DENEGADO | Falló el proceso 3DS. |
+  | **85** | Rechazo por verificaciones | DENEGADO | Fallaron reglas internas de red. |
+  | **86** | PIN no pudo ser verificado | DENEGADO | Error de comunicación con emisor. |
+  | **91** | Emisor no disponible | DENEGADO | El banco del cliente está caído. |
+  | **92** | ID institución inválida | DENEGADO | Error de configuración. |
+  | **93** | Transacción No completada | DENEGADO | Error en el flujo de pago. |
+  | **94** | Transmisión duplicada | DENEGADO | La operación ya fue enviada. |
+  | **96** | Error de sistema | DENEGADO | Error interno general. |
+  | **1A** | Autenticación requerida | DENEGADO | Se requiere validación adicional. |
+  | **6P** | Verificación fallida | DENEGADO | Error en datos de seguridad. |
+  | **B1** | Cargo adicional no permitido | DENEGADO | Error en cálculo de comisiones. |
+  | **N0** | Reintentar la transacción | DENEGADO | Error de red. |
+  | **N3** | Efectivo no disponible | DENEGADO | Restricción de tarjeta. |
+  | **N4** | Límite de efectivo excedido | DENEGADO | Restricción de tarjeta. |
+  | **N7** | Rechazo por clave CVV2 | DENEGADO | El código de seguridad es incorrecto. |
+  | **N8** | Excede preautorización | DENEGADO | Monto mayor al bloqueado inicialmente. |
+  | **P5** | Desbloqueo PIN denegado | DENEGADO | Fallo administrativo del banco. |
+  | **P6** | Cambio PIN denegado | DENEGADO | PIN no seguro o rechazado. |
+  | **Q1** | Fallo autenticación tarjeta | DENEGADO | Fallo en validación física/chip. |
+  | **R0/R1/R3** | Detener orden de pago | DENEGADO | Orden de bloqueo activa. |
+  | **R2** | No califica para PIN Visa | DENEGADO | Configuración de red incompatible. |
+  | **Z1** | Removido de proceso | DENEGADO | Transacción descartada. |
+  | **Z3** | No se puede conectar | DENEGADO | Error de enlace físico. |
+</Accordion>
+
+#### Listado Completo de Códigos Mastercard
+
+Utiliza esta tabla para mapear respuestas específicas en tus logs o dashboards de administración.
+
+<Accordion title="Ver lista completa de denegaciones y errores técnicos" icon="table-list">
+  | Código | Mensaje de Retorno | Estado | Acción del Comercio |
+  | :-- | :-- | :-- | :-- |
+  | **01** | Denegado por el emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **03** | Datos de comercio Inválidos | DENEGADO | Revisar configuración de credenciales del comercio. |
+  | **04** | Denegado por el emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **05** | Denegado por el emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **08** | Denegado por el emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **10** | Aprobación Parcial Denegada | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **12** | Transacción no válida | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **13** | Monto invalido | DENEGADO | Validar formato del monto enviado. |
+  | **14** | Número de cuenta no válido | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **15** | Emisor no disponible | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **30** | Error durante el proceso emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **41** | Denegado por el emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **43** | Denegado por el emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **57** | La transacción no es permitida | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **58** | La transacción no es permitida | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **61** | Excede el límite del monto | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **62** | Denegado por el emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **63** | Violación de seguridad | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **65** | Error durante el proceso emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **70** | Denegado por el emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **71** | Error de clave PIN | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **75** | Excedió el numero de intentos | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **76** | Error durante el proceso emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **77** | Error durante el proceso emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **78** | Error durante el proceso emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **79** | Denegado por la marca | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **81** | Denegado por el emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **82** | Denegado por la marca | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **83** | Denegado por el emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **84** | Denegado por el emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **85** | Denegado por el emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **86** | Error durante el proceso emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **87** | Denegado por el emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **88** | Error de ingreso de datos | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **89** | Denegado por el emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **91** | Error durante el proceso emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **92** | Error durante el proceso emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+  | **96** | Error durante el proceso emisor | DENEGADO | Solicitar al cliente intentar con otro medio de pago. |
+</Accordion>
+
+<Tip>
+  Si recibes de forma recurrente códigos como **03, 15 o 92**, contacta a nuestro equipo de soporte técnico, ya que podría indicar un error en la configuración de tus credenciales de comercio.
+</Tip>

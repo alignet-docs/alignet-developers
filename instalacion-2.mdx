@@ -1,0 +1,97 @@
+---
+title: "Inicializar SDK"
+sidebarTitle: "Instalación"
+description: "Configura tu proyecto Android para integrar Pay-me SDK."
+---
+
+<Note>
+  Contar con la última versión del SDK, [descargar aquí.](https://docs.pay-me.com/__attachments/165117953/SDK_Payme_Android_v3.3_.zip?inst-v=d51f22dc-2194-4463-876b-25cb1b1dfd18)
+
+  <u>Detalle de ultimas mejoras: </u>**_sdk-android-v3.4_**_-\> Correcciones con “Impresión de pantalla” en método de pago Yape_
+</Note>
+
+Se debe agregar las librerias (Payme, SecureKey3DS, VisaSensoryBranding y MastercardSonic) dentro del proyecto. También se debe agregar el SDK de autenticación que es entregado por Alignet. Se recomienda crear una carpeta **libs **dentro del proyecto del comercio, esta carpeta deberá contener los cuatro SDKs entregados por Pay-me.
+
+<Frame>
+  ![Image](/images/image-82.png)
+</Frame>
+
+<Frame>
+  ![Image](/images/image-83.png)
+
+  - Se debe implementar los cuatro SDKs dentro del proyecto. Ir al Gradle del proyecto del comercio y agregar los cuatro SDKs dentro de la sección dependencias:
+</Frame>
+
+```text
+dependencies {
+implementation files('../libs/SecureKey3DS.aar')
+implementation files('../libs/Payme.aar')
+implementation files('../libs/VisaSensoryBranding.aar')
+implementation files('../libs/MastercardSonic.aar')
+}
+```
+
+# Dependencias necesarias para Pay-me SDK Android
+
+## Permisos
+
+El SDK requiere permisos relacionados con la red y estado del dispositivo.
+
+```text
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+<uses-permission android:name="android.permission.READ_PHONE_STATE" />
+```
+
+## Dependencias
+
+<Note>
+  El SDK necesita un grupo de librerías para su correcto funcionamiento, estas librerías deben ser importadas desde el gradle del proyecto que integrará el SDK.
+</Note>
+
+El SDK de Payme requiere un listado de dependencias que se deben agregar en el Gradle del proyecto. Se comparte el listado en su mínima versión aceptada por el SDK. Se recomienda utilizar sus ultimas versiones.
+
+```text
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'kotlin-android'
+    id 'kotlin-parcelize'
+}
+android {
+  .
+  .
+  .
+  buildFeatures {
+    viewBinding = true
+  }
+  .
+  .
+  .
+}
+dependencies {
+    implementation("androidx.core:core-ktx:1.6.0")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
+    implementation("androidx.recyclerview:recyclerview:1.2.1")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+    implementation("com.squareup.retrofit2:retrofit:2.3.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.3.0")
+    implementation("com.squareup.retrofit2:converter-scalars:2.5.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:3.10.0")
+    implementation("com.squareup.okhttp3:okhttp:3.10.0")
+    implementation("com.google.code.gson:gson:2.8.8")
+    implementation("com.madgag.spongycastle:core:1.50.0.0")
+    implementation("com.madgag.spongycastle:pg:1.50.0.0")
+    implementation("org.bouncycastle:bcprov-jdk15on:1.56")
+    implementation("com.nimbusds:nimbus-jose-jwt:7.0.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:0.30.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:0.30.1")
+    implementation project(':Payme')
+    implementation project(':MasterCardSonic')
+    implementation project(':SecureKey3DS')
+    implementation project(':VisaSensoryBranding')
+}
+```

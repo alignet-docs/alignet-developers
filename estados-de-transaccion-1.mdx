@@ -1,0 +1,114 @@
+---
+title: "Estados de transacción"
+sidebarTitle: "Estados de transacción"
+description: "Entiende el ciclo de vida de una transacción y cómo interpretar cada estado en Metrix."
+---
+
+Los estados indican la **situación actual de una transacción** dentro del proceso de pago.
+
+Permiten identificar si un pago fue exitoso, rechazado o si aún está en proceso.
+
+---
+
+### Estados principales
+
+<Columns cols={2}>
+  <Column>
+    <Card title="Pendiente" icon="clock">
+      La transacción fue creada pero aún no tiene resultado final.
+
+      Común en pagos que requieren confirmación (QR, transferencias).
+    </Card>
+
+    <Card title="Autorizado" icon="check-circle">
+      La transacción fue aprobada por la marca o banco emisor.
+
+      Los fondos han sido reservados.
+    </Card>
+
+    <Card title="Liquidado" icon="money-from-bracket">
+      La transacción fue incluida en el proceso de liquidación.
+
+      No implica que el dinero ya fue abonado.
+    </Card>
+
+    <Card title="Extornado" icon="backward-step">
+      La transacción fue revertida después de haber sido autorizada.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Denegado" icon="do-not-enter">
+      El banco o procesador rechazó la transacción.
+    </Card>
+
+    <Card title="Inválido" icon="not-equal">
+      Ocurrió un error técnico o la transacción no cumple validaciones.
+    </Card>
+
+    <Card title="Cancelado" icon="slash">
+      La operación fue cancelada antes de completarse.
+    </Card>
+
+    <Card title="Expirado" icon="timer">
+      El cliente no completó el pago dentro del tiempo permitido.
+    </Card>
+  </Column>
+</Columns>
+
+---
+
+### Cómo interpretar los estados
+
+<Columns cols={2}>
+  <Column>
+    <Card title="Transacciones exitosas" icon="check">
+      - Autorizado
+      - Liquidado
+      - Extornado
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Transacciones no exitosas" icon="x">
+      - Denegado
+      - Inválido
+      - Cancelado
+      - Expirado
+    </Card>
+  </Column>
+</Columns>
+
+---
+
+### Detalle importante: Liquidado
+
+<Expandable title="¿Qué significa realmente este estado?">
+  Una transacción en estado **Liquidado** indica que:
+
+  - Fue aprobada previamente
+  - Fue enviada al proceso de liquidación
+  - Será considerada en conciliación
+
+  ⚠️ Este estado no confirma que el dinero ya fue depositado en la cuenta del comercio.
+</Expandable>
+
+---
+
+## Consideraciones importantes
+
+<Check>
+  No todas las transacciones pasan por todos los estados
+</Check>
+
+<Check>
+  Una transacción autorizada puede ser extornada posteriormente
+</Check>
+
+<Check>
+  Los estados pueden variar según el método de pago
+</Check>
+
+<Check>
+  Pagos asíncronos pueden permanecer en estado pendiente por más tiempo
+</Check>
+
+---

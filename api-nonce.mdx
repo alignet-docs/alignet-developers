@@ -1,0 +1,90 @@
+---
+title: "API Nonce"
+description: "Genera el código único Nonce para invocar Pay-me Flex"
+---
+
+<Note>
+Es necesario primero consumir el API de Seguridad para obtener el Access Token antes de llamar a este servicio.
+</Note>
+
+Este servicio tiene como función generar un código único **Nonce** el cual sirve para invocar Pay-me Flex.
+
+## Endpoints
+
+<CardGroup cols={2}>
+  <Card title="Pre-Producción" icon="flask">
+    <code>POST</code> https://auth.preprod.alignet.io/nonce
+  </Card>
+  <Card title="Producción" icon="rocket">
+    <code>POST</code> https://auth.alignet.io/nonce
+  </Card>
+</CardGroup>
+
+<Tabs>
+  <Tab title="Request">
+    ### Headers
+
+    | Field | Accepted Value | Type | Obligatorio |
+    |---|---|---|---|
+    | `ALG-API-VERSION` | 1709847567 | String | SI |
+    | `Authorization` | Bearer ACCESS_TOKEN | String | SI |
+```json
+    {
+      "Content-Type": "application/json",
+      "ALG-API-VERSION": "1709847567",
+      "Authorization": "Bearer eyJhbGciOiJSUzI1NsInR5cCI6IkpXVCIsImt........."
+    }
+```
+
+    ### Body
+
+    | Field | Description | Accepted Value | Type | Obligatorio |
+    |---|---|---|---|---|
+    | `action` | Acción a ejecutar | `create.nonce` | String | SI |
+    | `audience` | URL base del API | Pre-producción: `https://api.preprod.alignet.io/` / Producción: `https://api.alignet.io/` | String | SI |
+    | `client_id` | Identificación del cliente | Cadena alfanumérica | String | SI |
+    | `scope` | Permisos a solicitar | `post:charges` | String | SI |
+```json
+    {
+      "action": "create.nonce",
+      "audience": "https://api.preprod.alignet.io/",
+      "client_id": "WDqE4tFbhvzm5XJnnTYcPUNQGQMTg8P4",
+      "scope": "post:charges"
+    }
+```
+  </Tab>
+  <Tab title="Response">
+    | Field | Description | Type | Obligatorio |
+    |---|---|---|---|
+    | `action` | Acción ejecutada | String | SI |
+    | `success` | Resultado de la operación. Valores: `true` / `false` | String | SI |
+    | `nonce` | Token para usar en las APIs | String | NO |
+    | `scope` | Permisos solicitados | String | NO |
+    | `expires_in` | Tiempo de expiración en segundos | String | NO |
+    | `nonce_creation.meta.status.code` | Código del resultado | String | SI |
+    | `nonce_creation.meta.status.message_ilgn[].locale` | Idioma del mensaje | String | SI |
+    | `nonce_creation.meta.status.message_ilgn[].value` | Mensaje resultante | String | SI |
+```json
+    {
+        "action": "create.nonce",
+        "success": true,
+        "nonce": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.........",
+        "scope": "post:charges",
+        "expires_in": 30,
+        "nonce_creation": {
+            "meta": {
+                "status": {
+                    "code": "00",
+                    "message_ilgn": [
+                        {
+                            "locale": "es_PE",
+                            "value": "Código Nonce creado"
+                        }
+                    ]
+                }
+            }
+        }
+    }
+```
+  </Tab>
+</Tabs>

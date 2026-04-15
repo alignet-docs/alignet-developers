@@ -1,0 +1,109 @@
+---
+title: "Configuración Inicial"
+description: "Primeros pasos para operar tu terminal PayMe POS Wiseasy P5."
+icon: "shoe-prints"
+---
+
+### Inicio y acceso
+
+Al encender tu terminal Wiseasy P5, la aplicación **PayMe POS** se iniciará de forma automática. El proceso de acceso se divide en dos etapas clave:
+
+<Frame>
+  ![Image](/images/image-123.png)
+</Frame>
+
+### Inicialización (Splash Screen)
+
+Al abrir la app, visualizarás el logo de PayMe POS con una animación de carga. Durante este breve periodo, el sistema inicializa automáticamente los componentes de pago.
+
+<Note>
+  Si ocurre un error durante esta fase, el sistema reintentará la conexión automáticamente. Asegúrate de contar con acceso a internet.
+</Note>
+
+### Inicio de sesión
+
+Una vez completada la carga, deberás ingresar tus credenciales en la pantalla de login:
+
+<Steps>
+  <Step title="Correo electrónico">
+    Ingresa la dirección de correo asignada por tu administrador.
+  </Step>
+  <Step title="Contraseña">
+    Ingresa tu clave de acceso. Ten en cuenta que los intentos fallidos son limitados por motivos de seguridad.
+  </Step>
+  <Step title="Acceso">
+    Presiona el botón **Ingresar** para dirigirte al centro de operaciones.
+  </Step>
+</Steps>
+
+<Warning>
+  **Bloqueo de seguridad:** Tras varios intentos fallidos, la cuenta puede bloquearse temporalmente. Si esto sucede, contacta a tu administrador para recuperar el acceso.
+</Warning>
+
+---
+
+## Pantalla principal
+
+La pantalla principal es el centro de control desde donde gestionarás todas las operaciones de tu comercio.
+
+### Interfaz superior
+
+En la barra superior encontrarás información crítica de tu sesión:
+
+- **Nombre del comercio:** Tu identidad comercial registrada.
+- **Código del terminal:** Identificador único (formato POS-XXXX).
+- **Usuario y Rol:** Tu nombre y nivel de acceso (Administrador u Operador).
+
+### Funciones principales
+
+Accede rápidamente a las herramientas de venta y gestión:
+
+<CardGroup cols={2}>
+  <Card title="Monto Libre" icon="keyboard">
+    Ingresa montos manualmente para cobros sin productos predefinidos.
+  </Card>
+
+  <Card title="Cobro Rápido" icon="bolt">
+    Acceso directo a tus 6 productos más vendidos con precio fijo.
+  </Card>
+
+  <Card title="Anular" icon="xmark">
+    Reversa operaciones mediante el número de transacción (Solo Admin).
+  </Card>
+
+  <Card title="Ventas" icon="list-ul">
+    Consulta el historial detallado de las últimas transacciones.
+  </Card>
+
+  <Card title="Reportes" icon="chart-bar">
+    Estadísticas de rendimiento y métricas de venta (Solo Admin).
+  </Card>
+
+  <Card title="Más Opciones" icon="ellipsis">
+    Acceso al catálogo, configuración técnica y soporte.
+  </Card>
+</CardGroup>
+
+<Info>
+  **Resumen de actividad:** En la parte inferior de la pantalla siempre verás los detalles de la última venta (marca, últimos 4 dígitos y monto).
+</Info>
+
+---
+
+## Roles y permisos
+
+El acceso a las funciones del terminal depende del rol asignado a tu cuenta:
+
+| Función | Administrador | Operador |
+| :-- | :-: | :-: |
+| Realizar cobros y Cobro Rápido | ✅ | ✅ |
+| Ver historial de ventas | ✅ | ✅ |
+| Gestionar catálogo de productos | ✅ | ✅ |
+| **Anular operaciones** | ✅ | ❌ |
+| **Ver reportes estadísticos** | ✅ | ❌ |
+| **Configuración del terminal** | ✅ | ❌ |
+| Cerrar sesión | ✅ | ✅ |
+
+<Note>
+  Los roles son fijos y se gestionan desde el panel de administración central.
+</Note>

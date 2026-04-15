@@ -1,0 +1,86 @@
+---
+title: "Consulta"
+sidebarTitle: "Consulta"
+description: "Verifica el estado de una transacción por método de pago en la API de Pay-me."
+---
+
+El endpoint de consulta permite obtener el estado actual de una transacción previamente autorizada. Es especialmente útil para métodos asíncronos donde el resultado final no es inmediato.
+
+---
+
+## Endpoint
+
+| Ambiente | URL | Método |
+| :-- | :-- | :-- |
+| Pre-Producción | `https://api.preprod.alignet.io/charges` | `GET` |
+| Producción | `https://api.alignet.io/charges` | `GET` |
+
+---
+
+## ¿Cuándo usar la consulta?
+
+<Columns cols={2}>
+  <Column>
+    <Card title="Métodos asíncronos" icon="clock">
+      Úsala para verificar el estado de pagos con **QR, Transferencia Bancaria, Cuotéalo y PagoEfectivo** — métodos donde el resultado no llega de forma inmediata.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Reintentos y reconciliación" icon="rotate">
+      Úsala cuando no recibes la notificación S2S o necesitas reconciliar el estado de una transacción en tu sistema.
+    </Card>
+  </Column>
+</Columns>
+
+---
+
+## Métodos soportados
+
+| Método | Consulta disponible |
+| :-- | :-- |
+| Tarjeta | ✅ |
+| Transferencia Bancaria | ✅ |
+| Yape | ✅ |
+| QR | ✅ |
+| Cuotéalo | ✅ |
+| PagoEfectivo | ✅ |
+
+---
+
+## Headers requeridos
+
+| Campo | Valor | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `Authorization` | `Bearer <Access Token>` | `String` | SI |
+| `ALG-API-VERSION` | `1709847567` | `String` | SI |
+| `payment-facilitator-code` | Código del PF — solo para Facilitadores de Pago | `String` | NO |
+
+---
+
+## Consideraciones
+
+<Note>
+  Se recomienda implementar un mecanismo de **polling** con intervalos razonables para métodos asíncronos — evita consultas excesivas en periodos cortos.
+</Note>
+
+<Note>
+  Si ya tienes configurada la [notificación Server-to-Server](/payin/notificaciones), la consulta activa es opcional — úsala solo como respaldo.
+</Note>
+
+---
+
+## Referencia técnica
+
+La especificación completa — parámetros de consulta por método, esquemas JSON de respuesta y ejemplos — está publicada en GitHub.
+
+<Card title="Ver referencia en GitHub" icon="github" href="https://github.com/alignet">
+  Tarjeta · Transferencia · Yape · QR · Cuotéalo · PagoEfectivo
+</Card>
+
+---
+
+## Siguiente paso
+
+<Card title="Cancelación" icon="arrow-right">
+  Aprende cómo cancelar una transacción autorizada antes de su liquidación.
+</Card>

@@ -1,0 +1,36 @@
+---
+title: "Otros medios de pago"
+description: "Medios de pago alternativos disponibles en el Checkout Modal"
+---
+
+Para que un comercio pueda contar con estos medios de pago alternativos, es necesario que se realice lo siguiente:
+
+- Solicitar la habilitación de la marca alternativa de pago.
+- Brindar el tiempo de expiración (en horas) de la orden o ticket de pago a generar.
+
+<Note>
+Para el uso de las marcas alternativas de pago, Pay-me realizará dos envíos de respuesta al comercio. La primera es al generar la orden de pago y la segunda es al momento de realizar el pago de la orden, ya sea a través del homebanking o físicamente en alguna entidad bancaria. Esto ocurre con el fin de informar al comercio la actualización del estado de la orden.
+</Note>
+
+---
+
+## Parámetros de respuesta
+
+| Campo | Tipo | Ancho máximo | Descripción |
+|---|---|---|---|
+| numeroCip | Alfanumérico | 40 | Parámetro de retorno exclusivo del medio de pago Pago Efectivo. Contiene el código de la orden que utilizará el usuario para realizar el pago en la entidad financiera correspondiente. |
+| authorizationResult | Numérico | 2 | Indica el estado de la orden de pago: **03** Pendiente de Pago / **00** Autorizado. |
+| brand | Alfanumérico | 20 | Medio de pago alternativo utilizado en la transacción. Valores posibles: SAFETYPAY / PAGO EFECTIVO. |
+
+---
+
+## Parámetros adicionales para conexión directa
+
+Para el caso de que el comercio desee realizar una conexión directa al medio de pago alternativo deberá añadir los siguientes parámetros en su formulario de envío:
+
+| Campo | Tipo | Ancho máximo | Descripción |
+|---|---|---|---|
+| payBrandRedirect | Numérico | 2 | Permite especificar que se ejecute el redirect hacia la pantalla de SafetyPay o PagoEfectivo. **1** Realizar el redirect / **0** No realiza redirect. |
+| selectedPayType | Alfanumérico | 10 | Campo opcional para acceder por defecto a Otros Medios de Pago. Valor: **OTHER**. |
+| selectedPayBrand | Alfanumérico | 10 | Permite especificar el medio de pago alternativo. **PAEF** Pago Efectivo / **SFPY** SafetyPay. |
+| selectedPayBrandLevel1 | Numérico | 2 | Permite acceder por defecto a la opción del medio de pago alternativo. **1** Banca por Internet / **2** Pago en Efectivo. |

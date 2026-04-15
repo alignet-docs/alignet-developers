@@ -1,0 +1,77 @@
+---
+title: "Cod. respuesta | Otros procesadores"
+icon: "octagon-check"
+---
+
+"Códigos de Procesadores (Niubiz / Izipay)" description: "Referencia cruzada de códigos de respuesta para los principales adquirentes y redes."
+
+### Resumen de Estados del Procesador
+
+<CardGroup cols={2}>
+  <Card title="Aprobado" color="#2ecc71" icon="check">
+    **Niubiz:** `000` | **Izipay:** `00`\
+    La transacción fue autorizada exitosamente por el procesador.
+  </Card>
+</CardGroup>
+
+### Comparativa de Códigos Críticos
+
+Los errores más comunes mapeados entre ambos procesadores para tu lógica de frontend.
+
+| Evento | Código Niubiz | Código Izipay | Acción Sugerida |
+| :-- | :-- | :-- | :-- |
+| **Aprobado** | `000` | `00` | Proceder con la venta. |
+| **Tarjeta Vencida** | `101` | `54` | Pedir otra tarjeta o revisar fecha. |
+| **Saldo Insuficiente** | `116` | `51` | Sugerir otro medio de pago. |
+| **PIN Incorrecto** | `117` | `55` | Solicitar reingreso de clave. |
+| **Sospecha Fraude** | `102` | `59` | Bloqueo de seguridad. No entregar. |
+| **CVV Incorrecto** | `129` | `82` | Revisar código de seguridad. |
+
+### Listado Completo por Procesador
+
+Selecciona tu procesador para ver la lista completa de códigos de retorno.
+
+<Tabs>
+  <Tab title="Izipay (Red General)">
+    <Accordion title="Ver todos los códigos de Izipay" icon="list-ol">
+      | Código | Descripción | Acción |
+      | :-- | :-- | :-- |
+      | **02** | Consulte emisor de tarjetas | Denegado |
+      | **03** | Comerciante no válido | Denegado |
+      | **04** | No honres | Denegado |
+      | **05** | No se puede procesar | Denegado |
+      | **08** | Tiempo de espera del emisor | Reintentar |
+      | **12** | Transacción no válida | Denegado |
+      | **13** | Importe no válido | Denegado |
+      | **14** | Número de tarjeta no válido | Denegado |
+      | **19** | Error del sistema | Reintentar |
+      | **30** | Error de formato | Denegado |
+      | **41/43** | Tarjeta perdida/robada | Denegado |
+      | **61** | Supera el límite | Denegado |
+      | **91** | Emisor no disponible | Reintentar |
+      | **94** | Transacción duplicada | Denegado |
+      | **96** | Error del sistema | Denegado |
+    </Accordion>
+  </Tab>
+  <Tab title="Niubiz (Visanet)">
+    <Accordion title="Ver todos los códigos de Niubiz" icon="list-ol">
+      | Código | Descripción | Acción |
+      | :-- | :-- | :-- |
+      | **104** | Operación no permitida | Denegado |
+      | **107** | Contactar con emisor | Denegado |
+      | **109** | Identificación inválida comercio | Error Config |
+      | **111** | Sobre límite de monto internet | Denegado |
+      | **119** | 3 intentos de PIN incorrectos | Bloqueada |
+      | **208/209** | Tarjeta Perdida / Robada | Denegado |
+      | **263** | Error en envío de parámetros | Error Técnico |
+      | **265** | Clave OTP incorrecta | Denegado |
+      | **300** | Número de pedido duplicado | Denegado |
+      | **401** | Marca inhabilitada en comercio | Denegado |
+      | **403** | Requiere autenticación | 3DS Requerido |
+      | **423** | Usuario canceló el pago | Cancelado |
+      | **667** | Transacción abandonada | Cancelado |
+      | **670** | Antifraude | Denegado |
+      | **909** | Error de sistema | Reintentar |
+    </Accordion>
+  </Tab>
+</Tabs>

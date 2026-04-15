@@ -1,0 +1,68 @@
+---
+title: "Sandbox y Datos de Prueba"
+sidebarTitle: "Sandbox y datos de prueba"
+description: "Tarjetas y credenciales de prueba para validar tu integración con Pay-me SDK iOS."
+---
+
+<Warning>
+  Las tarjetas listadas a continuación son **ficticias** y se utilizan exclusivamente con fines de prueba en entornos controlados. No son tarjetas reales ni válidas para transacciones, no cumplen con el algoritmo de validación de Luhn, y no pertenecen a ningún BIN real ni están asociadas a entidad emisora alguna.
+
+  **No deben utilizarse en sistemas productivos o en pruebas con datos reales.**
+</Warning>
+
+---
+
+## Tarjetas de crédito / débito
+
+<Tabs>
+  <Tab title="VISA">
+    | **Número de Tarjeta** | **Expiración** | **CVV** | **Resultado** |
+    | :-- | :-- | :-- | :-- |
+    | `4474118355632240` | 03/28 | 111 | ✅ Autorización Exitosa |
+    | `4041650444437904` | 03/28 | 111 | ❌ Autorización Denegada |
+  </Tab>
+  <Tab title="MASTERCARD">
+    | **Número de Tarjeta** | **Expiración** | **CVV** | **Resultado** |
+    | :-- | :-- | :-- | :-- |
+    | `5455460920094260` | 03/28 | 111 | ✅ Autorización Exitosa |
+    | `5115422225052734` | 03/28 | 111 | ❌ Autorización Denegada |
+  </Tab>
+  <Tab title="AMEX">
+    | **Número de Tarjeta** | **Expiración** | **CVV** | **Resultado** |
+    | :-- | :-- | :-- | :-- |
+    | `371064649323968` | 03/28 | 1111 | ✅ Autorización Exitosa |
+    | `371327381068590` | 03/28 | 1111 | ❌ Autorización Denegada |
+  </Tab>
+  <Tab title="DINERS">
+    | **Número de Tarjeta** | **Expiración** | **CVV** | **Resultado** |
+    | :-- | :-- | :-- | :-- |
+    | `36006616055724` | 03/28 | 111 | ✅ Autorización Exitosa |
+    | `36344311372031` | 03/28 | 111 | ❌ Autorización Denegada |
+  </Tab>
+</Tabs>
+
+---
+
+## Yape
+
+| **Teléfono** | **Código de Aprobación** | **Resultado** |
+| :-- | :-- | :-- |
+| `969929157` | `557454` | ✅ Autorización Exitosa |
+| `999999999` | `284563` | ❌ Autorización Denegada |
+
+---
+
+## Transferencia Bancaria
+
+| **Número de Tarjeta** | **Clave** | **Nro de Documento** | **Token Digital** | **Resultado** |
+| :-- | :-- | :-- | :-- | :-- |
+| `123456` | `123456` | `123456` | `123456` | ✅ Autorización Exitosa |
+| `123456` | `123456` | `123456` | `222222` | ❌ Autorización Denegada |
+
+---
+
+## Cuotéalo
+
+| **DNI** | **Número de Tarjeta** | **Clave** | **Monto (Soles)** | **Resultado** |
+| :-- | :-- | :-- | :-- | :-- |
+| `46699676` | `4557885801589196` | `111111` | 100.00 | ✅ Autorización Exitosa |

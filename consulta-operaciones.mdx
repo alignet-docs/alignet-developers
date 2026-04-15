@@ -1,0 +1,175 @@
+---
+title: "Consulta operaciones"
+sidebarTitle: "Consulta operaciones"
+description: "Aprende a buscar, filtrar y analizar operaciones y transacciones en Dashboard Metrix."
+---
+
+### Consultar operaciones
+
+En Metrix, toda la información se organiza alrededor de **Operaciones**, lo que te permite entender el resultado real de cada pago sin duplicidad de intentos.
+
+### Conceptos clave
+
+<Columns cols={3}>
+  <Column>
+    <Card title="Operación" icon="align-justify">
+      Agrupa uno o más intentos de pago de un mismo pedido.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Transacción" icon="shuffle">
+      Intento individual de pago (tarjeta, Yape, transferencia, etc.).
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Resultado" icon="check-circle">
+      Estado final de la operación (éxito o no éxito).
+    </Card>
+  </Column>
+</Columns>
+
+### ⚡ ¿Qué significa esto en la práctica?
+
+<Note>
+  No verás múltiples “ventas fallidas” separadas.\
+  Metrix agrupa todos los intentos en una sola operación.
+</Note>
+
+<Expandable title="Ejemplo real">
+  Un cliente intenta pagar:
+
+  1. Tarjeta → ❌ Rechazada
+  2. Otra tarjeta → ❌ Rechazada
+  3. Yape → ✅ Aprobado
+
+  👉 Resultado en Metrix: **1 sola operación exitosa**
+</Expandable>
+
+---
+
+### 🔎 ¿Cómo buscar operaciones?
+
+<Steps>
+  <Step title="Define el rango de fechas">
+    La búsqueda siempre requiere una **fecha inicial y final**.
+  </Step>
+  <Step title="Aplica filtros">
+    Puedes usar combinaciones como:
+
+    - Comercio
+    - Canal (POS / E-commerce)
+    - Método de pago
+    - Estado
+    - BIN o últimos dígitos (PAN enmascarado)
+  </Step>
+  <Step title="Haz clic en Buscar">
+    Obtendrás resultados agrupados por operación.
+  </Step>
+</Steps>
+
+---
+
+### ¿Qué verás en los resultados?
+
+<Columns cols={2}>
+  <Column>
+    <Card title="Información general" icon="table">
+      - ID de operación
+      - Número de pedido
+      - Fecha
+      - Canal
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Información de pago" icon="credit-card">
+      - Método de pago
+      - Marca / procesadora
+      - Estado
+    </Card>
+  </Column>
+</Columns>
+
+---
+
+### Ver transacciones dentro de una operación
+
+<Steps>
+  <Step title="Expandir operación">
+    Haz clic sobre una fila en la tabla.
+  </Step>
+  <Step title="Ver intentos">
+    Cada transacción muestra:
+
+    - Método de pago
+    - Estado
+    - Fecha y hora
+  </Step>
+  <Step title="Analizar comportamiento">
+    Identifica reintentos, rechazos o cambios de método.
+  </Step>
+</Steps>
+
+---
+
+### Detalle de transacción
+
+Al hacer clic en una transacción se abre un panel lateral con:
+
+<Columns cols={2}>
+  <Column>
+    <Check>
+      Ciclo de vida (timeline)
+    </Check>
+
+    <Check>
+      Información general
+    </Check>
+
+    <Check>
+      Método de pago (enmascarado)
+    </Check>
+  </Column>
+  <Column>
+    <Check>
+      Autenticación (3DS)
+    </Check>
+
+    <Check>
+      Logs del procesamiento
+    </Check>
+
+    <Check>
+      Datos técnicos (API / SDK)
+    </Check>
+  </Column>
+</Columns>
+
+---
+
+### Vista rápida
+
+<Note>
+  Accede a **Operaciones → Últimas 100 Transacciones** para monitoreo en tiempo real.
+</Note>
+
+### 💡 Recomendaciones
+
+<Columns cols={3}>
+  <Column>
+    <Card title="Empieza simple" icon="calendar">
+      Usa rangos de 1 día y luego amplía.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Filtra menos" icon="filter">
+      Menos filtros = búsquedas más rápidas.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Analiza intentos" icon="magnifying-glass-chart">
+      Revisa operaciones con múltiples transacciones.
+    </Card>
+  </Column>
+</Columns>
+
+---

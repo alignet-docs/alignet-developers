@@ -1,0 +1,103 @@
+---
+title: "Operaciones de Venta"
+description: "Guía detallada para procesar pagos, gestionar propinas y realizar anulaciones en el terminal."
+icon: "store"
+---
+
+## Realizar un cobro
+
+El proceso de cobro en el terminal PayMe POS es simple y guiado para asegurar una operación rápida en el punto de venta.
+
+<Steps>
+  <Step title="Ingreso del monto">
+    Utiliza el teclado numérico para ingresar el monto a cobrar en soles (S/). El sistema mostrará el valor en formato `S/ 0.00`.
+  </Step>
+  <Step title="Confirmación">
+    Una vez ingresado un monto mayor a cero, presiona el botón **Continuar**.
+  </Step>
+  <Step title="Gestión de Propinas">
+    Si la función está habilitada, se presentarán las opciones de propina al cliente antes de proceder al pago.
+  </Step>
+  <Step title="Método de pago">
+    Selecciona si el cliente pagará con **Tarjeta** (crédito/débito) o mediante **Código QR**.
+  </Step>
+  <Step title="Procesamiento">
+    El terminal solicitará la interacción del cliente (acercar/insertar tarjeta o escanear QR) y procesará la transacción con el banco.
+  </Step>
+  <Step title="Resultado">
+    La pantalla confirmará inmediatamente si la operación fue aprobada o rechazada.
+  </Step>
+</Steps>
+
+---
+
+## Métodos de pago admitidos
+
+El terminal Wiseasy P5 ofrece flexibilidad total para tus clientes:
+
+<CardGroup cols={2}>
+  <Card title="Tarjetas de Crédito/Débito" icon="credit-card">
+    Compatible con Visa, Mastercard y más. Admite tres tipos de lectura:
+
+    - **Contactless:** Acercar al lector NFC.
+    - **Chip:** Insertar en la ranura inferior.
+    - **Banda:** Deslizar en la ranura lateral.
+  </Card>
+
+  <Card title="Billeteras Digitales (QR)" icon="qrcode">
+    Genera un código dinámico en pantalla para pagos con **Yape, Plin** y otras aplicaciones compatibles.
+  </Card>
+</CardGroup>
+
+---
+
+## Gestión de Propinas
+
+Esta función permite al cliente reconocer el servicio recibido de forma digital. Las opciones disponibles son:
+
+| Opción | Descripción |
+| :-- | :-- |
+| **Sin propina** | Se procesa únicamente el monto original de la venta. |
+| **Porcentajes (10% / 15%)** | Cálculos automáticos basados en el monto de la venta. |
+| **Otro monto** | Permite al cliente ingresar una cifra específica manualmente. |
+
+<Info>
+  Los porcentajes sugeridos y la activación de esta función se gestionan desde **Configuración → Configuración de Venta**.
+</Info>
+
+---
+
+## Estados de la transacción
+
+Tras el procesamiento, el terminal mostrará uno de los siguientes resultados visuales:
+
+### ✅ Operación Aprobada
+
+Pantalla verde que confirma el éxito del cobro. Incluye:
+
+- Monto final y marca de tarjeta.
+- Últimos 4 dígitos de la tarjeta.
+- Código de autorización y número de operación.
+
+### ❌ Operación Rechazada
+
+Pantalla roja que indica que el cobro no pudo completarse. Se mostrará un código de error y la descripción del motivo (ej. fondos insuficientes o tarjeta bloqueada).
+
+---
+
+## Anular una operación
+
+<Warning>
+  **Función restringida:** Solo los usuarios con rol de **Administrador** pueden realizar anulaciones.
+</Warning>
+
+Para reversar un cobro autorizado que aún no ha sido liquidado, sigue estos pasos:
+
+1. Selecciona **Anular** en la pantalla principal e ingresa el **número de operación**.
+2. Presiona **Consultar** para recuperar los detalles de la transacción.
+3. Verifica que el monto, tarjeta y fecha coincidan con la venta original.
+4. Confirma la acción presionando **Confirmar Anulación**.
+
+<Note>
+  Solo se pueden anular operaciones en estado **Autorizado**. Las operaciones ya liquidadas deben gestionarse como devoluciones administrativas.
+</Note>

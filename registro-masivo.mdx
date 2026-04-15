@@ -1,0 +1,87 @@
+---
+title: "Registro Masivo"
+sidebarTitle: "Registro Masivo"
+description: "Registra múltiples comercios en un solo archivo Excel mediante carga a S3 — exclusivo para Facilitadores de Pago."
+---
+
+El registro masivo permite dar de alta o actualizar cientos de comercios en un solo proceso, cargando un archivo Excel a un bucket S3 asignado a tu organización. El sistema procesa cada fila de forma asíncrona y genera un archivo de resultados con el detalle de cada operación.
+
+---
+
+## Ambientes
+
+| Ambiente | Bucket S3 entrada | Bucket S3 salida |
+| :-- | :-- | :-- |
+| Desarrollo | `adq-massive-onboarding/payment-facilitator/{PF_CODE}/IN/` | `adq-massive-onboarding/payment-facilitator/{PF_CODE}/OUT/` |
+| Producción | `adq-massive-onboarding/payment-facilitator/{PF_CODE}/IN/` | `adq-massive-onboarding/payment-facilitator/{PF_CODE}/OUT/` |
+
+<Note>
+  El nombre del archivo debe seguir el formato: `OMasivo_*.xlsx`
+</Note>
+
+---
+
+## Flujo de registro masivo
+
+<Steps>
+  <Step title="Prepara el archivo Excel">
+    Completa el archivo de entrada con los datos de cada comercio. Cada fila puede ser `INSERT` para nuevos comercios o `UPDATE` para actualizar existentes.
+  </Step>
+  <Step title="Sube el archivo a S3">
+    Carga el archivo en la carpeta `/IN/` del bucket S3 asignado a tu organización.
+  </Step>
+  <Step title="El sistema procesa el archivo">
+    Pay-me procesa cada fila de forma asíncrona — valida los datos, registra los comercios y habilita sus métodos de pago.
+  </Step>
+  <Step title="Descarga el archivo de resultados">
+    Una vez procesado, el archivo de salida aparece en la carpeta `/OUT/` con el resultado de cada fila — exitosos, fallidos y credenciales generadas.
+  </Step>
+</Steps>
+
+---
+
+## Operaciones soportadas por fila
+
+<CardGroup cols={2}>
+  <Card title="INSERT" icon="plus">
+    Crea un nuevo comercio. Genera `client_id` y `client_secret` incluidos en el archivo de salida.
+  </Card>
+  <Card title="UPDATE" icon="pen">
+    Actualiza datos de un comercio existente usando su `merchant_code`. No regenera credenciales ni modifica datos fiscales.
+  </Card>
+</CardGroup>
+
+---
+
+## Estructura del archivo de salida
+
+El archivo de salida incluye todas las columnas del archivo de entrada más los siguientes campos de resultado:
+
+| Campo | Descripción |
+| :-- | :-- |
+| `status` | `success` o `error` por fila |
+| `message` | Detalle del resultado o motivo del error |
+| `merchant_code` | UUID asignado al comercio |
+| `merchant_credentials` | `client_id` y `client_secret` generados — solo en `INSERT` |
+| `payment_methods_enabled` | Métodos habilitados exitosamente |
+| `payment_methods_failed` | Métodos que fallaron durante el registro |
+
+---
+
+## Consideraciones
+
+<Note>
+  Si una fila tiene errores de validación, el campo `status` será `error` y `message` describirá el motivo — por ejemplo: `"RUC inválido"` o `"marca no permitida"`.
+</Note>
+
+<Note>
+  En operaciones `UPDATE`, los datos fiscales no son modificables y las credenciales no se regeneran.
+</Note>
+
+---
+
+## Referencia técnica
+
+<Card title="Ver referencia en GitHub" icon="github" href="https://github.com/alignet">
+  Estructura de entrada · Estructura de salida · Archivos de ejemplo
+</Card>

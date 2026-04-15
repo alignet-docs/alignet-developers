@@ -1,0 +1,71 @@
+---
+title: "PrestaShop"
+sidebarTitle: "Introducción"
+description: "Integra la pasarela de pagos Pay-me en tu tienda PrestaShop de forma rápida y segura."
+---
+
+<Frame>
+  <img
+    src="/images/image-64.png"
+    alt="Image"
+    title="Image"
+    className="mx-auto"
+    style={{ width:"58%" }}
+  />
+</Frame>
+
+Pay-me PrestaShop es el módulo oficial para **cobrar en tu tienda PrestaShop** con los métodos de pago más importantes del mercado local (Perú y región) desde una sola integración.
+
+### Métodos de Pago Disponibles
+
+Dependiendo de tu configuración, podrás habilitar
+
+- **Tarjetas:** Visa, Mastercard, American Express, Diners.
+- **Billeteras:** Yape, Plin.
+- **Pagos con QR.**
+- **Transferencias y Efectivo:** PagoEfectivo, Cuotéalo BCP.
+
+### Flujo General de Pago
+
+Comprender cómo viaja la información es clave para una integración exitosa. El módulo gestiona todo el ciclo de vida de la transacción automáticamente.
+
+![Image](/images/image-66.png)
+
+### ¿Cómo funciona?
+
+1. **Selección:** El cliente elige Pay-me como método de pago en el checkout de PrestaShop.
+2. **Envío:** El módulo envía de forma cifrada la información de la transacción a la pasarela Pay-me.
+3. **Validación:** Pay-me valida el pago con los emisores y procesadores bajo estándares de seguridad PCI-DSS.
+4. **Respuesta:**
+   - **Síncrona:** El cliente recibe una confirmación inmediata en pantalla.
+   - **Asíncrona (Webhook):** Pay-me notifica a tu tienda mediante un webhook para actualizar el estado del pedido automáticamente.
+
+---
+
+## Ciclo de Vida del Pedido
+
+Para que tu operación sea consistente, el módulo mapea los estados de la pasarela con los estados nativos de PrestaShop:
+
+<Steps>
+  <Step title="Registro y Pendiente">
+    El pedido se crea en PrestaShop como **"Esperando pago"** o **"Pendiente"**.
+  </Step>
+  <Step title="Pago Aprobado">
+    Si el pago es exitoso, el estado cambia a **"Pago aceptado"**, permitiendo iniciar la preparación del pedido.
+  </Step>
+  <Step title="Fallo o Cancelación">
+    Si el pago es rechazado o el cliente abandona el flujo, el pedido se marca como **"Error de pago"** o **"Cancelado"**.
+  </Step>
+</Steps>
+
+---
+
+<CardGroup cols={2}>
+  <Card title="Instalación" icon="download" href="/prestashop/instalacion">
+    Descarga el módulo y súbelo desde el panel de administración de PrestaShop.
+  </Card>
+
+  <Card title="Configuración" icon="gear" href="/prestashop/configuracion">
+    Configura tus credenciales y habilita los métodos de pago según tu negocio.
+  </Card>
+</CardGroup>
