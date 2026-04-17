@@ -333,8 +333,8 @@
   },
 
   "logo": {
-    "light": "/images/AlgDocs_.png",
-    "dark": "/images/AlgDocs_white.png"
+    "light": "/images/AlgDocs_bk.png",
+    "dark": "/images/AlgDocs_wte.png"
   },
 
   "appearance": {
