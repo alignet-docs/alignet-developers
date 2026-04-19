@@ -1,7 +1,6 @@
 ---
 title: "Autenticación"
 sidebarTitle: "Autenticación"
-icon: "shield-check"
 description: "Genera tu Access Token para autenticarte en todos los endpoints de la API de Pay-me."
 ---
 
@@ -22,7 +21,7 @@ Este token se genera mediante el API de autenticación utilizando tus credencial
 
 ## Scopes disponibles
 
-El *scope* define los permisos que tendrá tu token.
+El _scope_ define los permisos que tendrá tu token.
 
 Solicita únicamente los scopes necesarios según los endpoints que vayas a utilizar.
 
@@ -30,19 +29,22 @@ Solicita únicamente los scopes necesarios según los endpoints que vayas a util
   <Card title="create:token" icon="key">
     Crear tokens de acceso. Requerido en todos los casos.
   </Card>
+
   <Card title="post:charges" icon="plus">
     Crear cargos y autorizaciones. Necesario para PayIn.
   </Card>
+
   <Card title="get:charges" icon="search">
     Consultar transacciones.
   </Card>
+
   <Card title="delete:charges" icon="trash">
     Cancelar transacciones.
   </Card>
 </CardGroup>
 
 <Note>
-El scope `create:token` es obligatorio. Los demás dependen de los endpoints que implementes.
+  El scope `create:token` es obligatorio. Los demás dependen de los endpoints que implementes.
 </Note>
 
 ---
@@ -50,7 +52,7 @@ El scope `create:token` es obligatorio. Los demás dependen de los endpoints que
 ## Generar Access Token
 
 <Note>
-Puedes probar este endpoint directamente desde la documentación usando el botón **Try it**.
+  Puedes probar este endpoint directamente desde la documentación usando el botón **Try it**.
 </Note>
 
 ```api
@@ -103,11 +105,11 @@ ALG-API-VERSION: 1709847567
 ## Consideraciones
 
 <Warning>
-El Access Token expira en **8600 segundos (~2.4 horas)**. Renuévalo antes de que venza para evitar errores `401 Unauthorized`.
+  El Access Token expira en **8600 segundos (~2.4 horas)**. Renuévalo antes de que venza para evitar errores `401 Unauthorized`.
 </Warning>
 
 <Note>
-Incluye siempre el header `ALG-API-VERSION` en todas las peticiones.
+  Incluye siempre el header `ALG-API-VERSION` en todas las peticiones.
 </Note>
 
 ---
