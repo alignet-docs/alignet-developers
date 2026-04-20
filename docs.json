@@ -18,7 +18,7 @@
         "icon": "cart-shopping",
         "tabs": [
           {
-            "tab": "Guìa",
+            "tab": "Guía",
             "groups": [
               {
                 "group": "Primeros pasos",
@@ -266,6 +266,10 @@
                 ]
               }
             ]
+          },
+          {
+            "tab": "API Docs",
+            "openapi": "openapi.json"
           }
         ]
       },
@@ -292,6 +296,13 @@
         ]
       }
     ]
+  },
+
+  "api": {
+    "openapi": "openapi.json",
+    "playground": {
+      "display": "interactive"
+    }
   },
 
   "navbar": {
@@ -333,8 +344,8 @@
   },
 
   "logo": {
-    "light": "/images/321.png",
-    "dark": "/images/4321.png"
+    "light": "/images/AlgDocs_bk.png",
+    "dark": "/images/AlgDocs_white.png"
   },
 
   "appearance": {

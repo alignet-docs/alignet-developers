@@ -1,37 +1,40 @@
 ---
 title: "Autenticación"
 sidebarTitle: "Autenticación"
-description: "Genera tu Access Token para autenticarte en todos los endpoints de la API de Pay-me."
+description: "Genera un Access Token para autenticar requests a la API de Pay-me."
 ---
 
-Todos los endpoints de la API de Pay-me requieren un **Access Token** vigente.
+Genera un **Access Token** usando tus credenciales `client_id` y `client_secret`.  
+Todos los endpoints requieren este token para ser consumidos.
 
-Este token se genera mediante el API de autenticación utilizando tus credenciales `client_id` y `client_secret`.
+<ParamField path="POST /token" type="endpoint" />
 
----
+<CardGroup cols={2}>
+  <Card title="Pre-Producción" icon="flask">
+    <code>https://auth.preprod.alignet.io/token</code>
+  </Card>
+  <Card title="Producción" icon="rocket">
+    <code>https://auth.alignet.io/token</code>
+  </Card>
+</CardGroup>
 
-## Endpoints
-
-| Ambiente | URL |
-| :-- | :-- |
-| Pre-Producción | `https://auth.preprod.alignet.io/token` |
-| Producción | `https://auth.alignet.io/token` |
+<Note>
+  Este endpoint sigue el flujo OAuth 2.0 `client_credentials`. Genera el token una vez y reutilízalo mientras siga vigente.
+</Note>
 
 ---
 
 ## Scopes disponibles
 
-El _scope_ define los permisos que tendrá tu token.
-
-Solicita únicamente los scopes necesarios según los endpoints que vayas a utilizar.
+Define los permisos asociados al token.
 
 <CardGroup cols={2}>
   <Card title="create:token" icon="key">
-    Crear tokens de acceso. Requerido en todos los casos.
+    Obligatorio para generar tokens.
   </Card>
 
   <Card title="post:charges" icon="plus">
-    Crear cargos y autorizaciones. Necesario para PayIn.
+    Crear cargos y autorizaciones.
   </Card>
 
   <Card title="get:charges" icon="search">
@@ -43,57 +46,16 @@ Solicita únicamente los scopes necesarios según los endpoints que vayas a util
   </Card>
 </CardGroup>
 
-<Note>
-  El scope `create:token` es obligatorio. Los demás dependen de los endpoints que implementes.
-</Note>
-
 ---
 
-## Generar Access Token
+## Request
 
-<Note>
-  Puedes probar este endpoint directamente desde la documentación usando el botón **Try it**.
-</Note>
+### Headers
 
-```api
-post https://auth.preprod.alignet.io/token
-```
-
-### Body
-
-```json
-{
-  "client_id": "tu_client_id",
-  "client_secret": "tu_client_secret",
-  "scope": "create:token post:charges"
-}
-```
-
----
-
-### Respuesta
-
-```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "token_type": "Bearer",
-  "expires_in": 8600
-}
-```
-
----
-
-## Uso del Access Token
-
-Incluye el token en el header de cada request:
-
-```bash
-Authorization: Bearer {access_token}
-```
-
----
-
-## Headers obligatorios
+| Campo | Descripción | Valor | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `Content-Type` | Formato del request | `application/json` | String | SI |
+| `ALG-API-VERSION` | Versión del API | `1709847567` | String | SI |
 
 ```bash
 Content-Type: application/json
@@ -102,28 +64,121 @@ ALG-API-VERSION: 1709847567
 
 ---
 
-## Consideraciones
+### Body
 
-<Warning>
-  El Access Token expira en **8600 segundos (~2.4 horas)**. Renuévalo antes de que venza para evitar errores `401 Unauthorized`.
-</Warning>
-
-<Note>
-  Incluye siempre el header `ALG-API-VERSION` en todas las peticiones.
-</Note>
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `action` | Acción a ejecutar | `authorize` | String | SI |
+| `grant_type` | Método de autorización | `client_credentials` | String | SI |
+| `audience` | URL base del API | `{{base_url}}` | String | SI |
+| `client_id` | Identificador del cliente | Credencial | String | SI |
+| `client_secret` | Secreto del cliente | Credencial | String | SI |
+| `scope` | Permisos solicitados | `create:token post:charges` | String | SI |
 
 ---
 
-## Referencia técnica
+### Ejemplo (JSON)
 
-<Card title="Ver ejemplos en GitHub" icon="github" href="https://github.com/alignet">
-  SDKs · Ejemplos · Colección Postman
-</Card>
+```json
+{
+  "action": "authorize",
+  "grant_type": "client_credentials",
+  "audience": "{{base_url_del_ambiente}}",
+  "client_id": "your_client_id",
+  "client_secret": "your_client_secret",
+  "scope": "create:token post:charges get:charges delete:charges"
+}
+```
+
+---
+
+## Response
+
+### Body
+
+| Campo | Descripción | Tipo |
+| :-- | :-- | :-- |
+| `action` | Acción ejecutada | String |
+| `success` | Resultado del proceso | Boolean |
+| `access_token` | Token generado | String |
+| `scope` | Permisos del token | String |
+| `expires_in` | Tiempo de expiración (segundos) | Integer |
+| `token_type` | Tipo de token (`Bearer`) | String |
+| `authorization` | Metadata del flujo | Object |
+
+---
+
+### Ejemplo (JSON)
+
+```json
+{
+  "action": "authorize",
+  "success": true,
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "scope": "create:token api-test:create:token",
+  "expires_in": 8600,
+  "token_type": "Bearer",
+  "authorization": {
+    "meta": {
+      "status": {
+        "code": "00",
+        "message_ilgn": [
+          {
+            "locale": "es_PE",
+            "value": "Access Token creado"
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+---
+
+## Usar el token en requests
+
+Incluye el token en el header `Authorization`:
+
+```bash
+Authorization: Bearer {access_token}
+Content-Type: application/json
+ALG-API-VERSION: 1709847567
+```
+
+---
+
+## Buenas prácticas
+
+- Reutiliza el token mientras esté vigente.
+- No generes un token por cada transacción.
+- Renuévalo antes de su expiración.
+- Centraliza su gestión en backend.
+- Usa caché para optimizar rendimiento.
+- Controla concurrencia para evitar múltiples generaciones simultáneas.
+
+---
+
+## Errores comunes
+
+<CardGroup cols={2}>
+  <Card title="401 Unauthorized" icon="triangle-exclamation">
+    Token inválido, expirado o no enviado correctamente en el header.
+  </Card>
+
+  <Card title="403 Forbidden" icon="ban">
+    El token no tiene los scopes necesarios para el endpoint.
+  </Card>
+</CardGroup>
+
+<Warning>
+  No expongas el Access Token en frontend, logs o herramientas sin enmascaramiento.
+</Warning>
 
 ---
 
 ## Siguiente paso
 
 <Card title="PayIn — Introducción" icon="arrow-right" href="/payin/introduccion">
-  Conoce cómo crear tu primera transacción de pago.
+  Aprende a crear tu primera transacción.
 </Card>

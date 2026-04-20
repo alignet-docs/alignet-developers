@@ -1,48 +1,249 @@
 {
-  "openapi": "3.0.0",
+  "openapi": "3.0.3",
   "info": {
     "title": "Alignet API",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "description": "API de autenticacion para obtener el Access Token requerido por los endpoints de pagos."
   },
   "servers": [
     {
-      "url": "https://auth.preprod.alignet.io"
+      "url": "https://auth.preprod.alignet.io",
+      "description": "Pre-Produccion"
+    },
+    {
+      "url": "https://auth.alignet.io",
+      "description": "Produccion"
     }
   ],
   "paths": {
     "/token": {
       "post": {
+        "tags": [
+          "Authentication"
+        ],
         "summary": "Generar Access Token",
+        "description": "Genera un Bearer Token usando credenciales del comercio y el flujo client_credentials.",
+        "operationId": "generateAccessToken",
+        "parameters": [
+          {
+            "name": "ALG-API-VERSION",
+            "in": "header",
+            "required": true,
+            "description": "Version del API a usar.",
+            "schema": {
+              "type": "string",
+              "default": "1709847567"
+            },
+            "example": "1709847567"
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "default": {
+                  "action": "authorize",
+                  "grant_type": "client_credentials",
+                  "audience": "https://api.preprod.alignet.io/",
+                  "client_id": "your_client_id",
+                  "client_secret": "your_client_secret",
+                  "scope": "create:token post:charges get:charges delete:charges"
+                },
+                "additionalProperties": false,
+                "required": [
+                  "action",
+                  "grant_type",
+                  "audience",
+                  "client_id",
+                  "client_secret",
+                  "scope"
+                ],
                 "properties": {
-                  "client_id": { "type": "string" },
-                  "client_secret": { "type": "string" },
-                  "scope": { "type": "string" }
+                  "action": {
+                    "type": "string",
+                    "description": "Accion a ejecutar.",
+                    "default": "authorize",
+                    "example": "authorize"
+                  },
+                  "grant_type": {
+                    "type": "string",
+                    "description": "Metodo de autorizacion.",
+                    "default": "client_credentials",
+                    "example": "client_credentials"
+                  },
+                  "audience": {
+                    "type": "string",
+                    "description": "URL base del API Orquestador segun el ambiente configurado.",
+                    "enum": [
+                      "https://api.preprod.alignet.io/",
+                      "https://api.alignet.io/"
+                    ],
+                    "default": "https://api.preprod.alignet.io/",
+                    "example": "https://api.preprod.alignet.io/"
+                  },
+                  "client_id": {
+                    "type": "string",
+                    "description": "Identificacion del cliente.",
+                    "default": "your_client_id",
+                    "example": "your_client_id"
+                  },
+                  "client_secret": {
+                    "type": "string",
+                    "description": "Secreto del cliente.",
+                    "default": "your_client_secret",
+                    "example": "your_client_secret"
+                  },
+                  "scope": {
+                    "type": "string",
+                    "description": "Permisos a solicitar, separados por espacios.",
+                    "default": "create:token post:charges get:charges delete:charges",
+                    "example": "create:token post:charges get:charges delete:charges"
+                  }
                 }
+              },
+              "example": {
+                "action": "authorize",
+                "grant_type": "client_credentials",
+                "audience": "https://api.preprod.alignet.io/",
+                "client_id": "your_client_id",
+                "client_secret": "your_client_secret",
+                "scope": "create:token post:charges get:charges delete:charges"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Token generado",
+            "description": "Token generado correctamente.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
+                  "required": [
+                    "action",
+                    "success",
+                    "authorization"
+                  ],
                   "properties": {
-                    "access_token": { "type": "string" },
-                    "token_type": { "type": "string" },
-                    "expires_in": { "type": "integer" }
+                    "action": {
+                      "type": "string",
+                      "description": "Accion a ejecutar.",
+                      "example": "authorize"
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "description": "Indica si el proceso se realizo correctamente.",
+                      "example": true
+                    },
+                    "access_token": {
+                      "type": "string",
+                      "description": "Token para usar en las APIs.",
+                      "example": "eyJhbGciOiJIUzI1NiIs..."
+                    },
+                    "scope": {
+                      "type": "string",
+                      "description": "Permisos asociados al token generado.",
+                      "example": "create:token api-test:create:token"
+                    },
+                    "expires_in": {
+                      "type": "integer",
+                      "description": "Tiempo de expiracion del token en segundos.",
+                      "example": 8600
+                    },
+                    "token_type": {
+                      "type": "string",
+                      "description": "Tipo de token.",
+                      "example": "Bearer"
+                    },
+                    "authorization": {
+                      "type": "object",
+                      "description": "Objeto que contiene metadatos del flujo ejecutado.",
+                      "required": [
+                        "meta"
+                      ],
+                      "properties": {
+                        "meta": {
+                          "type": "object",
+                          "description": "Objeto que contiene metadatos del flujo ejecutado.",
+                          "required": [
+                            "status"
+                          ],
+                          "properties": {
+                            "status": {
+                              "type": "object",
+                              "description": "Objeto que contiene el resultado del flujo ejecutado.",
+                              "required": [
+                                "code",
+                                "message_ilgn"
+                              ],
+                              "properties": {
+                                "code": {
+                                  "type": "string",
+                                  "description": "Codigo que representa el resultado del flujo ejecutado.",
+                                  "example": "00"
+                                },
+                                "message_ilgn": {
+                                  "type": "array",
+                                  "description": "Lista de mensajes resultantes del flujo.",
+                                  "items": {
+                                    "type": "object",
+                                    "required": [
+                                      "locale",
+                                      "value"
+                                    ],
+                                    "properties": {
+                                      "locale": {
+                                        "type": "string",
+                                        "description": "Localidad a nivel de lenguaje para el mensaje del flujo ejecutado.",
+                                        "example": "es_PE"
+                                      },
+                                      "value": {
+                                        "type": "string",
+                                        "description": "Mensaje resultante del flujo ejecutado.",
+                                        "example": "Access Token creado"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "action": "authorize",
+                  "success": true,
+                  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...",
+                  "scope": "create:token api-test:create:token",
+                  "expires_in": 8600,
+                  "token_type": "Bearer",
+                  "authorization": {
+                    "meta": {
+                      "status": {
+                        "code": "00",
+                        "message_ilgn": [
+                          {
+                            "locale": "es_PE",
+                            "value": "Access Token creado"
+                          }
+                        ]
+                      }
+                    }
                   }
                 }
               }
             }
+          },
+          "400": {
+            "description": "Request invalido."
+          },
+          "401": {
+            "description": "Credenciales invalidas o scope no permitido."
           }
         }
       }
