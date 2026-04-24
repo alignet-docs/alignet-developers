@@ -2,6 +2,7 @@
 title: "PayIn"
 sidebarTitle: "Introducción"
 description: "Conoce los métodos de pago disponibles en Pay-me y cómo funciona el flujo de autorización."
+icon: "book-open-reader"
 ---
 
 PayIn es el módulo de cobros de la API de Pay-me. Permite aceptar pagos de consumidores a través de múltiples métodos, todos orquestados desde un único punto de integración.
@@ -12,7 +13,7 @@ PayIn es el módulo de cobros de la API de Pay-me. Permite aceptar pagos de cons
 
 <CardGroup cols={2}>
   <Card title="Tarjeta con 3DS" icon="credit-card">
-    ecommerce · tarjeta presente · Síncrono
+    ecommerce · Síncrono · 3DS según configuración
   </Card>
   <Card title="Yape" icon="mobile">
     ecommerce · Síncrono
@@ -40,7 +41,7 @@ PayIn es el módulo de cobros de la API de Pay-me. Permite aceptar pagos de cons
 
 <Steps>
   <Step title="Obtén tu Access Token">
-    Genera un token vigente desde el [API de Autenticación](/autenticacion) antes de cada sesión de pago.
+    Genera un token vigente desde el [API de Autenticación](/autenticacion) y reutilízalo mientras siga activo.
   </Step>
   <Step title="Envía la autorización">
     Haz un `POST` al endpoint de autorización con los datos del pago y el método elegido.
@@ -58,11 +59,11 @@ PayIn es el módulo de cobros de la API de Pay-me. Permite aceptar pagos de cons
 ## Contenido de esta sección
 
 <CardGroup cols={2}>
-  <Card title="Autorización" icon="credit-card" href="/payin/autorizacion">
-    Endpoints de autorización para todos los métodos de pago disponibles.
+  <Card title="API de Autorización" icon="credit-card" href="/payin/autorizacion">
+    Revisa la estructura general y los flujos específicos por método de pago ecommerce.
   </Card>
-  <Card title="Consulta" icon="magnifying-glass" href="/payin/consulta">
-    Consulta el estado de una transacción por método de pago.
+  <Card title="API de Consulta" icon="magnifying-glass" href="/payin/consulta">
+    Consulta el estado de una transacción con páginas separadas por método.
   </Card>
   <Card title="Cancelación" icon="xmark" href="/payin/cancelacion">
     Cancela una transacción autorizada antes de su liquidación.
@@ -79,6 +80,6 @@ PayIn es el módulo de cobros de la API de Pay-me. Permite aceptar pagos de cons
 
 ## Siguiente paso
 
-<Card title="Autorización" icon="arrow-right" href="/payin/autorizacion">
-  Revisa los endpoints y parámetros para iniciar una transacción.
+<Card title="API de Autorización" icon="arrow-right" href="/payin/autorizacion">
+  Entra al resumen de autorización y navega por cada método de pago.
 </Card>

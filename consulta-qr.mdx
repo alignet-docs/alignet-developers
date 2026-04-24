@@ -1,0 +1,313 @@
+---
+title: "Api de Consulta con QR"
+sidebarTitle: "QR"
+description: "Consulta el estado de una operación con QR en PayIn."
+---
+
+Usa esta consulta para confirmar el estado final de un pago QR luego del redirect del usuario o cuando la operación permanece pendiente.
+
+<ParamField path="GET /charges/{merchant_code}/{merchant_operation_number}/{transaction_id}" type="endpoint" />
+
+<Note>
+  Este flujo usa la misma estructura general documentada en el [Overview de Consulta](/payin/consulta). Aquí se detalla específicamente el objeto `operation.transactions[]` para pagos con QR.
+</Note>
+
+---
+
+## ¿Cuándo usarla?
+
+<CardGroup cols={2}>
+  <Card title="Después del redirect" icon="rotate-left">
+    Para contrastar el retorno del navegador con el estado real de backend.
+  </Card>
+
+  <Card title="Confirmación final" icon="shield-check">
+    Para obtener el estado definitivo antes de actualizar la orden en tu sistema.
+  </Card>
+
+  <Card title="QR pendiente" icon="qrcode">
+    Para recuperar el `qr_image`, `qr_id` y la fecha de expiración mientras el pago sigue pendiente.
+  </Card>
+
+  <Card title="Seguimiento operativo" icon="clock">
+    Para validar si la operación pasó de `PENDIENTE` a `AUTORIZADO`, `EXPIRADO` o `CANCELADO`.
+  </Card>
+</CardGroup>
+
+---
+
+## Consideraciones
+
+<Warning>
+  No marques la operación como exitosa solo por el retorno del usuario. Usa la consulta o la notificación S2S como validación final.
+</Warning>
+
+<Note>
+  En esta documentación se usa `method_details` para mantener consistencia con el resto de la referencia. Si en material previo encuentras `method_detail`, trátalo como el mismo objeto.
+</Note>
+
+<Note>
+  En estado `PENDIENTE`, el objeto `processor_response` suele devolver el QR generado. Cuando la operación queda `AUTORIZADO`, ese mismo objeto puede devolver datos de autorización.
+</Note>
+
+---
+
+## Response
+
+Objeto `operation.transactions[]` para pagos con QR dentro de la trama de respuesta del [API de Consulta](/payin/consulta).
+
+### Objeto `operation.transactions[]`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].transaction_id` | Identificador único de la transacción. | String | SI |
+| `operation.transactions[].channel` | Canal por el cual se realizó la transacción. Valor esperado: `ecommerce`. | String | SI |
+| `operation.transactions[].state` | Estado actual de la transacción. Valores frecuentes: `PENDIENTE`, `AUTORIZADO`, `INVALIDO`, `EXPIRADO`, `CANCELADO`, `LIQUIDADO`. | String | SI |
+| `operation.transactions[].state_reason` | Observación o detalle del estado. | String | SI |
+| `operation.transactions[].amount` | Monto de la transacción. | String | SI |
+| `operation.transactions[].currency` | Código de la moneda de la operación. | String | SI |
+| `operation.transactions[].payment_method` | Objeto que contiene información sobre el método de pago usado en la transacción. | Object | SI |
+| `operation.transactions[].payment_method.method_name` | Nombre del método de pago usado en la transacción. Valor esperado: `QR`. | String | SI |
+| `operation.transactions[].payment_method.method_details` | Objeto que contiene información detallada relacionada al método. | Object | NO |
+| `operation.transactions[].expiration_date` | Visible en estado `PENDIENTE`. Objeto que contiene la fecha en la que expirará la transacción. | Object | NO |
+| `operation.transactions[].processor_response` | Objeto que contiene el resultado devuelto por la procesadora. Su contenido varía según el estado de la transacción. | Object | NO |
+| `operation.transactions[].additional_fields` | Objeto que contiene los datos adicionales de la transacción enviados en el request. | Object | NO |
+| `operation.transactions[].lifecycle` | Array que contiene el listado de estados por los cuales pasó la transacción. | Array | SI |
+
+---
+
+### Objeto `operation.transactions[].payment_method.method_details`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].payment_method.method_details.masked_pan` | Tarjeta enmascarada usada en la transacción. | String | NO |
+| `operation.transactions[].payment_method.method_details.brand` | Marca de la tarjeta usada en la transacción. | String | NO |
+| `operation.transactions[].payment_method.method_details.bin` | BIN de la tarjeta usada en la transacción. | String | NO |
+| `operation.transactions[].payment_method.method_details.last_pan` | Últimos 4 dígitos de la tarjeta usada en la transacción. | String | NO |
+| `operation.transactions[].payment_method.method_details.card_type` | Tipo de tarjeta. | String | NO |
+| `operation.transactions[].payment_method.method_details.card_country` | País de la tarjeta. | String | NO |
+| `operation.transactions[].payment_method.method_details.issuer` | Banco emisor de la tarjeta. | String | NO |
+| `operation.transactions[].payment_method.method_details.callback_url` | URL del callback enviado en la autorización. | String | NO |
+
+---
+
+### Objeto `operation.transactions[].expiration_date`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].expiration_date.utc_time` | Fecha en UTC. | String | NO |
+| `operation.transactions[].expiration_date.unix_time` | Fecha en Unix time. | Integer | NO |
+
+---
+
+### Objeto `operation.transactions[].processor_response`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].processor_response.date` | Visible normalmente en estado `PENDIENTE`. Fecha devuelta por la procesadora al generar el QR. | String | NO |
+| `operation.transactions[].processor_response.qr_image` | Visible normalmente en estado `PENDIENTE`. Imagen en base64 del QR generado. | String | NO |
+| `operation.transactions[].processor_response.qr_id` | Visible normalmente en estado `PENDIENTE`. ID del QR generado por la procesadora. | String | NO |
+| `operation.transactions[].processor_response.authorization_code` | Visible normalmente en estado `AUTORIZADO` o `DENEGADO`. Código de autorización. | String | NO |
+| `operation.transactions[].processor_response.brand_transaction_id` | Visible normalmente en estado `AUTORIZADO` o `DENEGADO`. ID de la transacción ante la marca. | String | NO |
+| `operation.transactions[].processor_response.result_message` | Objeto que contiene el mensaje del resultado devuelto por la procesadora. | Object | NO |
+
+---
+
+### Objeto `operation.transactions[].processor_response.result_message`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].processor_response.result_message.code` | Código del resultado de la autorización o generación del QR. | String | NO |
+| `operation.transactions[].processor_response.result_message.description` | Descripción del resultado de la autorización o generación del QR. | String | NO |
+
+---
+
+### Objeto `operation.transactions[].lifecycle`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].lifecycle[].state` | Estado de la transacción. Valores frecuentes: `REGISTRADO`, `PENDIENTE`, `AUTORIZADO`, `EXTORNADO`, `CANCELADO`, `EXPIRADO`, `LIQUIDADO`. | String | SI |
+| `operation.transactions[].lifecycle[].date` | Objeto que contiene la fecha en la que se realizó el cambio de estado. | Object | SI |
+
+---
+
+### Objeto `operation.transactions[].lifecycle[].date`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].lifecycle[].date.utc_time` | Fecha en UTC. | String | SI |
+| `operation.transactions[].lifecycle[].date.unix_time` | Fecha en Unix time. | Integer | SI |
+
+---
+
+## Ejemplo: pendiente
+
+Response de consulta de QR en estado `PENDIENTE`.
+
+```json
+{
+  "success": true,
+  "merchant_code": "abc",
+  "operation": {
+    "merchant_operation_number": "2391645",
+    "state": "PENDIENTE",
+    "created_at": {
+      "utc_time": "2024-03-12T22:49:36.018Z",
+      "unix_time": 1710282940
+    },
+    "amount": "15000",
+    "currency": "604",
+    "transactions": [
+      {
+        "transaction_id": "5hk8rwa3h3cq9oyfs3a28v1ms",
+        "channel": "ecommerce",
+        "state": "PENDIENTE",
+        "state_reason": "QR generado, pendiente de pago",
+        "amount": "15000",
+        "currency": "604",
+        "payment_method": {
+          "method_name": "QR",
+          "method_details": {
+            "callback_url": "https://pay-me.com/callback"
+          }
+        },
+        "expiration_date": {
+          "utc_time": "2024-03-12T22:49:36.018Z",
+          "unix_time": 1710282940
+        },
+        "processor_response": {
+          "date": "2024-03-21 14:53:15.096596",
+          "qr_image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAV4AAAFeAQAAAADlUEq3AAAFa0lEQVR42u1bS47iQAx1i0WWOUJu0lwsUpC4GNwkR8iSRRTP+1SlmZZGmsVsrGkWEVAvSLFd9vMrE/n3rz1+wP8XeIuIj22eXrjw3WXNx4ilJxc+x3visuNtLFXBCxcu6/AYb5PeYTXX1yfWM3lv4qdwKQueY3jyQo9GjLcYHgHjROi2+0ozTTBTaXDeE98tK25b1tc1c4VdZhonJnh/rw/G6iOWHA4swBAxwTj7hI+ZQ363RjGw4nmmkxeaJLB1gcMNiuI58omPvwV/MXDLSAzqP16+p69KYL2cXhnFeaP38T0SVOQRS8vAbwWoGnhnRsK+TAU1iggcH1Nct4u8H06+D1ujIHjj5mRQ46FXbdg8mHf19NjJvFeFpS44TAiC7k4kX9xxX2ENZlu6WxkJq0XBCGAUESRaVhJc7isMoUsPdoTAOtgaFcEslfwYjN1UEQErQBSzulwRB7gwIdt0FcEtnv2d7mVG4mr6giw1YdcuVcGXZMHAXg2y17ikCEGgcgatQbogWptFwanscyPFuSHRIpRT7g6EgDMSWN/K24qC2VyYmcMufOiV9HzSNiXD43bWT2VdMK0BVkAi18gdWg92HYpnOP7G/VsVjEfF49/JfRZ3wn78dDyzWSZRf2ZZMBr8K7MtG2PiwlWSe1VcT/EczkgVwWQFMapA7uRwZABMUAxvGsK8rjCYGYkEHB2VSsfFPmclceVEPCM3HWXBfujZ9UPkTt0xVqPF88Ef+MisCw4SAvhcLI4yVdc3yAUUz9l5XU2wuAAd2toM8vGIsTVd4kOdxlcEzy29Bn3+QYYn4Y3No0XU1pOUBbP15Xfcl/KvpGIRdUkbv8VzRfDMbEsOdyrgYuvHqAy8kNzds2ekiuALY5cUB+721v1gIeWL8ew6MzR3VwTPzqxUFlldurJ4UMX5dCfCmjJWBUvdpwblIqJ+X0Rui7O3iui8riKYvVVXUiXgZOuOd5M76+NZFszW4ykNqlM6CVYK7+FhavAe/PXA6hvxUX2jSCp1fu3axuvck5QFkwGAC7BomueI1+k2HU9JKu6soCKYC+j3KWjw8cXHWUTIBY7O6+LaJeV64DmkQX1pGXzyfKnp7+2IqmlV8GXVR0Zsul623kov8br9bXeXA/vgcJH4nS4iJHKv1mWZ9qyN11UEyxqjVA0eB7NenjJVsIbyjuwnNRXBoW6xpderm2XmWO1VnQ5LSO4ZqR5YIwqMYiZaeJUZ2EUkrVA93oK/ItiMx7xOIxmK7FTH7ON+qgHHWBZ80Tu/WD5bI/y0IsfIpth/9lb1wCqLt0kQ9sT2OexijVHTGGf7XxBM11KXaqM09G9rlqUS0ySaXRjLgm8iqRqGSsZzOkGJvbaxBfu8MFhEjvvSp6UPj0XdJpdPDYT1w/F6YM2vpQb0XDrUaoWsoXNTzSf2s7aCYDLVzybguI86jzTCg22sKXmarhzY8zS7BI3J07OHVyUQq8HSYU6WBa9vHZXC24eJm+YyxAru2sl1wUM7tIg2paeackpXGrT5av/LgVXy1Qlb3fcdk5pHkTvZhRy9KnhXExyaSkSObZPQ0obVar081d7H/MqB1S2yUVSrH4psaTfMtoemEsnRr1tVMDfn07POEjR8WhqidB7OuLbR06pgHc3wsMmu5VFUNjancRNRoeF91LYWeGuqaWuRo009c8J00gnqt0HNemAx1bueV+eIqck9DZeqpljnf36Nu1cDt3+RiBAMbR74PGGjrRjPJwmsCxZEwd1l4aY7Dt1WpcFScaQIh4/20yLqJo1xP+O5IljxvE+np6ksalboVKikpL4FfzFwnJlVNtDsQk/FnjnxIF8WBf/8XfQH/A/AvwD2DA1dmGNskwAAAABJRU5ErkJggg==",
+          "qr_id": "e5e36834a2294d83868d587af8ae8e13",
+          "result_message": {
+            "code": "0",
+            "description": "Exito"
+          }
+        },
+        "additional_fields": null,
+        "lifecycle": [
+          {
+            "state": "REGISTRADO",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          },
+          {
+            "state": "PENDIENTE",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Se proceso correctamente"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Ejemplo: autorizado
+
+Response de consulta de QR en estado `AUTORIZADO`.
+
+```json
+{
+  "success": true,
+  "merchant_code": "abc",
+  "operation": {
+    "merchant_operation_number": "2391645",
+    "state": "AUTORIZADO",
+    "amount": "15000",
+    "currency": "604",
+    "transactions": [
+      {
+        "transaction_id": "5hk8rwa3h3cq9oyfs3a28v1ms",
+        "channel": "ecommerce",
+        "state": "AUTORIZADO",
+        "state_reason": "Approval and completed successfully",
+        "amount": "15000",
+        "currency": "604",
+        "payment_method": {
+          "method_name": "QR",
+          "method_details": {
+            "masked_pan": "455788******9268",
+            "brand": "VISA",
+            "bin": "455788",
+            "last_pan": "9268",
+            "card_type": "DEBIT",
+            "card_country": "PE",
+            "issuer": "BANCO DE CREDITO DEL PERU - BCP",
+            "callback_url": "https://pay-me.com/callback"
+          }
+        },
+        "expiration_date": null,
+        "processor_response": {
+          "authorization_code": "055552",
+          "result_message": {
+            "code": "00",
+            "description": "Approval and completed successfully"
+          },
+          "brand_transaction_id": "A055552"
+        },
+        "additional_fields": null,
+        "lifecycle": [
+          {
+            "state": "REGISTRADO",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          },
+          {
+            "state": "PENDIENTE",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          },
+          {
+            "state": "AUTORIZADO",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Se proceso correctamente"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Siguiente paso
+
+<Card title="API de Cancelación" icon="arrow-right" href="/payin/cancelacion">
+  Revisa la cancelación para operaciones que todavía puedan anularse.
+</Card>

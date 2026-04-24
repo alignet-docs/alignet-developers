@@ -1,9 +1,32 @@
 ---
 title: "Introducción"
 description: "Integra fácilmente un formulario de pago en tu aplicación web con Pay-me Flex"
+icon: "book-open-reader"
 ---
 
 El Pay-me Flex permite a los desarrolladores integrar fácilmente un formulario de pago en aplicaciones web. Proporciona métodos y funciones que facilitan la interacción con el formulario de pago y la gestión de transacciones.
+
+---
+
+## Flujo inicial
+
+<CardGroup cols={3}>
+  <Card title="1. Autenticación" icon="key" href="/autenticacion">
+    Primero genera el `Access Token` desde el API de Seguridad. Sin ese token no podrás solicitar el `nonce`.
+  </Card>
+
+  <Card title="2. API Nonce" icon="shield-check" href="/api-nonce">
+    Con el `Access Token` vigente solicita el `nonce` que se usará para inicializar Flex.
+  </Card>
+
+  <Card title="3. Librería Flex" icon="code" href="/incluir-libreria-y-estilos-basicos">
+    Después de obtener el `nonce`, incluye el CSS y JS del ambiente y continúa con la inicialización del formulario.
+  </Card>
+</CardGroup>
+
+<Note>
+  En Flex, el orden correcto es `Autenticación` → `API Nonce` → inclusión de librería y luego la inicialización del componente.
+</Note>
 
 ## ¿Por qué Pay-me Flex?
 

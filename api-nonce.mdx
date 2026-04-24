@@ -1,13 +1,31 @@
 ---
-title: "API Nonce"
-description: "Genera el código único Nonce para invocar Pay-me Flex"
+title: "Inicializar Pay-me Flex"
+sidebarTitle: "API Nonce"
+description: "Genera el Nonce necesario para inicializar Pay-me Flex después de autenticarte."
+icon: "shield-halved"
 ---
 
-<Note>
-Es necesario primero consumir el API de Seguridad para obtener el Access Token antes de llamar a este servicio.
-</Note>
+Para inicializar Pay-me Flex es necesario consumir primero el **API de Seguridad** y, con el token de acceso, solicitar el **API Nonce**.
 
-Este servicio tiene como función generar un código único **Nonce** el cual sirve para invocar Pay-me Flex.
+Este servicio tiene como función generar un código único **Nonce** que luego será usado para invocar Pay-me Flex.
+
+<Warning>
+  Si todavía no generaste tu `Access Token`, primero revisa [Autenticación](/autenticacion). El `nonce` no puede solicitarse sin ese paso previo.
+</Warning>
+
+<Steps>
+  <Step title="Genera el Access Token">
+    Consume primero el API de Seguridad para obtener un `Bearer Token` vigente.
+  </Step>
+
+  <Step title="Solicita el Nonce">
+    Usa ese token para llamar al endpoint `/nonce` y obtener el código temporal de inicialización.
+  </Step>
+
+  <Step title="Usa el Nonce en Flex">
+    Una vez generado, utiliza el `nonce` en la instancia de `FlexPaymentForms` junto con tu `payload`.
+  </Step>
+</Steps>
 
 ## Endpoints
 
@@ -88,3 +106,11 @@ Este servicio tiene como función generar un código único **Nonce** el cual si
 ```
   </Tab>
 </Tabs>
+
+---
+
+## Siguiente paso
+
+<Card title="Incluir librería y estilos básicos" icon="arrow-right" href="/incluir-libreria-y-estilos-basicos">
+  Continúa con la inclusión del CSS y JS del ambiente antes de inicializar el formulario.
+</Card>

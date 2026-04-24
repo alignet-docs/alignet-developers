@@ -1,13 +1,174 @@
 ---
-title: "Referencia del API de Devoluciones"
-sidebarTitle: "Referencia"
-description: "Especificación técnica del endpoint de devoluciones: parámetros, esquemas JSON y ejemplos de request y response."
+title: "API de Devoluciones"
+sidebarTitle: "API de Devoluciones"
+description: "Envía solicitudes de devolución total o parcial sobre transacciones liquidadas."
 ---
 
-Esta página contiene la referencia técnica completa del API de Devoluciones de Pay-me.
+El **API de Devoluciones** permite enviar una o más transacciones en estado `LIQUIDADO` a devolver. Solo está disponible para los métodos `CARD`, `YAPE` y `CUOTEALO`.
 
-Aquí encontrarás el detalle del endpoint, los parámetros de entrada y salida, los esquemas JSON y ejemplos de uso — todo publicado y mantenido en el repositorio oficial de GitHub.
+<ParamField path="POST /refund" type="endpoint" />
 
-<Card title="Ver referencia completa en GitHub" icon="github" href="https://github.com/alignet">
-  Endpoint · Parámetros · Esquemas JSON · Colecciones Postman
-</Card>
+<CardGroup cols={2}>
+  <Card title="Pre-Producción" icon="flask">
+    <code>https://api.preprod.alignet.io/refund</code>
+  </Card>
+
+  <Card title="Producción" icon="rocket">
+    <code>https://api.alignet.io/refund</code>
+  </Card>
+</CardGroup>
+
+<Note>
+  La devolución se procesa después del estado `AUTORIZADO`, cuando la transacción ya se encuentra en `LIQUIDADO`. Si la operación aún no fue liquidada, el mecanismo correcto es el extorno, no la devolución.
+</Note>
+
+---
+
+## Request
+
+### Headers
+
+| Campo | Descripción | Valor | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `Authorization` | Token de identificación para uso del API creado previamente en API de Seguridad | `Bearer <Access Token>` | String | SI |
+| `ALG-API-VERSION` | Versión del API a usar | `1709847567` | String | SI |
+| `payment-facilitator-code` | Identificador del PF, obligatorio para Payment Facilitator | Cadena alfanumérica | String | NO |
+
+### Body
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `merchant_code` | Identificador del comercio | `41bb301e-3c37-4332-accb-ed5ec19081e4` | String | SI |
+| `operations` | Array que contiene objetos de transacciones a devolver | Array | Array | SI |
+| `operations[].type` | Tipo de devolución | `TOTAL`, `PARTIAL` | String | SI |
+| `operations[].merchant_operation_number` | Número de pedido de la operación | `239766` | String | SI |
+| `operations[].transaction_id` | Código alfanumérico de la transacción | `bko66gpi8czns4tcde93q96vd` | String | NO |
+| `operations[].refund_amount` | Monto a devolver en centavos | `1050` | String | SI |
+| `operations[].additional_fields` | Diccionario para enviar campos y valores personalizados como `key:value` | `external_id:21871054` | Dictionary | NO |
+
+<Note>
+  Para S/. 10.50 debes enviar `1050`. La separación de decimales se aplica según la moneda.
+</Note>
+
+### Ejemplo (JSON)
+
+```json
+{
+  "merchant_code": "41bb301e-3c37-4332-accb-ed5ec19081e4",
+  "operations": [
+    {
+      "type": "TOTAL",
+      "merchant_operation_number": "239766",
+      "transaction_id": null,
+      "refund_amount": "1050",
+      "additional_fields": {
+        "canal": "WEB",
+        "reason": "cliente no reconoció el consumo",
+        "description": "solicitud por desconocimiento"
+      }
+    }
+  ]
+}
+```
+
+---
+
+## Siguiente paso
+
+<CardGroup cols={2}>
+  <Card title="Consulta Unitaria de Devolución" icon="arrow-right" href="/devoluciones/consulta-unitaria-devolucion">
+    Consulta una solicitud puntual usando `merchant_code` y `merchant_operation_number`.
+  </Card>
+
+  <Card title="Consulta Masiva de Devolución" icon="arrow-right" href="/devoluciones/consulta-masiva-devolucion">
+    Lista devoluciones por rango de fechas y filtros operativos.
+  </Card>
+</CardGroup>
+
+---
+
+## Response
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `success` | Indica si el proceso se realizó correctamente | `true`, `false` | String | SI |
+| `action` | Acción ejecutada | `refund` | String | SI |
+| `merchant_code` | Identificador del comercio | `41bb301e-3c37-4332-accb-ed5ec19081e4` | String | SI |
+| `operations` | Array que contiene objetos de transacciones a devolver | Array | Array | SI |
+| `operations[].refund_id` | UUID único de la devolución | UUID | String | SI |
+| `operations[].state` | Estado de la solicitud | `REGISTERED`, `REJECTED` | String | SI |
+| `operations[].refund_reason` | Motivo o detalle asociado al estado | `Solicitud recibida y validada` | String | SI |
+| `operations[].type` | Tipo de devolución | `TOTAL`, `PARTIAL` | String | SI |
+| `operations[].merchant_operation_number` | Número de pedido de la operación | `239766` | String | SI |
+| `operations[].transaction_id` | Código alfanumérico de la transacción | `bko66gpi8czns4tcde93q96vd` | String | SI |
+| `operations[].refund_amount` | Monto a devolver en centavos | `1050` | String | SI |
+| `operations[].transaction_amount` | Monto original de la transacción en centavos | `1050` | String | SI |
+| `operations[].currency` | Código ISO 4217 de la moneda de la transacción | `604` | String | SI |
+| `operations[].additional_fields` | Diccionario con campos personalizados enviados en el request | Dictionary | Dictionary | NO |
+| `operations[].payment_method` | Objeto relacionado al medio y procesador de pago | Object | Object | SI |
+| `operations[].payment_method.name` | Nombre del método de pago | `CARD`, `YAPE`, `CUOTEALO` | String | SI |
+| `operations[].payment_method.brand` | Marca de la tarjeta | `VISA`, `MSCD`, `AMEX`, `DINC` | String | SI |
+| `operations[].payment_method.masked_pan` | Tarjeta enmascarada | `447411******2240` | String | SI |
+| `operations[].lifecycle` | Array con el listado de estados por los que pasó la devolución | Array | Array | SI |
+| `operations[].lifecycle[].state` | Estado de la devolución | `REGISTERED`, `REJECTED` | String | SI |
+| `operations[].lifecycle[].date` | Objeto con la fecha del cambio de estado | Object | Object | SI |
+| `operations[].lifecycle[].date.utc_time` | Fecha en UTC | `2025-05-26T06:06:45` | String | SI |
+| `operations[].lifecycle[].date.unix_time` | Fecha en unix time | `1748239605` | Integer | SI |
+| `meta.status` | Objeto que contiene el resultado del flujo ejecutado | Object | Object | SI |
+| `meta.status.code` | Código que representa el resultado del flujo ejecutado | `00` | String | SI |
+| `meta.status.message_ilgn` | Objeto que contiene el mensaje resultante del flujo | Object | Object | SI |
+| `meta.status.message_ilgn[].locale` | Localidad a nivel de lenguaje para el mensaje del flujo ejecutado | `es_PE` | String | SI |
+| `meta.status.message_ilgn[].value` | Mensaje resultante del flujo ejecutado | `Se procesó correctamente la petición` | String | SI |
+
+### Ejemplo (JSON)
+
+```json
+{
+  "success": "true",
+  "action": "refund",
+  "merchant_code": "41bb301e-3c37-4332-accb-ed5ec19081e4",
+  "operations": [
+    {
+      "refund_id": "922178aa-ce4c-4c5f-8190-82fa7e009425",
+      "state": "REGISTERED",
+      "refund_reason": "Solicitud recibida y validada",
+      "type": "TOTAL",
+      "merchant_operation_number": "239766",
+      "transaction_id": "bko66gpi8czns4tcde93q96vd",
+      "refund_amount": "1050",
+      "transaction_amount": "1050",
+      "currency": "604",
+      "payment_method": {
+        "name": "CARD",
+        "brand": "VISA",
+        "masked_pan": "447411******2240"
+      },
+      "additional_fields": {
+        "canal": "WEB",
+        "reason": "cliente no reconoció el consumo",
+        "description": "solicitud por desconocimiento"
+      },
+      "lifecycle": [
+        {
+          "state": "REGISTERED",
+          "date": {
+            "utc_time": "2025-05-26T06:06:45",
+            "unix_time": 1748239605
+          }
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Se procesó correctamente la petición"
+        }
+      ]
+    }
+  }
+}
+```

@@ -1,0 +1,138 @@
+---
+title: "Consideraciones para métodos con Redirect"
+sidebarTitle: "Métodos con Redirect"
+description: "Aspectos comunes para CARD cuando usa Redirect, Cuotéalo y transferencia bancaria."
+---
+
+Esta guía reúne las consideraciones comunes para los flujos donde la autorización continúa fuera de tu checkout y luego retorna al comercio mediante un `form post`.
+
+---
+
+## Métodos que aplican
+
+<CardGroup cols={2}>
+  <Card title="CARD con Redirect" icon="credit-card">
+    Aplica cuando la autorización de tarjeta requiere continuar fuera de la sesión inicial.
+  </Card>
+
+  <Card title="Transferencia Bancaria" icon="building-columns">
+    El usuario continúa el pago fuera del checkout y luego retorna al comercio.
+  </Card>
+
+  <Card title="Cuotéalo" icon="receipt">
+    La operación continúa en una experiencia externa de pago en cuotas.
+  </Card>
+</CardGroup>
+
+---
+
+## Flujo general
+
+<Steps>
+  <Step title="Inicia la autorización">
+    Envía el `POST /charges` con el método de pago correspondiente.
+  </Step>
+
+  <Step title="Carga la URL entregada">
+    Cuando la respuesta incluya la URL de continuación del flujo, cárgala para que el usuario pueda seguir con el pago.
+  </Step>
+
+  <Step title="Recibe el retorno al comercio">
+    Cuando el usuario finalice la autorización, el orquestador redirigirá hacia la `redirect_url` enviada en el request.
+  </Step>
+
+  <Step title="Procesa el form post">
+    El retorno se realiza en formato `form post` e incluye los campos `authorization_result` y `signature`.
+  </Step>
+
+  <Step title="Valida la autenticidad">
+    Decodifica `authorization_result` y valida `signature` antes de confiar en el contenido.
+  </Step>
+
+  <Step title="Confirma desde backend">
+    Usa [Notificaciones](/payin/notificaciones) o [Consulta](/payin/consulta) como confirmación final del estado.
+  </Step>
+</Steps>
+
+---
+
+## Campos enviados al `redirect_url`
+
+| Campo | Descripción |
+| :-- | :-- |
+| `authorization_result` | Contendrá un json-string en base64 con el resultado de la autorización. |
+| `signature` | Contendrá una firma para validar que el json de respuesta es auténtico. |
+
+---
+
+## Parámetros del `authorization_result`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `success` | Indica si el proceso se realizó correctamente | `true` | String | SI |
+| `merchant_code` | Identificador del comercio | `your_merchant_code` | String | SI |
+| `merchant_operation_number` | Número de pedido de la operación | `2391645` | String | SI |
+| `transaction` | Objeto con información de la transacción | Object | Object | SI |
+| `meta` | Objeto que contiene metadatos del flujo ejecutado | Object | Object | SI |
+
+---
+
+### Objeto `authorization_result.transaction`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `transaction_id` | Identificador de la transacción | `5hk8rwa3h3cq9oyfs3a28v1ms` | String | SI |
+| `state` | Estado de la transacción | `AUTORIZADO` | String | SI |
+| `currency` | Código de la moneda autorizada | `604` | String | SI |
+| `amount` | Monto autorizado en centavos | `15000` | String | SI |
+| `processor_response` | Resultado detallado del procesamiento. Este objeto puede variar según el método de pago. | Object | Object | NO |
+
+<Note>
+  `processor_response` es variable y puede modificarse en el tiempo. Tómalo como referencial y complementa la integración con la documentación específica del método.
+</Note>
+
+---
+
+### Objeto `authorization_result.meta.status`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `code` | Código que representa el resultado del flujo ejecutado | `00` | String | SI |
+| `message_ilgn` | Mensajes resultantes del flujo | Array | Object | SI |
+
+---
+
+### Objeto `authorization_result.meta.status.message_ilgn[]`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `locale` | Localidad a nivel de lenguaje para el mensaje del flujo ejecutado | `es_PE` | String | SI |
+| `value` | Mensaje resultante del flujo ejecutado | `Procesado correctamente` | String | SI |
+
+---
+
+## Recomendaciones
+
+<Warning>
+  No cambies el estado de la orden únicamente por el retorno del navegador. La fuente final de verdad debe ser backend.
+</Warning>
+
+<Note>
+  Valida siempre `signature` antes de procesar `authorization_result`.
+</Note>
+
+<Note>
+  Maneja explícitamente escenarios donde el usuario regresa sin completar el pago o abandona el flujo.
+</Note>
+
+<Note>
+  Si no recibes confirmación S2S, realiza consulta activa con intervalos razonables.
+</Note>
+
+---
+
+## Siguiente paso
+
+<Card title="API de Consulta" icon="arrow-right" href="/payin/consulta">
+  Complementa los métodos con redirect usando consulta y reconciliación.
+</Card>

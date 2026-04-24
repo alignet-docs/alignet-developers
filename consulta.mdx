@@ -1,86 +1,222 @@
 ---
-title: "Consulta"
-sidebarTitle: "Consulta"
-description: "Verifica el estado de una transacción por método de pago en la API de Pay-me."
+title: "API de Consulta"
+sidebarTitle: "Overview"
+description: "Overview del API de consulta para verificar el estado de transacciones en PayIn."
 ---
 
-El endpoint de consulta permite obtener el estado actual de una transacción previamente autorizada. Es especialmente útil para métodos asíncronos donde el resultado final no es inmediato.
+El API de Consulta permite consultar una transacción generada previamente por el API de Autorización para ecommerce. Es la forma recomendada de confirmar el estado final desde backend, especialmente en métodos asíncronos o cuando necesitas una segunda validación del resultado.
 
----
+<ParamField path="GET /charges/{merchant_code}/{merchant_operation_number}/{transaction_id}" type="endpoint" />
 
-## Endpoint
+<CardGroup cols={1}>
+  <Card title="Pre-Producción" icon="flask">
+    <code>https://api.preprod.alignet.io/charges/{merchant_code}/{merchant_operation_number}/{transaction_id}</code>
+  </Card>
+</CardGroup>
+<CardGroup cols={1}>
+  <Card title="Producción" icon="rocket">
+    <code>https://api.alignet.io/charges/{merchant_code}/{merchant_operation_number}/{transaction_id}</code>
+  </Card>
+</CardGroup>
 
-| Ambiente | URL | Método |
-| :-- | :-- | :-- |
-| Pre-Producción | `https://api.preprod.alignet.io/charges` | `GET` |
-| Producción | `https://api.alignet.io/charges` | `GET` |
-
----
-
-## ¿Cuándo usar la consulta?
-
-<Columns cols={2}>
-  <Column>
-    <Card title="Métodos asíncronos" icon="clock">
-      Úsala para verificar el estado de pagos con **QR, Transferencia Bancaria, Cuotéalo y PagoEfectivo** — métodos donde el resultado no llega de forma inmediata.
-    </Card>
-  </Column>
-  <Column>
-    <Card title="Reintentos y reconciliación" icon="rotate">
-      Úsala cuando no recibes la notificación S2S o necesitas reconciliar el estado de una transacción en tu sistema.
-    </Card>
-  </Column>
-</Columns>
+<Note>
+  Usa este API para validar el resultado final de una operación desde backend. También aplica al flujo Checkout Web (Flex) como segunda validación luego de `responseCallback`, redirect o cualquier confirmación preliminar mostrada al usuario.
+</Note>
 
 ---
 
-## Métodos soportados
+## ¿Qué cubre esta sección?
 
-| Método | Consulta disponible |
-| :-- | :-- |
-| Tarjeta | ✅ |
-| Transferencia Bancaria | ✅ |
-| Yape | ✅ |
-| QR | ✅ |
-| Cuotéalo | ✅ |
-| PagoEfectivo | ✅ |
+<CardGroup cols={2}>
+  <Card title="Validación final" icon="shield-check">
+    Confirma desde backend si la transacción terminó en estado autorizado, pendiente, expirado, cancelado u otro estado relevante para tu negocio.
+  </Card>
+
+  <Card title="Métodos asíncronos" icon="clock">
+    Es especialmente útil para QR, Transferencia Bancaria, Cuotéalo y PagoEfectivo, donde el resultado final puede cambiar luego de la autorización inicial.
+  </Card>
+
+  <Card title="Checkout Web (Flex)" icon="globe">
+    Si integras Flex, usa esta consulta como segunda validación antes de cerrar la orden o marcar el pago como exitoso en tu sistema.
+  </Card>
+
+  <Card title="Conciliación y soporte" icon="rotate">
+    Conserva `merchant_code`, `merchant_operation_number` y `transaction_id` para conciliación, soporte operativo y seguimiento de reclamos.
+  </Card>
+</CardGroup>
 
 ---
 
-## Headers requeridos
+## Métodos disponibles
 
-| Campo | Valor | Tipo | Obligatorio |
+<CardGroup cols={2}>
+  <Card title="API de Consulta con Tarjeta" icon="credit-card" href="/payin/consulta-tarjeta">
+    Verifica el resultado de cobros con tarjeta y realiza conciliación.
+  </Card>
+
+  <Card title="API de Consulta con Yape" icon="mobile" href="/payin/consulta-yape">
+    Consulta el estado de pagos con Yape cuando necesitas respaldo adicional.
+  </Card>
+
+  <Card title="API de Consulta con Transferencia Bancaria" icon="building-columns" href="/payin/consulta-transferencia-bancaria">
+    Consulta operaciones con retorno diferido o pendientes de confirmación.
+  </Card>
+
+  <Card title="API de Consulta con QR" icon="qrcode" href="/payin/consulta-qr">
+    Úsala para validar pagos QR luego del redirect o durante polling controlado.
+  </Card>
+
+  <Card title="API de Consulta con Cuotéalo" icon="receipt" href="/payin/consulta-cuotealo">
+    Consulta el estado actualizado de operaciones en cuotas.
+  </Card>
+
+  <Card title="API de Consulta con PagoEfectivo" icon="money-bill" href="/payin/consulta-pagoefectivo">
+    Verifica operaciones que completan su confirmación fuera de la sesión inicial.
+  </Card>
+</CardGroup>
+
+---
+
+## Request
+
+<Note>
+  Antes de consumir este endpoint, solicita tu `Access Token` en [Autenticación](/autenticacion#param-post-token).
+</Note>
+
+### Path
+
+```bash
+GET {{base}}/charges/{merchant_code}/{merchant_operation_number}/{transaction_id}
+```
+
+| Campo | Descripción | Formato | Tipo |
 | :-- | :-- | :-- | :-- |
-| `Authorization` | `Bearer <Access Token>` | `String` | SI |
-| `ALG-API-VERSION` | `1709847567` | `String` | SI |
-| `payment-facilitator-code` | Código del PF — solo para Facilitadores de Pago | `String` | NO |
+| `merchant_code` | Identificador del comercio. | Cadena alfanumérica | String |
+| `merchant_operation_number` | Número de operación registrado por el comercio. | Cadena alfanumérica | String |
+| `transaction_id` | Identificador único de la transacción. Se usa para consultar una sola transacción dentro de una operación. | Cadena alfanumérica | String |
+
+### Headers
+
+| Campo | Descripción | Valor | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `Authorization` | Token de identificación creado previamente en API de Seguridad. | `Bearer {access_token}` | String | SI |
+| `ALG-API-VERSION` | Versión del API a usar. | `1709847567` | String | SI |
+| `payment-facilitator-code` | Identificador del Facilitador de Pago. | Cadena alfanumérica | String | NO |
+
+```bash
+Authorization: Bearer {access_token}
+ALG-API-VERSION: 1709847567
+payment-facilitator-code: {pf_code}
+```
 
 ---
 
-## Consideraciones
+## Response
+
+El orquestador responde el detalle de la operación y el listado de transacciones asociadas. Si consultas una transacción específica, la estructura es la misma y `operation.transactions` contendrá solo la transacción solicitada.
+
+<AccordionGroup>
+  <Accordion title="Operación" defaultOpen icon="folder-tree">
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `success` | Indica si el proceso se realizó correctamente. Valores esperados: `true` o `false`. | String | SI |
+| `merchant_code` | Identificador del comercio. | String | SI |
+| `operation` | Objeto con el detalle de la operación. | Object | SI |
+| `operation.merchant_operation_number` | Número de pedido de la operación consultada. | String | SI |
+| `operation.amount` | Monto total de la operación. | String | SI |
+| `operation.currency` | Código de moneda de la operación. | String | SI |
+| `operation.state` | Estado actual de la operación. Valores frecuentes: `REGISTRADO`, `PENDIENTE`, `AUTORIZADO`, `CANCELADO`, `EXPIRADO`, `LIQUIDADO`, `DEPOSITADO`. | String | SI |
+| `operation.transactions` | Lista de transacciones realizadas sobre la operación. Cambia según el método de pago: [Tarjeta](/payin/consulta-tarjeta), [Transferencia Bancaria](/payin/consulta-transferencia-bancaria), [QR](/payin/consulta-qr), [Yape](/payin/consulta-yape), [Cuotéalo](/payin/consulta-cuotealo), [PagoEfectivo](/payin/consulta-pagoefectivo). | Array | SI |
+
+  </Accordion>
+
+  <Accordion title="Transacción" icon="shuffle">
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].transaction_id` | Identificador único de la transacción. | String | SI |
+| `operation.transactions[].channel` | Canal en el que se realizó la transacción. Valor esperado: `ecommerce`. | String | SI |
+| `operation.transactions[].state` | Estado actual de la transacción. Puede ser `REGISTRADO`, `PENDIENTE`, `AUTORIZADO`, `CANCELADO`, `EXPIRADO`, `LIQUIDADO` o `DEPOSITADO`. | String | SI |
+| `operation.transactions[].state_reason` | Observación o motivo del estado. | String | SI |
+| `operation.transactions[].amount` | Monto de la transacción. | String | SI |
+| `operation.transactions[].currency` | Código de moneda de la transacción. | String | SI |
+| `operation.transactions[].payment_method` | Objeto con información del método de pago usado en la transacción. | Object | SI |
+| `operation.transactions[].payment_method.method_name` | Nombre del método de pago usado. Ejemplos: `CARD`, `BANK_TRANSFER`, `QR`, `YAPE`, `CUOTEALO`, `PAGOEFECTIVO`. | String | SI |
+| `operation.transactions[].payment_method.method_details` | Objeto con información específica del método. Su estructura varía por flujo y se documenta en cada página de método. | Object | SI |
+
+  </Accordion>
+
+  <Accordion title="Campos condicionales" icon="circle-info">
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].payment_method.method_details.redirect_url` | URL de redirect enviada durante la autorización. | String | NO |
+| `operation.transactions[].payment_method.method_details.callback_url` | URL de callback enviada durante la autorización. | String | NO |
+| `operation.transactions[].continue_url` | Visible en estado `PENDIENTE`. Se usa para continuar el flujo de pago en `CARD` con redirect, `BANK_TRANSFER` y `CUOTEALO`. | String | NO |
+| `operation.transactions[].expiration_date` | Visible en estado `PENDIENTE`. Objeto con la fecha de expiración de la transacción para `CARD` con redirect, `BANK_TRANSFER`, `PAGOEFECTIVO`, `QR` y `CUOTEALO`. | Object | NO |
+| `operation.transactions[].expiration_date.utc_time` | Fecha de expiración en UTC. | String | NO |
+| `operation.transactions[].expiration_date.unix_time` | Fecha de expiración en Unix time. | Integer | NO |
+| `operation.transactions[].processor_response` | Resultado detallado del procesamiento. Visible normalmente en estados como `AUTORIZADO`, `DENEGADO` o `EXTORNADO`. Su estructura cambia según el método y debe tomarse como referencial. | Object | NO |
+| `operation.transactions[].additional_fields` | Datos adicionales enviados durante la autorización. | Dictionary | NO |
+
+  </Accordion>
+
+  <Accordion title="Lifecycle y meta" icon="clock-rotate-left">
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].lifecycle` | Historial de estados por los que pasó la transacción. | Array | SI |
+| `operation.transactions[].lifecycle[].state` | Estado del ciclo de vida. Valores frecuentes: `REGISTRADO`, `PENDIENTE`, `AUTORIZADO`, `EXTORNADO`, `CANCELADO`, `EXPIRADO`, `LIQUIDADO`, `DEPOSITADO`. | String | SI |
+| `operation.transactions[].lifecycle[].date` | Objeto con la fecha del cambio de estado. | Object | SI |
+| `operation.transactions[].lifecycle[].date.utc_time` | Fecha en UTC. | String | SI |
+| `operation.transactions[].lifecycle[].date.unix_time` | Fecha en Unix time. | Integer | SI |
+| `meta` | Objeto con metadatos del flujo ejecutado. | Object | SI |
+| `meta.status` | Objeto con el resultado del flujo ejecutado. | Object | SI |
+| `meta.status.code` | Código que representa el resultado del flujo ejecutado. | String | SI |
+| `meta.status.message_ilgn` | Lista de mensajes resultantes del flujo. | Array | SI |
+| `meta.status.message_ilgn[].locale` | Localidad del mensaje. | String | SI |
+| `meta.status.message_ilgn[].value` | Mensaje resultante del flujo. | String | SI |
+
+  </Accordion>
+</AccordionGroup>
 
 <Note>
-  Se recomienda implementar un mecanismo de **polling** con intervalos razonables para métodos asíncronos — evita consultas excesivas en periodos cortos.
-</Note>
-
-<Note>
-  Si ya tienes configurada la [notificación Server-to-Server](/payin/notificaciones), la consulta activa es opcional — úsala solo como respaldo.
+  Si consultas una transacción puntual, recibirás la misma estructura de respuesta que una operación, pero `operation.transactions` incluirá solo la transacción solicitada.
 </Note>
 
 ---
 
-## Referencia técnica
+## Recomendaciones de uso
 
-La especificación completa — parámetros de consulta por método, esquemas JSON de respuesta y ejemplos — está publicada en GitHub.
+<CardGroup cols={2}>
+  <Card title="Polling controlado" icon="wave-square">
+    Si el método es asíncrono, consulta con intervalos razonables y evita usar polling agresivo como única estrategia.
+  </Card>
 
-<Card title="Ver referencia en GitHub" icon="github" href="https://github.com/alignet">
-  Tarjeta · Transferencia · Yape · QR · Cuotéalo · PagoEfectivo
-</Card>
+  <Card title="Complemento de S2S" icon="bell">
+    Si ya recibes [Notificaciones](/payin/notificaciones), usa este API como respaldo y validación adicional, no como único origen de verdad.
+  </Card>
+
+  <Card title="Flex como segunda validación" icon="globe">
+    En Checkout Web (Flex), no cierres la orden solo con el resultado visual del frontend. Confirma el estado final consultando desde backend.
+  </Card>
+
+  <Card title="Conserva identificadores" icon="key">
+    Guarda `merchant_operation_number` y `transaction_id` desde la autorización para evitar consultas ambiguas y facilitar soporte.
+  </Card>
+</CardGroup>
 
 ---
 
 ## Siguiente paso
 
-<Card title="Cancelación" icon="arrow-right">
-  Aprende cómo cancelar una transacción autorizada antes de su liquidación.
-</Card>
+<CardGroup cols={2}>
+  <Card title="API de Consulta con Tarjeta" icon="arrow-right" href="/payin/consulta-tarjeta">
+    Revisa el primer flujo específico por método para aterrizar la respuesta y validaciones de negocio.
+  </Card>
+
+  <Card title="Notificaciones" icon="bell" href="/payin/notificaciones">
+    Combina consulta con notificaciones S2S para confirmar estados sin depender del frontend.
+  </Card>
+</CardGroup>

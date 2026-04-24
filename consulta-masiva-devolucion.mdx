@@ -1,12 +1,12 @@
 ---
-title: "API de Devoluciones"
-sidebarTitle: "API de Devoluciones"
-description: "Envía solicitudes de devolución total o parcial sobre transacciones liquidadas."
+title: "API de Consulta Masiva de Devolución"
+sidebarTitle: "Consulta Masiva"
+description: "Consulta una o más solicitudes de devolución mediante filtros."
 ---
 
-El **API de Devoluciones** permite enviar una o más transacciones en estado `LIQUIDADO` a devolver. Solo está disponible para los métodos `CARD`, `YAPE` y `CUOTEALO`.
+El **API de Consulta Masiva de Devolución** permite consultar mediante filtros una o más solicitudes de devolución generadas anteriormente por el **API de Devoluciones**.
 
-<ParamField path="POST /refund" type="endpoint" />
+<ParamField path="GET /refund" type="endpoint" />
 
 <CardGroup cols={2}>
   <Card title="Pre-Producción" icon="flask">
@@ -19,12 +19,23 @@ El **API de Devoluciones** permite enviar una o más transacciones en estado `LI
 </CardGroup>
 
 <Note>
-  La devolución se procesa después del estado `AUTORIZADO`, cuando la transacción ya se encuentra en `LIQUIDADO`. Si la operación aún no fue liquidada, el mecanismo correcto es el extorno, no la devolución.
+  Esta consulta trabaja por filtros. `date_start` y `date_end` son obligatorios, mientras que el resto de parámetros ayudan a acotar la búsqueda para conciliación y seguimiento operativo.
 </Note>
 
 ---
 
 ## Request
+
+### Query Params
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `date_start` | Fecha de cuando se realizó el refund | `2025-05-26` | String | SI |
+| `date_end` | Fecha final de cuando se realizó el refund | `2025-05-26` | String | SI |
+| `merchant_code` | Código único del comercio | `41bb301e-3c37-4332-accb-ed5ec19081e4` | String | NO |
+| `merchant_operation_number` | Número de operación de un pedido | `239766` | String | NO |
+| `transaction_id` | UUID único de una transacción | `bko66gpi8czns4tcde93q96vd` | String | NO |
+| `refund_state` | Estado del refund | `REGISTERED`, `IN_PROCESS`, `RESOLVED`, `REJECTED` | String | NO |
 
 ### Headers
 
@@ -34,57 +45,6 @@ El **API de Devoluciones** permite enviar una o más transacciones en estado `LI
 | `ALG-API-VERSION` | Versión del API a usar | `1709847567` | String | SI |
 | `payment-facilitator-code` | Identificador del PF, obligatorio para Payment Facilitator | Cadena alfanumérica | String | NO |
 
-### Body
-
-| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
-| :-- | :-- | :-- | :-- | :-- |
-| `merchant_code` | Identificador del comercio | `41bb301e-3c37-4332-accb-ed5ec19081e4` | String | SI |
-| `operations` | Array que contiene objetos de transacciones a devolver | Array | Array | SI |
-| `operations[].type` | Tipo de devolución | `TOTAL`, `PARTIAL` | String | SI |
-| `operations[].merchant_operation_number` | Número de pedido de la operación | `239766` | String | SI |
-| `operations[].transaction_id` | Código alfanumérico de la transacción | `bko66gpi8czns4tcde93q96vd` | String | NO |
-| `operations[].refund_amount` | Monto a devolver en centavos | `1050` | String | SI |
-| `operations[].additional_fields` | Diccionario para enviar campos y valores personalizados como `key:value` | `external_id:21871054` | Dictionary | NO |
-
-<Note>
-  Para S/. 10.50 debes enviar `1050`. La separación de decimales se aplica según la moneda.
-</Note>
-
-### Ejemplo (JSON)
-
-```json
-{
-  "merchant_code": "41bb301e-3c37-4332-accb-ed5ec19081e4",
-  "operations": [
-    {
-      "type": "TOTAL",
-      "merchant_operation_number": "239766",
-      "transaction_id": null,
-      "refund_amount": "1050",
-      "additional_fields": {
-        "canal": "WEB",
-        "reason": "cliente no reconoció el consumo",
-        "description": "solicitud por desconocimiento"
-      }
-    }
-  ]
-}
-```
-
----
-
-## Siguiente paso
-
-<CardGroup cols={2}>
-  <Card title="Consulta Unitaria de Devolución" icon="arrow-right" href="/devoluciones/consulta-unitaria-devolucion">
-    Consulta una solicitud puntual usando `merchant_code` y `merchant_operation_number`.
-  </Card>
-
-  <Card title="Consulta Masiva de Devolución" icon="arrow-right" href="/devoluciones/consulta-masiva-devolucion">
-    Lista devoluciones por rango de fechas y filtros operativos.
-  </Card>
-</CardGroup>
-
 ---
 
 ## Response
@@ -92,28 +52,29 @@ El **API de Devoluciones** permite enviar una o más transacciones en estado `LI
 | Campo | Descripción | Ejemplo | Tipo | Obligatorio |
 | :-- | :-- | :-- | :-- | :-- |
 | `success` | Indica si el proceso se realizó correctamente | `true`, `false` | String | SI |
-| `action` | Acción ejecutada | `refund` | String | SI |
 | `merchant_code` | Identificador del comercio | `41bb301e-3c37-4332-accb-ed5ec19081e4` | String | SI |
+| `operations_count` | Cantidad de operaciones encontradas | `1` | String | SI |
 | `operations` | Array que contiene objetos de transacciones a devolver | Array | Array | SI |
 | `operations[].refund_id` | UUID único de la devolución | UUID | String | SI |
-| `operations[].state` | Estado de la solicitud | `REGISTERED`, `REJECTED` | String | SI |
+| `operations[].state` | Estado de la solicitud | `REGISTERED`, `IN_PROCESS`, `RESOLVED`, `REJECTED` | String | SI |
 | `operations[].refund_reason` | Motivo o detalle asociado al estado | `Solicitud recibida y validada` | String | SI |
-| `operations[].type` | Tipo de devolución | `TOTAL`, `PARTIAL` | String | SI |
 | `operations[].merchant_operation_number` | Número de pedido de la operación | `239766` | String | SI |
+| `operations[].type` | Tipo de devolución | `TOTAL`, `PARTIAL` | String | SI |
 | `operations[].transaction_id` | Código alfanumérico de la transacción | `bko66gpi8czns4tcde93q96vd` | String | SI |
 | `operations[].refund_amount` | Monto a devolver en centavos | `1050` | String | SI |
 | `operations[].transaction_amount` | Monto original de la transacción en centavos | `1050` | String | SI |
 | `operations[].currency` | Código ISO 4217 de la moneda de la transacción | `604` | String | SI |
-| `operations[].additional_fields` | Diccionario con campos personalizados enviados en el request | Dictionary | Dictionary | NO |
+| `operations[].additional_fields` | Diccionario para enviar campos y valores personalizados como `key:value` | Dictionary | Dictionary | NO |
 | `operations[].payment_method` | Objeto relacionado al medio y procesador de pago | Object | Object | SI |
 | `operations[].payment_method.name` | Nombre del método de pago | `CARD`, `YAPE`, `CUOTEALO` | String | SI |
 | `operations[].payment_method.brand` | Marca de la tarjeta | `VISA`, `MSCD`, `AMEX`, `DINC` | String | SI |
 | `operations[].payment_method.masked_pan` | Tarjeta enmascarada | `447411******2240` | String | SI |
-| `operations[].lifecycle` | Array con el listado de estados por los que pasó la devolución | Array | Array | SI |
-| `operations[].lifecycle[].state` | Estado de la devolución | `REGISTERED`, `REJECTED` | String | SI |
-| `operations[].lifecycle[].date` | Objeto con la fecha del cambio de estado | Object | Object | SI |
+| `operations[].lifecycle` | Array que contiene listado de los estados por los que pasó la devolución | Array | Array | SI |
+| `operations[].lifecycle[].state` | Estado de la devolución | `REGISTERED`, `IN_PROCESS`, `RESOLVED`, `REJECTED` | String | SI |
+| `operations[].lifecycle[].date` | Objeto que contiene la fecha en la que se realizó el cambio de estado | Object | Object | SI |
 | `operations[].lifecycle[].date.utc_time` | Fecha en UTC | `2025-05-26T06:06:45` | String | SI |
 | `operations[].lifecycle[].date.unix_time` | Fecha en unix time | `1748239605` | Integer | SI |
+| `meta` | Objeto que contiene metadatos del flujo ejecutado | Object | Object | SI |
 | `meta.status` | Objeto que contiene el resultado del flujo ejecutado | Object | Object | SI |
 | `meta.status.code` | Código que representa el resultado del flujo ejecutado | `00` | String | SI |
 | `meta.status.message_ilgn` | Objeto que contiene el mensaje resultante del flujo | Object | Object | SI |
@@ -125,8 +86,8 @@ El **API de Devoluciones** permite enviar una o más transacciones en estado `LI
 ```json
 {
   "success": "true",
-  "action": "refund",
   "merchant_code": "41bb301e-3c37-4332-accb-ed5ec19081e4",
+  "operations_count": "1",
   "operations": [
     {
       "refund_id": "922178aa-ce4c-4c5f-8190-82fa7e009425",
@@ -172,3 +133,17 @@ El **API de Devoluciones** permite enviar una o más transacciones en estado `LI
   }
 }
 ```
+
+---
+
+## Siguiente paso
+
+<CardGroup cols={2}>
+  <Card title="Consulta Unitaria" icon="arrow-right">
+    Usa la consulta unitaria cuando ya conozcas el `merchant_operation_number` exacto.
+  </Card>
+
+  <Card title="Códigos de Respuesta - Devoluciones" icon="arrow-right">
+    Revisa cómo interpretar `meta.status.code` para todas las APIs del módulo.
+  </Card>
+</CardGroup>

@@ -1,77 +1,334 @@
 ---
-title: "Cancelación"
-sidebarTitle: "Cancelación"
-description: "Cancela una transacción autorizada antes de que sea liquidada en la API de Pay-me."
+title: "API de Cancelación"
+sidebarTitle: "API de Cancelación"
+description: "Cancela o extorna una transacción generada previamente por el API de autorización ecommerce."
+icon: "xmark"
 ---
 
-El endpoint de cancelación permite anular una transacción que se encuentre en estado `AUTORIZADO` antes de que sea procesada para liquidación.
+El API de Cancelación permite cancelar una transacción generada previamente por el API de Autorización para ecommerce.
 
----
+Con el método `DELETE` del orquestador, las transacciones se pueden cancelar o extornar según el estado en el que se encuentren.
 
-## Endpoint
+<ParamField path="DELETE /charges/{merchant_code}/{merchant_operation_number}" type="endpoint" />
 
-| Ambiente | URL | Método |
-| :-- | :-- | :-- |
-| Pre-Producción | `https://api.preprod.alignet.io/charges` | `DELETE` |
-| Producción | `https://api.alignet.io/charges` | `DELETE` |
+<CardGroup cols={1}>
+  <Card title="Pre-Producción" icon="flask">
+    <code>https://api.preprod.alignet.io/charges/{merchant_code}/{merchant_operation_number}</code>
+  </Card>
+</CardGroup>
+<CardGroup cols={1}>
+  <Card title="Producción" icon="rocket">
+    <code>https://api.alignet.io/charges/{merchant_code}/{merchant_operation_number}</code>
+  </Card>
+</CardGroup>
 
----
-
-## ¿Cuándo usar la cancelación?
-
-<Warning>
-  Solo puedes cancelar transacciones en estado **`AUTORIZADO`**. Una vez que la transacción pasa a estado `LIQUIDADO` debes usar el [API de Devoluciones](/devoluciones/introduccion).
-</Warning>
-
----
-
-## Métodos soportados
-
-| Método | Cancelación disponible |
-| :-- | :-- |
-| Tarjeta | ✅ |
-| Transferencia Bancaria | ✅ |
-| Yape | ✅ |
-| QR | ✅ |
-| Cuotéalo | ✅ |
-| PagoEfectivo | ✅ |
+<Note>
+  Este endpoint cambia el estado de la operación según el estado actual de la transacción y el método de pago. Si necesitas confirmar el resultado final luego del cambio, apóyate también en [Consulta](/payin/consulta) y [Notificaciones](/payin/notificaciones).
+</Note>
 
 ---
 
-## Headers requeridos
+## ¿Qué cubre esta sección?
 
-| Campo | Valor | Tipo | Obligatorio |
+<CardGroup cols={2}>
+  <Card title="Cancelación" icon="ban">
+    Las transacciones en estado `REGISTRADO` o `PENDIENTE` pasan a estado `CANCELADO` para `CARD` cuando usa Redirect, `CUOTEALO`, `QR`, `BANK_TRANSFER` y `PAGOEFECTIVO`.
+  </Card>
+
+  <Card title="Extorno" icon="rotate-left">
+    Las transacciones en estado `AUTORIZADO` pasan a estado `EXTORNADO` para `CARD` y `YAPE`.
+  </Card>
+
+  <Card title="Validación backend" icon="shield-check">
+    Usa este endpoint para cerrar correctamente una operación desde backend cuando el negocio requiera anular o revertir el cobro.
+  </Card>
+
+  <Card title="Manejo por estado" icon="diagram-project">
+    El comportamiento no es igual para todos los métodos. La transición depende del estado actual de la transacción.
+  </Card>
+</CardGroup>
+
+---
+
+## Request
+
+<Note>
+  Antes de consumir este endpoint, solicita tu `Access Token` en [Autenticación](/autenticacion#param-post-token).
+</Note>
+
+### Path
+
+```bash
+DELETE {{base}}/charges/{merchant_code}/{merchant_operation_number}
+```
+
+| Campo | Descripción | Formato | Tipo |
 | :-- | :-- | :-- | :-- |
-| `Authorization` | `Bearer <Access Token>` | `String` | SI |
-| `ALG-API-VERSION` | `1709847567` | `String` | SI |
-| `payment-facilitator-code` | Código del PF — solo para Facilitadores de Pago | `String` | NO |
+| `merchant_code` | Identificador del comercio. | Cadena alfanumérica | String |
+| `merchant_operation_number` | Número de operación. | Cadena alfanumérica | String |
+
+### Headers
+
+| Campo | Descripción | Valor | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `Authorization` | Token de identificación para uso del API creado previamente en API de Seguridad. | `Bearer {access_token}` | String | SI |
+| `ALG-API-VERSION` | Versión del API a usar. | `1709847567` | String | SI |
+| `payment-facilitator-code` | Identificador del PF. Uso obligatorio para PF. | Cadena alfanumérica | String | NO |
+
+```bash
+Authorization: Bearer {access_token}
+ALG-API-VERSION: 1709847567
+payment-facilitator-code: {pf_code}
+```
 
 ---
 
-## Consideraciones
+## Response
+
+Se devuelve la misma estructura general que el [API de Consulta](/payin/consulta), con las transacciones que se pudieron cancelar o extornar de forma exitosa.
+
+<AccordionGroup>
+  <Accordion title="Operación" defaultOpen icon="folder-tree">
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `success` | Indica si el proceso se realizó correctamente. Valores esperados: `true` o `false`. | Boolean | SI |
+| `merchant_code` | Identificador del comercio. | String | SI |
+| `merchant_operation_number` | Número de pedido de la operación cancelada o extornada. Puede estar presente a nivel raíz según la integración. | String | NO |
+| `operation` | Visible cuando se encontró el `merchant_operation_number`. Objeto con el detalle de la operación. | Object | SI |
+| `operation.merchant_operation_number` | Número de pedido de la operación cancelada o extornada. | String | SI |
+| `operation.amount` | Monto de la operación. | String | SI |
+| `operation.currency` | Código de moneda de la operación. | String | SI |
+| `operation.state` | Visible cuando la operación se pudo cancelar o extornar. Estado al cual cambió la operación. Valores frecuentes: `CANCELADO`, `EXTORNADO`. | String | SI |
+| `operation.transactions` | Lista de transacciones canceladas o extornadas sobre la operación. Este objeto cambia según el método de pago: [Tarjeta](/payin/consulta-tarjeta), [Transferencia Bancaria](/payin/consulta-transferencia-bancaria), [QR](/payin/consulta-qr), [Yape](/payin/consulta-yape), [Cuotéalo](/payin/consulta-cuotealo), [PagoEfectivo](/payin/consulta-pagoefectivo). | Array | SI |
+
+  </Accordion>
+
+  <Accordion title="Transacciones" icon="shuffle">
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].transaction_id` | Identificador único de la transacción afectada. | String | SI |
+| `operation.transactions[].channel` | Canal de la transacción. Valor esperado: `ecommerce`. | String | SI |
+| `operation.transactions[].state` | Estado final de la transacción luego del cambio. Valores frecuentes: `CANCELADO`, `EXTORNADO`. | String | SI |
+| `operation.transactions[].state_reason` | Observación o motivo del cambio de estado. | String | SI |
+| `operation.transactions[].amount` | Monto de la transacción. | String | SI |
+| `operation.transactions[].currency` | Código de la moneda de la transacción. | String | SI |
+| `operation.transactions[].payment_method` | Objeto con información del método de pago usado. | Object | SI |
+| `operation.transactions[].continue_url` | Puede aparecer si el flujo original generó URL de continuación. | String | NO |
+| `operation.transactions[].expiration_date` | Puede aparecer si el flujo original incluía expiración. | Object | NO |
+| `operation.transactions[].processor_response` | Resultado devuelto por la procesadora. En extornos puede incluir datos específicos como `reverse_date` o `reverse_code`. | Object | NO |
+| `operation.transactions[].authentication_result` | Resultado de autenticación asociado a la transacción, cuando aplique. | Object | NO |
+| `operation.transactions[].risk_evaluation` | Resultado de evaluación antifraude, cuando aplique. | Object | NO |
+| `operation.transactions[].additional_fields` | Datos adicionales enviados en la autorización. | Object | NO |
+| `operation.transactions[].lifecycle` | Historial de estados por los que pasó la transacción. | Array | SI |
+
+  </Accordion>
+
+  <Accordion title="Meta" icon="clock-rotate-left">
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `meta` | Objeto que contiene metadatos del flujo ejecutado. | Object | SI |
+| `meta.status` | Objeto que contiene el resultado del flujo ejecutado. | Object | SI |
+| `meta.status.code` | Código que representa el resultado del flujo ejecutado. | String | SI |
+| `meta.status.message_ilgn` | Lista de mensajes resultantes del flujo. | Array | SI |
+| `meta.status.message_ilgn[].locale` | Localidad a nivel de lenguaje para el mensaje del flujo ejecutado. | String | SI |
+| `meta.status.message_ilgn[].value` | Mensaje resultante del flujo ejecutado. | String | SI |
+
+  </Accordion>
+</AccordionGroup>
 
 <Note>
-  La cancelación es irreversible. Una vez ejecutada, la transacción pasa a estado `CANCELADO` y no puede recuperarse.
-</Note>
-
-<Note>
-  Si la transacción ya fue **liquidada**, usa el [API de Devoluciones](/devoluciones/introduccion) en su lugar.
+  La estructura interna de `operation.transactions[]` se mantiene alineada con el API de Consulta. Lo que cambia principalmente es el estado final alcanzado después de la cancelación o el extorno.
 </Note>
 
 ---
 
-## Referencia técnica
+## Ejemplo: cancelación exitosa
 
-La especificación completa — parámetros, esquema JSON y ejemplos de request y response — está publicada en GitHub.
+```json
+{
+  "success": true,
+  "merchant_code": "abc",
+  "merchant_operation_number": "2836824",
+  "operation": {
+    "merchant_operation_number": "2836824",
+    "amount": "1000",
+    "currency": "604",
+    "created_at": {
+      "utc_time": "2024-07-05T16:46:12",
+      "unix_time": 1720197972
+    },
+    "state": "CANCELADO",
+    "transactions": [
+      {
+        "transaction_id": "9namjcnjvqzas2t33xyfrqr2h",
+        "channel": "ecommerce",
+        "state": "CANCELADO",
+        "state_reason": "Usuario cancelo el metodo de pago",
+        "amount": "1000",
+        "currency": "604",
+        "additional_fields": null,
+        "payment_method": {
+          "method_name": "PAGOEFECTIVO",
+          "method_details": {
+            "callback_url": "https://jjap9ekgee.execute-api.us-east-1.amazonaws.com/development/redirect/prueba/merchant_notification_response"
+          }
+        },
+        "expiration_date": null,
+        "processor_response": null,
+        "lifecycle": [
+          {
+            "state": "REGISTRADO",
+            "date": {
+              "utc_time": "2024-07-05T16:46:12",
+              "unix_time": 1720197972
+            }
+          },
+          {
+            "state": "PENDIENTE",
+            "date": {
+              "utc_time": "2024-07-05T16:46:13",
+              "unix_time": 1720197973
+            }
+          },
+          {
+            "state": "CANCELADO",
+            "date": {
+              "utc_time": "2024-07-05T16:47:22",
+              "unix_time": 1720198042
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Se proceso correctamente la peticion"
+        }
+      ]
+    }
+  }
+}
+```
 
-<Card title="Ver referencia en GitHub" icon="github" href="https://github.com/alignet">
-  Esquema JSON · Ejemplos · Colección Postman
-</Card>
+---
+
+## Ejemplo: extorno exitoso
+
+```json
+{
+  "success": true,
+  "merchant_code": "abc",
+  "merchant_operation_number": "8522366",
+  "operation": {
+    "merchant_operation_number": "8522366",
+    "amount": "150",
+    "currency": "604",
+    "created_at": {
+      "utc_time": "2024-07-05T20:34:18",
+      "unix_time": 1720211658
+    },
+    "state": "EXTORNADO",
+    "transactions": [
+      {
+        "transaction_id": "0fuwnd6miwsomisn0ikqivav9",
+        "channel": "ecommerce",
+        "state": "EXTORNADO",
+        "state_reason": "Pago anulado",
+        "amount": "150",
+        "currency": "604",
+        "additional_fields": null,
+        "payment_method": {
+          "method_name": "CARD",
+          "method_details": {
+            "redirect_url": null,
+            "callback_url": null,
+            "masked_pan": "545545******3401",
+            "brand": "MASTERCARD",
+            "bin": "545545",
+            "last_pan": "3401",
+            "card_type": "CIRRUS",
+            "card_country": "PE",
+            "issuer": "SCOTIABANK PERU S.A.A."
+          }
+        },
+        "continue_url": null,
+        "expiration_date": null,
+        "risk_evaluation": null,
+        "authentication_result": null,
+        "processor_response": {
+          "reverse_date": "05-07-2024 20:34:19",
+          "reverse_code": "T90261",
+          "brand_transaction_id": "0705203422939657",
+          "result_message": {
+            "code": "00",
+            "description": "Aprobado"
+          }
+        },
+        "lifecycle": [
+          {
+            "state": "REGISTRADO",
+            "date": {
+              "utc_time": "2024-07-05T20:34:18",
+              "unix_time": 1720211658
+            }
+          },
+          {
+            "state": "PENDIENTE",
+            "date": {
+              "utc_time": "2024-07-05T20:34:19",
+              "unix_time": 1720211659
+            }
+          },
+          {
+            "state": "AUTORIZADO",
+            "date": {
+              "utc_time": "2024-07-05T20:34:24",
+              "unix_time": 1720211664
+            }
+          },
+          {
+            "state": "EXTORNADO",
+            "date": {
+              "utc_time": "2024-07-05T21:34:24",
+              "unix_time": 1720211664
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Se proceso correctamente la peticion"
+        }
+      ]
+    }
+  }
+}
+```
 
 ---
 
 ## Siguiente paso
 
-<Card title="Notificaciones" icon="arrow-right">
-  Configura tu endpoint para recibir confirmaciones Server-to-Server.
-</Card>
+<CardGroup cols={2}>
+  <Card title="API de Consulta" icon="arrow-right" href="/payin/consulta">
+    Confirma el estado final de la operación y revisa el detalle por método cuando lo necesites.
+  </Card>
+
+  <Card title="Notificaciones" icon="bell" href="/payin/notificaciones">
+    Complementa la cancelación con notificaciones S2S para trazabilidad operativa.
+  </Card>
+</CardGroup>

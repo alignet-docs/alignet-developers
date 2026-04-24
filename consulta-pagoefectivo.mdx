@@ -1,0 +1,288 @@
+---
+title: "Api de Consulta con PagoEfectivo"
+sidebarTitle: "PagoEfectivo"
+description: "Consulta el estado de una operación con PagoEfectivo en PayIn."
+---
+
+Usa esta consulta para verificar operaciones con PagoEfectivo cuyo resultado puede confirmarse fuera de la sesión inicial del checkout.
+
+<ParamField path="GET /charges/{merchant_code}/{merchant_operation_number}/{transaction_id}" type="endpoint" />
+
+<Note>
+  Este flujo usa la misma estructura general documentada en el [Overview de Consulta](/payin/consulta). Aquí se detalla específicamente el objeto `operation.transactions[]` para pagos con PagoEfectivo.
+</Note>
+
+---
+
+## ¿Cuándo usarla?
+
+<CardGroup cols={2}>
+  <Card title="Pagos diferidos" icon="timer">
+    Cuando el usuario completa el pago después de abandonar la sesión principal.
+  </Card>
+
+  <Card title="Confirmación backend" icon="server">
+    Cuando necesitas una fuente confiable del estado final antes de actualizar la orden.
+  </Card>
+
+  <Card title="CIP pendiente" icon="receipt">
+    Cuando necesitas recuperar el `cip`, la `cip_url` o la expiración mientras el pago sigue pendiente.
+  </Card>
+
+  <Card title="Conciliación" icon="rotate">
+    Cuando debes validar pagos confirmados por PagoEfectivo y conciliarlos con tu orden.
+  </Card>
+</CardGroup>
+
+---
+
+## Consideraciones
+
+<Note>
+  Conserva `merchant_code`, `merchant_operation_number` y `transaction_id` desde la autorización para consultar sin ambigüedad.
+</Note>
+
+<Note>
+  En esta documentación se usa `method_details` para mantener consistencia con el resto de la referencia. Si en material previo encuentras `method_detail`, trátalo como el mismo objeto.
+</Note>
+
+<Note>
+  Los campos de `processor_response` para PagoEfectivo pueden variar según el estado de la operación. Tómalos como referenciales.
+</Note>
+
+---
+
+## Response
+
+Objeto `operation.transactions[]` para pagos con PagoEfectivo dentro de la trama de respuesta del [API de Consulta](/payin/consulta).
+
+### Objeto `operation.transactions[]`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].transaction_id` | Identificador único de la transacción. | String | SI |
+| `operation.transactions[].channel` | Canal por el cual se realizó la transacción. Valor esperado: `ecommerce`. | String | SI |
+| `operation.transactions[].state` | Estado actual de la transacción. Valores frecuentes: `PENDIENTE`, `INVALIDO`, `AUTORIZADO`, `DENEGADO`, `CANCELADO`, `EXPIRADO`, `LIQUIDADO`. | String | SI |
+| `operation.transactions[].state_reason` | Observación o detalle del estado. | String | SI |
+| `operation.transactions[].amount` | Monto de la transacción. | String | SI |
+| `operation.transactions[].currency` | Código de la moneda de la operación. | String | SI |
+| `operation.transactions[].payment_method` | Objeto que contiene información sobre el método de pago usado en la transacción. | Object | SI |
+| `operation.transactions[].payment_method.method_name` | Nombre del método de pago usado en la transacción. Valor esperado: `PAGOEFECTIVO`. | String | SI |
+| `operation.transactions[].payment_method.method_details` | Objeto que contiene información detallada relacionada al método. | Object | NO |
+| `operation.transactions[].expiration_date` | Visible en estado `PENDIENTE`. Objeto que contiene la fecha en la que expirará la transacción. | Object | NO |
+| `operation.transactions[].processor_response` | Visible normalmente en estado `PENDIENTE` o `AUTORIZADO`. Objeto que contiene el resultado devuelto por la procesadora. | Object | NO |
+| `operation.transactions[].additional_fields` | Objeto que contiene los datos adicionales de la transacción enviados en la autorización. | Object | NO |
+| `operation.transactions[].lifecycle` | Array que contiene el listado de estados por los cuales pasó la transacción. | Array | SI |
+
+---
+
+### Objeto `operation.transactions[].payment_method.method_details`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].payment_method.method_details.callback_url` | URL del callback enviado en la autorización. | String | NO |
+
+---
+
+### Objeto `operation.transactions[].expiration_date`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].expiration_date.utc_time` | Fecha en UTC. | String | NO |
+| `operation.transactions[].expiration_date.unix_time` | Fecha en Unix time. | Integer | NO |
+
+---
+
+### Objeto `operation.transactions[].processor_response`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].processor_response.cip` | Visible normalmente en estado `PENDIENTE` o `AUTORIZADO`. Código CIP de PagoEfectivo. | String | NO |
+| `operation.transactions[].processor_response.cip_url` | Visible normalmente en estado `PENDIENTE`. URL de PagoEfectivo con el detalle e indicaciones de pago. | String | NO |
+| `operation.transactions[].processor_response.payment_date` | Visible normalmente en estado `AUTORIZADO`. Fecha de pago reportada por PagoEfectivo. | String | NO |
+| `operation.transactions[].processor_response.operationNumber` | Visible normalmente en estado `AUTORIZADO`. Identificador de PagoEfectivo. | String | NO |
+| `operation.transactions[].processor_response.result_message` | Visible normalmente en estado `PENDIENTE`. Objeto que contiene el mensaje del resultado de la autorización. | Object | NO |
+
+---
+
+### Objeto `operation.transactions[].processor_response.result_message`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].processor_response.result_message.code` | Código del resultado de la autorización. | String | NO |
+| `operation.transactions[].processor_response.result_message.description` | Descripción del resultado de la autorización. | String | NO |
+
+---
+
+### Objeto `operation.transactions[].lifecycle`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].lifecycle[].state` | Estado de la transacción. Valores frecuentes: `REGISTRADO`, `PENDIENTE`, `INVALIDO`, `AUTORIZADO`, `DENEGADO`, `CANCELADO`, `EXPIRADO`, `LIQUIDADO`. | String | SI |
+| `operation.transactions[].lifecycle[].date` | Objeto que contiene la fecha en la que se realizó el cambio de estado. | Object | SI |
+
+---
+
+### Objeto `operation.transactions[].lifecycle[].date`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].lifecycle[].date.utc_time` | Fecha en UTC. | String | SI |
+| `operation.transactions[].lifecycle[].date.unix_time` | Fecha en Unix time. | Integer | SI |
+
+---
+
+## Ejemplo: pendiente
+
+Response de consulta de PagoEfectivo con estado `PENDIENTE`.
+
+```json
+{
+  "success": true,
+  "merchant_code": "abc",
+  "operation": {
+    "merchant_operation_number": "7649167",
+    "amount": "121900",
+    "currency": "604",
+    "state": "PENDIENTE",
+    "transactions": [
+      {
+        "transaction_id": "a9e9040spd17ba3tdw42u4uv3",
+        "state": "PENDIENTE",
+        "state_reason": "Codigo CIP generado exitosamente",
+        "amount": "121900",
+        "currency": "604",
+        "additional_fields": null,
+        "payment_method": {
+          "method_name": "PAGOEFECTIVO",
+          "method_details": {
+            "callback_url": "https://pay-me.com/callback"
+          }
+        },
+        "expiration_date": {
+          "utc_time": "2024-07-06T16:20:16.345140+00:00",
+          "unix_time": 1720282816
+        },
+        "processor_response": {
+          "cip": "1508405",
+          "cip_url": "https://pre1a.payment.pagoefectivo.pe/72217FA5-4580-4B16-A345-24F028F53356.html",
+          "result_message": {
+            "code": "100",
+            "description": "Solicitud exitosa."
+          }
+        },
+        "lifecycle": [
+          {
+            "state": "REGISTRADO",
+            "date": {
+              "utc_time": "2024-07-05T16:20:16",
+              "unix_time": 1720196416.222
+            }
+          },
+          {
+            "state": "PENDIENTE",
+            "date": {
+              "utc_time": "2024-07-05T16:20:16",
+              "unix_time": 1720196416.305
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Se proceso correctamente la peticion"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Ejemplo: autorizada
+
+Response de consulta de PagoEfectivo con estado `AUTORIZADO`.
+
+```json
+{
+  "success": true,
+  "merchant_code": "abc",
+  "operation": {
+    "merchant_operation_number": "2836824",
+    "amount": "1000",
+    "currency": "604",
+    "state": "AUTORIZADO",
+    "transactions": [
+      {
+        "transaction_id": "9namjcnjvqzas2t33xyfrqr2h",
+        "state": "AUTORIZADO",
+        "state_reason": "Pago exitoso",
+        "amount": "1000",
+        "currency": "604",
+        "additional_fields": null,
+        "payment_method": {
+          "method_name": "PAGOEFECTIVO",
+          "method_details": {
+            "callback_url": "https://pay-me.com/callback"
+          }
+        },
+        "expiration_date": null,
+        "processor_response": {
+          "payment_date": "2024-06-24T11:01:20-05:00",
+          "cip": "1493006",
+          "operationNumber": "1057462"
+        },
+        "lifecycle": [
+          {
+            "state": "REGISTRADO",
+            "date": {
+              "utc_time": "2024-07-05T16:46:12",
+              "unix_time": 1720197972.931
+            }
+          },
+          {
+            "state": "PENDIENTE",
+            "date": {
+              "utc_time": "2024-07-05T16:46:13",
+              "unix_time": 1720197973.047
+            }
+          },
+          {
+            "state": "AUTORIZADO",
+            "date": {
+              "utc_time": "2024-07-05T16:47:22",
+              "unix_time": 1720198042.642
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Se proceso correctamente la peticion"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Siguiente paso
+
+<Card title="API de Cancelación" icon="arrow-right" href="/payin/cancelacion">
+  Revisa el flujo de cancelación si tu operación aún puede anularse.
+</Card>

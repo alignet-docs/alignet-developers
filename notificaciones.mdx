@@ -1,106 +1,123 @@
 ---
-title: "Notificaciones"
-sidebarTitle: "Notificaciones"
-description: "Configura tu endpoint para recibir y verificar notificaciones Server-to-Server de Pay-me."
+title: "API de Notificaciones S2S"
+sidebarTitle: "API de Notificaciones S2S"
+description: "Recibe, valida y prueba la notificación Server-to-Server del resultado final de autorización."
+icon: "bell"
 ---
 
-Pay-me notifica el resultado final de cada transacción enviando un `POST` al endpoint que configures en tu servidor. Esto es especialmente crítico para métodos asíncronos donde el resultado no es inmediato.
+Pay-me notifica el resultado final de la autorización enviando un `POST` a la `callback_url` configurada por el comercio. Este canal es clave para confirmar estados finales desde backend, especialmente en métodos asíncronos o en flujos donde el usuario puede abandonar el frontend.
 
 ---
 
-## ¿Cómo funciona?
+## Panorama general
+
+<CardGroup cols={2}>
+  <Card title="Registro del endpoint" icon="link">
+    Comparte tu URL S2S con el equipo de Pay-me o Alignet para que pueda quedar registrada y validada en la configuración del merchant cuando aplique.
+  </Card>
+
+  <Card title="Canal backend" icon="server">
+    La notificación viaja de servidor a servidor y no depende del navegador del comprador.
+  </Card>
+
+  <Card title="Firma digital" icon="shield-check">
+    Cada notificación incluye un header `signature` que debes validar con la llave pública del ambiente.
+  </Card>
+
+  <Card title="Fuente de confirmación" icon="badge-check">
+    Usa este canal para confirmar el resultado final de la autorización junto con [Consulta](/payin/consulta).
+  </Card>
+
+  <Card title="Reintentos" icon="rotate">
+    Tu endpoint debe responder `HTTP 200` en menos de 10 segundos o Pay-me reintentará más adelante.
+  </Card>
+</CardGroup>
+
+<Note>
+  Si el método usa `callback_url`, prepara un endpoint backend público y accesible por HTTPS. Además, según el esquema de integración, esa URL puede ser compartida con Pay-me o Alignet para configurarla también a nivel del merchant del comercio. No dependas solo del retorno del usuario para cambiar el estado de la orden.
+</Note>
+
+---
+
+## Flujo general
 
 <Steps>
-  <Step title="Configura tu endpoint">
-    Define una URL pública en tu servidor que pueda recibir peticiones `POST` de Pay-me. Compártela con tu asesor comercial para que sea registrada.
+  <Step title="Configura tu callback">
+    Define una URL S2S pública y compártela con el equipo de Pay-me o Alignet. En los flujos que lo soportan puedes enviarla como `callback_url`, y cuando aplique también puede quedar registrada a nivel del merchant del comercio.
   </Step>
-  <Step title="Recibe la notificación">
-    Pay-me enviará un `POST` con el resultado final de la transacción en formato JSON, incluyendo el estado, el método de pago y los datos de la operación.
+
+  <Step title="Recibe el POST">
+    Pay-me enviará el resultado final de la autorización en formato `application/json` al endpoint configurado.
   </Step>
-  <Step title="Verifica el signature">
-    Cada notificación incluye un `signature` en el header generado con `SHA512withRSA`. Debes validarlo con la llave pública de Pay-me antes de procesar la notificación.
+
+  <Step title="Valida la firma">
+    Verifica el header `signature` con la llave pública del ambiente usando el body crudo recibido.
   </Step>
-  <Step title="Responde con HTTP 200">
-    Tu servidor debe responder con `HTTP 200` en un máximo de **10 segundos**. Si Pay-me no recibe esa respuesta reintentará el envío.
+
+  <Step title="Procesa con idempotencia">
+    Guarda el evento, valida el estado y evita procesar dos veces la misma transacción.
+  </Step>
+
+  <Step title="Responde HTTP 200">
+    Devuelve `HTTP 200` en menos de 10 segundos cuando la notificación haya sido aceptada por tu sistema.
   </Step>
 </Steps>
 
 ---
 
-## Payload de la notificación
+## Qué conviene validar
 
-### Header
+<AccordionGroup>
+  <Accordion title="Campos mínimos" defaultOpen icon="list-check">
+    Confirma la presencia de `success`, `action`, `merchant_code`, `merchant_operation_number`, `transaction.transaction_id`, `transaction.state`, `transaction.amount`, `transaction.currency` y `meta.status`.
+  </Accordion>
 
-| Campo | Descripción | Tipo |
-| :-- | :-- | :-- |
-| `signature` | Firma digital para verificar la autenticidad del payload | `String` |
+  <Accordion title="Body crudo" icon="file-code">
+    Para verificar la firma usa el body exactamente como llegó por HTTP. No reserialices el JSON ni reordenes llaves antes de validar, porque eso cambia los bytes firmados.
+  </Accordion>
 
-### Body
+  <Accordion title="Idempotencia" icon="copy">
+    Usa `merchant_operation_number` y `transaction.transaction_id` como claves de correlación para ignorar duplicados y soportar reintentos.
+  </Accordion>
 
-| Campo | Descripción | Tipo | Obligatorio |
-| :-- | :-- | :-- | :-- |
-| `success` | Indica si el proceso se realizó correctamente: `true` o `false` | `String` | SI |
-| `merchant_code` | Identificador del comercio | `String` | SI |
-| `merchant_operation_number` | Número de pedido de la operación | `String` | SI |
-| `transaction.transaction_id` | Identificador único de la transacción | `String` | SI |
-| `transaction.state` | Estado: `AUTORIZADO`, `DENEGADO`, `INVALIDO` | `String` | SI |
-| `transaction.currency` | Código ISO 4217 de la moneda | `String` | SI |
-| `transaction.amount` | Monto en centavos | `String` | SI |
-| `transaction.processor_response` | Resultado detallado del procesamiento — varía según el método de pago | `Object` | NO |
-| `meta.status.code` | Código de resultado del flujo | `String` | SI |
-| `meta.status.message_ilgn.[].value` | Mensaje del resultado | `String` | SI |
-
-### Ejemplo
-
-```json
-{
-  "success": "true",
-  "action": "authorize",
-  "merchant_code": "b0deb6f3-e51a-48a7-9268-f1441d46f7bd",
-  "merchant_operation_number": "2391645",
-  "transaction": {
-    "transaction_id": "5hk8rwa3h3cq9oyfs3a28v1ms",
-    "state": "AUTORIZADO",
-    "amount": "15000",
-    "currency": "604",
-    "processor_response": {
-      "date": "17-01-2024 12:27:46",
-      "authorization_code": "055552",
-      "result_message": {
-        "code": "00",
-        "description": "Approval and completed successfully"
-      }
-    }
-  },
-  "meta": {
-    "status": {
-      "code": "00",
-      "message_ilgn": [
-        {
-          "locale": "es_PE",
-          "value": "Procesado correctamente"
-        }
-      ]
-    }
-  }
-}
-```
+  <Accordion title="Confirmación backend" icon="database">
+    Si tu sistema rechaza la notificación o tienes dudas sobre el estado, realiza una verificación adicional con [API de Consulta](/payin/consulta).
+  </Accordion>
+</AccordionGroup>
 
 ---
 
-## Verificación del signature
+## Verificación del `signature`
 
-El `signature` es una firma digital generada por Pay-me usando el algoritmo `SHA512withRSA` con una llave privada RSA de 2048 bits. Debes verificarla usando la llave pública correspondiente a tu ambiente.
+El `signature` es una firma digital generada por Pay-me con una llave privada asimétrica. Su objetivo es proteger la integridad del contenido enviado al comercio tanto en `ServerToServer` como en flujos de `redirect`.
 
-<Warning>
-  **Nunca proceses una notificación sin verificar el signature.** Un signature inválido indica que la petición no proviene de Pay-me o que el contenido fue modificado en tránsito.
-</Warning>
+### Especificaciones técnicas
 
-### Llaves públicas por ambiente
+| Propiedad | Valor |
+| :-- | :-- |
+| Tipo de llave | Asimétrica |
+| Especificación | `RSA_2048` |
+| Longitud | `2048 bits` |
+| Uso | Firma y verificación |
+| Algoritmo | `SHA512withRSA` |
+| Longitud del `signature` | Hasta `512` caracteres |
+
+### Paso 1: identifica el contenido firmado
+
+| Flujo | Dato que debes verificar |
+| :-- | :-- |
+| `Redirect` | El valor de `authorization_result` recibido en el retorno del comercio |
+| `ServerToServer` | El body completo y crudo de la petición recibida |
+
+### Paso 2: usa la llave pública del ambiente
 
 <Tabs>
   <Tab title="Pre-Producción">
-  -----BEGIN PUBLIC KEY-----
+
+  Archivo: `Publickey-6f031bb8-45cb-4aed-9375-80d8dbb9c8fd.pem`
+
+```pem
+-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkmpsqcJzjQ45u0K7JOQJ
 tfjXGeMXNwsaU6JDGSdKwSDGGXt1m551p2mlG0oGkmn9FPbp4E0lOQzkL/qhHB1Y
 pTP2MqecJ7pMTonEeXOv0P6uwR9yvV5lxK17nE3+xgfcpFfxT5GAI/wZsQJ3+Lsv
@@ -109,8 +126,14 @@ qh3+IcRG2Hb2BUdM5pYZFOUBGGSZWc/ULPtsFx2DSjI9peJ9kYibpaokphP+Cypz
 KjPD4wvzssrqbAQvkk56XOcE9ML0iJhcIY1/xgNSiHqij0Ql1UTU5nAIJR5/paOn
 hQIDAQAB
 -----END PUBLIC KEY-----
-</Tab>
+```
+  </Tab>
+
   <Tab title="Producción">
+
+  Archivo: `Publickey-4e68a306-6f87-47f8-b5a2-e1c0129515fa.pem`
+
+```pem
 -----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwEAOZB5HxPxraV/SmOUC
 i+Y/A2tQ9djLWTJ7yx4kXzdDuy0yojZMwA+p5jUExN0ZvW78Td2d29KpmXu7hdTk
@@ -120,88 +143,130 @@ Y2UKdyss7GFxnQ7BWahci2vlUUuR2wjKniN1XLQWX1gPw1kZhU4EcKcMbymSv7GA
 Yg+hKfandUC3/8fXWtyff2W8iQA6uNDvJ3uG61bOMEKEJwlc1piZxiBsuQkmeGVs
 kwIDAQAB
 -----END PUBLIC KEY-----
-</Tab>
+```
+  </Tab>
 </Tabs>
-
-### Especificaciones técnicas
-
-| Propiedad | Valor |
-| :-- | :-- |
-| Tipo de llave | Asimétrica |
-| Especificación | RSA\_2048 |
-| Longitud | 2048 bits |
-| Uso | Firma y verificación |
-| Algoritmo | `SHA512withRSA` |
-| Longitud del signature | Hasta 512 caracteres |
-
-### Pasos de verificación
-
-<Steps>
-  <Step title="Identifica el campo a cifrar">
-    El campo a verificar depende del flujo:
-
-    - **Notificación S2S** — el `body` completo de la petición recibida.
-    - **Redirección** — el parámetro `authorization_result` (JSON en Base64) recibido en la URL de retorno.
-  </Step>
-  <Step title="Decodifica el signature">
-    El `signature` viene en Base64 — decodifícalo antes de usarlo en la verificación.
-  </Step>
-  <Step title="Verifica con la llave pública">
-    Usa la llave pública del ambiente correspondiente para verificar que el signature coincide con el campo identificado en el paso 1.
-  </Step>
-</Steps>
 
 ### Ejemplo de verificación en Python
 
 ```python
-import json
 import base64
-from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.serialization import load_pem_public_key
 
-def verify_rsa_signature(public_key_pem, authorization_result, signature):
-    public_key = load_pem_public_key(public_key_pem.encode('utf-8'))
-    message_bytes = authorization_result.encode('utf-8')
+
+def verify_signature(public_key_pem: str, raw_body: bytes, signature_b64: str) -> bool:
+    public_key = load_pem_public_key(public_key_pem.encode("utf-8"))
+    signature = base64.b64decode(signature_b64)
+
     try:
         public_key.verify(
             signature,
-            message_bytes,
+            raw_body,
             padding.PKCS1v15(),
-            hashes.SHA512()
+            hashes.SHA512(),
         )
         return True
     except Exception:
         return False
-
-if __name__ == "__main__":
-    public_key_pem = ""  # Llave pública del ambiente
-    signature = base64.b64decode("SIGNATURE")
-    message = ""  # Body de la notificación S2S o authorization_result en redirección
-    result = verify_rsa_signature(public_key_pem, message, signature)
-    print(f'Firma válida: {result}')
 ```
+
+<Warning>
+  Nunca marques una transacción como final si el `signature` es inválido. Si la firma falla, registra el intento, responde según tu política interna y confirma el estado luego con [Consulta](/payin/consulta).
+</Warning>
 
 ---
 
-## Reintentos
+## Pruebas y simulación
 
-Pay-me espera **10 segundos** para recibir un `HTTP 200`. Si no lo recibe reintentará el envío según la configuración del comercio:
+Para pruebas de integración conviene separar dos escenarios:
 
-| Intento | Tiempo de espera |
-| :-- | :-- |
-| 1° reintento | 1 minuto |
-| 2° reintento | 5 minutos |
-| 3° reintento | 30 minutos |
+1. Validar que tu endpoint reciba el `POST`, procese JSON, registre el evento y responda `HTTP 200`.
+2. Validar la firma digital con un payload real emitido por Pay-me en el ambiente correspondiente.
 
 <Note>
-  El número de reintentos es configurable por comercio. Si agotados los reintentos tu servidor sigue sin responder, usa el [API de Consulta](/payin/consulta) para verificar el estado manualmente.
+  Si modificas aunque sea un carácter del body, el `signature` dejará de coincidir. Por eso una simulación manual sirve para probar parsing, ruteo e idempotencia, pero no reemplaza una prueba criptográfica real.
+</Note>
+
+### Simulación manual con `curl`
+
+Usa un body como el siguiente para probar el contrato de tu endpoint:
+
+```bash
+curl -X POST https://tu-comercio.com/payme/callback \
+  -H 'Content-Type: application/json' \
+  -H 'signature: REEMPLAZAR_CON_SIGNATURE_BASE64' \
+  -d '{
+    "success": "true",
+    "action": "authorize",
+    "merchant_code": "b0deb6f3-e51a-48a7-9268-f1441d46f7bd",
+    "merchant_operation_number": "2391645",
+    "transaction": {
+      "transaction_id": "5hk8rwa3h3cq9oyfs3a28v1ms",
+      "state": "AUTORIZADO",
+      "amount": "15000",
+      "currency": "604",
+      "processor_response": {
+        "date": "17-01-2024 12:27:46",
+        "authorization_code": "055552",
+        "result_message": {
+          "code": "00",
+          "description": "Approval and completed successfully"
+        }
+      }
+    },
+    "meta": {
+      "status": {
+        "code": "00",
+        "message_ilgn": [
+          {
+            "locale": "es_PE",
+            "value": "Procesado correctamente"
+          }
+        ]
+      }
+    }
+  }'
+```
+
+### Recomendación de prueba real
+
+<CardGroup cols={2}>
+  <Card title="Sandbox real" icon="flask">
+    Ejecuta una autorización en preproducción con `callback_url` y captura la notificación real para validar firma, logging e idempotencia.
+  </Card>
+
+  <Card title="Consulta como respaldo" icon="magnifying-glass">
+    Si el callback no llega o la prueba se corta, usa [API de Consulta](/payin/consulta) para verificar el estado final de la operación.
+  </Card>
+</CardGroup>
+
+---
+
+## Respuesta esperada por Pay-me
+
+Luego de enviar la notificación hacia tu callback, Pay-me esperará hasta `10 segundos` por una respuesta `HTTP 200`. Si no la recibe, reintentará el envío según la configuración del comercio.
+
+| Respuesta de tu endpoint | Comportamiento esperado |
+| :-- | :-- |
+| `HTTP 200` | La notificación se considera recibida |
+| Cualquier otro código o timeout | El envío puede reintentarse posteriormente |
+
+<Note>
+  La cantidad y ventana de reintentos es configurable por comercio. Diseña el endpoint para soportar notificaciones duplicadas o fuera de orden.
 </Note>
 
 ---
 
 ## Siguiente paso
 
-<Card title="Referencia" icon="arrow-right">
-  Consulta los estados de transacción, códigos de respuesta y datos de prueba.
-</Card>
+<CardGroup cols={2}>
+  <Card title="API de Consulta" icon="arrow-right" href="/payin/consulta">
+    Usa consulta para reconciliar estados cuando necesites una segunda validación backend.
+  </Card>
+
+  <Card title="Referencia" icon="book" href="/payin/referencia">
+    Revisa estados de transacción, códigos de respuesta y datos de prueba del ambiente sandbox.
+  </Card>
+</CardGroup>

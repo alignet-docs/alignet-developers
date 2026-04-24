@@ -1,0 +1,282 @@
+---
+title: "Api de Consulta con Transferencia Bancaria"
+sidebarTitle: "Transferencia Bancaria"
+description: "Consulta el estado de una operación con transferencia bancaria en PayIn."
+---
+
+Usa esta consulta para verificar el estado actualizado de pagos con transferencia bancaria, especialmente cuando la confirmación no llega de inmediato y necesitas validar el resultado final desde backend.
+
+<ParamField path="GET /charges/{merchant_code}/{merchant_operation_number}/{transaction_id}" type="endpoint" />
+
+<Note>
+  Este flujo usa la misma estructura general documentada en el [Overview de Consulta](/payin/consulta). Aquí se detalla específicamente el objeto `operation.transactions[]` para pagos con transferencia bancaria.
+</Note>
+
+---
+
+## ¿Cuándo usarla?
+
+<CardGroup cols={2}>
+  <Card title="Estados pendientes" icon="clock">
+    Cuando la autorización inicial deja la operación en seguimiento o `PENDIENTE`.
+  </Card>
+
+  <Card title="Segunda validación" icon="shield-check">
+    Cuando necesitas confirmar desde backend si la transferencia terminó autorizada, denegada, expirada o cancelada.
+  </Card>
+
+  <Card title="Flujo con redirect" icon="arrow-up-right-from-square">
+    Cuando necesitas consultar `continue_url`, expiración o volver a dirigir al usuario para completar el pago.
+  </Card>
+
+  <Card title="Respaldo de S2S" icon="bell">
+    Cuando no recibes confirmación inmediata vía notificaciones y necesitas validar el estado por consulta.
+  </Card>
+</CardGroup>
+
+---
+
+## Consideraciones
+
+<Note>
+  Conserva `merchant_code`, `merchant_operation_number` y `transaction_id` desde la autorización para consultar sin ambigüedad.
+</Note>
+
+<Note>
+  En esta documentación se usa `method_details` para mantener consistencia con el resto de la referencia. Si en material previo encuentras `method_detail`, trátalo como el mismo objeto.
+</Note>
+
+<Note>
+  Los campos de `processor_response` para transferencia bancaria pueden variar según la procesadora o el banco. Tómalos como referenciales.
+</Note>
+
+---
+
+## Response
+
+Objeto `operation.transactions[]` para pagos con transferencia bancaria dentro de la trama de respuesta del [API de Consulta](/payin/consulta).
+
+### Objeto `operation.transactions[]`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].transaction_id` | Identificador único de la transacción. | String | SI |
+| `operation.transactions[].channel` | Canal por el cual se realizó la transacción. Valor esperado: `ecommerce`. | String | SI |
+| `operation.transactions[].state` | Estado actual de la transacción. Valores frecuentes: `PENDIENTE`, `INVALIDO`, `AUTORIZADO`, `DENEGADO`, `CANCELADO`, `EXPIRADO`, `LIQUIDADO`. | String | SI |
+| `operation.transactions[].state_reason` | Observación o detalle del estado. | String | SI |
+| `operation.transactions[].amount` | Monto de la transacción. | String | SI |
+| `operation.transactions[].currency` | Código de la moneda de la operación. | String | SI |
+| `operation.transactions[].payment_method` | Objeto que contiene información sobre el método de pago usado en la transacción. | Object | SI |
+| `operation.transactions[].payment_method.method_name` | Nombre del método de pago usado en la transacción. Valor esperado: `BANK_TRANSFER`. | String | SI |
+| `operation.transactions[].payment_method.method_details` | Objeto que contiene información detallada relacionada al método. | Object | NO |
+| `operation.transactions[].continue_url` | Visible en estado `PENDIENTE`. URL para continuar el proceso de pago. | String | NO |
+| `operation.transactions[].expiration_date` | Visible en estado `PENDIENTE`. Objeto que contiene la fecha en la que expirará la transacción. | Object | NO |
+| `operation.transactions[].processor_response` | Visible normalmente en estados `AUTORIZADO`, `DENEGADO` o `EXTORNADO`. Objeto que contiene el resultado de la autorización. | Object | NO |
+| `operation.transactions[].additional_fields` | Objeto que contiene los datos adicionales de la transacción enviados en la autorización. | Object | NO |
+| `operation.transactions[].lifecycle` | Array que contiene el listado de estados por los cuales pasó la transacción. | Array | SI |
+
+---
+
+### Objeto `operation.transactions[].payment_method.method_details`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].payment_method.method_details.redirect_url` | Visible en estado `PENDIENTE`. URL del redirect enviado en la autorización. | String | SI |
+| `operation.transactions[].payment_method.method_details.callback_url` | URL del callback enviado en la autorización. | String | NO |
+
+---
+
+### Objeto `operation.transactions[].expiration_date`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].expiration_date.utc_time` | Fecha en UTC. | String | NO |
+| `operation.transactions[].expiration_date.unix_time` | Fecha en Unix time. | Integer | NO |
+
+---
+
+### Objeto `operation.transactions[].processor_response`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].processor_response.origin_account` | Visible en estado `AUTORIZADO` o `DENEGADO`. Cuenta bancaria enmascarada desde donde se realizó la transferencia. | String | NO |
+| `operation.transactions[].processor_response.request_id` | Visible en estado `AUTORIZADO` o `DENEGADO`. ID de la transacción generada por la procesadora. | String | NO |
+| `operation.transactions[].processor_response.operation_id` | Visible en estado `AUTORIZADO` o `DENEGADO`. ID de la operación generada por el banco. | String | NO |
+
+---
+
+### Objeto `operation.transactions[].lifecycle`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].lifecycle[].state` | Estado de la transacción. Valores frecuentes: `REGISTRADO`, `PENDIENTE`, `INVALIDO`, `AUTORIZADO`, `DENEGADO`, `CANCELADO`, `EXPIRADO`, `LIQUIDADO`. | String | SI |
+| `operation.transactions[].lifecycle[].date` | Objeto que contiene la fecha en la que se realizó el cambio de estado. | Object | SI |
+
+---
+
+### Objeto `operation.transactions[].lifecycle[].date`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].lifecycle[].date.utc_time` | Fecha en UTC. | String | SI |
+| `operation.transactions[].lifecycle[].date.unix_time` | Fecha en Unix time. | Integer | SI |
+
+---
+
+## Ejemplo: pendiente
+
+Response de consulta de transferencia bancaria con estado `PENDIENTE`.
+
+```json
+{
+  "success": true,
+  "merchant_code": "abc",
+  "operation": {
+    "merchant_operation_number": "2391645",
+    "state": "PENDIENTE",
+    "created_at": {
+      "utc_time": "2024-03-12T22:49:36.018Z",
+      "unix_time": 1710282940
+    },
+    "amount": "15000",
+    "currency": "604",
+    "transactions": [
+      {
+        "transaction_id": "5hk8rwa3h3cq9oyfs3a28v1ms",
+        "channel": "ecommerce",
+        "state": "PENDIENTE",
+        "state_reason": "Url generada para continuar con el pago",
+        "amount": "15000",
+        "currency": "604",
+        "payment_method": {
+          "method_name": "BANK_TRANSFER",
+          "method_details": {
+            "redirect_url": "https://pay-me.com",
+            "callback_url": "https://pay-me.com/callback"
+          }
+        },
+        "continue_url": "https://api.dev.alignet.io/payment/continue/bank_transfer/c7dagnrwgxgh1b6kzwirheezv",
+        "expiration_date": {
+          "utc_time": "2024-03-12T22:49:36.018Z",
+          "unix_time": 1710282940
+        },
+        "processor_response": null,
+        "additional_fields": null,
+        "lifecycle": [
+          {
+            "state": "REGISTRADO",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          },
+          {
+            "state": "PENDIENTE",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Se proceso correctamente"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Ejemplo: autorizada
+
+Response de consulta de transferencia bancaria con estado `AUTORIZADO`.
+
+```json
+{
+  "success": true,
+  "merchant_code": "abc",
+  "operation": {
+    "merchant_operation_number": "2391645",
+    "state": "AUTORIZADO",
+    "amount": "15000",
+    "currency": "604",
+    "transactions": [
+      {
+        "transaction_id": "5hk8rwa3h3cq9oyfs3a28v1ms",
+        "channel": "ecommerce",
+        "state": "AUTORIZADO",
+        "state_reason": "Pago exitoso",
+        "amount": "15000",
+        "currency": "604",
+        "payment_method": {
+          "method_name": "BANK_TRANSFER",
+          "method_details": {
+            "redirect_url": "https://pay-me.com",
+            "callback_url": "https://pay-me.com/callback"
+          }
+        },
+        "continue_url": null,
+        "expiration_date": null,
+        "processor_response": {
+          "origin_account": "055552",
+          "request_id": "055552",
+          "operation_id": "055552"
+        },
+        "additional_fields": null,
+        "lifecycle": [
+          {
+            "state": "REGISTRADO",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          },
+          {
+            "state": "PENDIENTE",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          },
+          {
+            "state": "AUTORIZADO",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Se proceso correctamente"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Siguiente paso
+
+<Card title="API de Cancelación" icon="arrow-right" href="/payin/cancelacion">
+  Revisa la cancelación si tu flujo de negocio necesita anular una operación autorizada.
+</Card>

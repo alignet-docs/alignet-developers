@@ -1,12 +1,13 @@
 ---
 title: "API de Pagos"
 sidebarTitle: "Introducción"
-description: "Conoce la API de Orquestador de Pay-me — un único punto de integración para procesar pagos en múltiples métodos y países."
+description: "Integra pagos en un único punto de conexión con el Orquestador de Pay-me."
+icon: "book-open-reader"
 ---
 
-La API de Orquestador de Pay-me es una solución tecnológica **independiente del procesador** que permite integrar pagos a través de un único punto de conexión, con acceso a una red mundial de procesamiento.
+La API de Orquestador de Pay-me permite procesar pagos a través de múltiples métodos y procesadores desde un único endpoint.
 
-Abarca servicios de orquestación de pagos, evaluación de riesgo y autenticación 3DS en diferentes países.
+Centraliza la autorización, autenticación (3DS) y gestión de riesgo en una sola integración.
 
 ---
 
@@ -14,27 +15,21 @@ Abarca servicios de orquestación de pagos, evaluación de riesgo y autenticaci�
 
 <CardGroup cols={2}>
   <Card title="PayIn" icon="arrow-down-to-line" href="/payin/introduccion">
-    Acepta pagos con múltiples métodos: tarjeta, QR, transferencia, Yape, Cuotéalo y más.
+    Acepta pagos con tarjeta, QR, transferencias, Yape y más.
   </Card>
+
   <Card title="Pagos Recurrentes" icon="rotate" href="/pagos-recurrentes/introduccion">
-    Automatiza cobros periódicos con afiliaciones y carga masiva de cobros.
+    Automatiza cobros periódicos mediante afiliaciones.
   </Card>
+
   <Card title="Devoluciones" icon="arrow-up-from-line" href="/devoluciones/introduccion">
-    Gestiona reembolsos totales o parciales de transacciones liquidadas.
+    Ejecuta reembolsos totales o parciales.
   </Card>
-  <Card title="Onboarding de Comercios" icon="building-2" href="/onboarding/introduccion">
-    Registra comercios de forma individual o masiva — exclusivo para Facilitadores de Pago.
+
+  <Card title="Onboarding de Comercios" icon="store" href="/onboarding/introduccion">
+    Registra comercios de forma individual o masiva.
   </Card>
 </CardGroup>
-
----
-
-## Ambientes
-
-| Ambiente | Base URL |
-| :-- | :-- |
-| Pre-Producción | `https://api.preprod.alignet.io/` |
-| Producción | `https://api.alignet.io/` |
 
 ---
 
@@ -42,42 +37,82 @@ Abarca servicios de orquestación de pagos, evaluación de riesgo y autenticaci�
 
 <Steps>
   <Step title="Obtén tu Access Token">
-    Genera un token de acceso usando el [API de Autenticación](/autenticacion) con tus credenciales `client_id` y `client_secret`.
+    Genera un token usando el endpoint de [Autenticación](/autenticacion) con tus credenciales.
   </Step>
-  <Step title="Elige tu módulo">
-    Selecciona el módulo que necesitas — [PayIn](/payin/introduccion), [Pagos Recurrentes](/pagos-recurrentes/introduccion), [Devoluciones](/devoluciones/introduccion) u [Onboarding](/onboarding/introduccion).
+
+  <Step title="Selecciona el módulo">
+    Define el flujo que implementarás: PayIn, Recurrentes, Devoluciones u Onboarding.
   </Step>
-  <Step title="Realiza tu primera transacción">
-    Ejecuta un request en Pre-Producción con los [datos de prueba](/payin/referencia) disponibles.
+
+  <Step title="Ejecuta tu primer request">
+    Realiza una operación en ambiente de Pre-Producción.
   </Step>
-  <Step title="Valida la notificación">
-    Configura tu endpoint para recibir y verificar las [notificaciones Server-to-Server](/payin/notificaciones).
+
+  <Step title="Procesa la respuesta">
+    Evalúa el resultado de la transacción (aprobado, denegado o pendiente).
   </Step>
+
+  <Step title="Configura notificaciones">
+    Implementa un endpoint para recibir eventos Server-to-Server.
+  </Step>
+
   <Step title="Pasa a Producción">
-    Una vez validadas tus pruebas, cambia la Base URL al ambiente de Producción.
+    Cambia la Base URL una vez validadas tus pruebas.
   </Step>
 </Steps>
 
 ---
 
+## Ambientes
+
+<CardGroup cols={2}>
+  <Card title="Pre-Producción" icon="flask">
+    Utiliza este ambiente para pruebas, validaciones y certificación de tu integración.
+
+    <div>
+      <code>https://api.preprod.alignet.io/</code>
+    </div>
+  </Card>
+
+  <Card title="Producción" icon="rocket">
+    Usa este ambiente cuando tu integración ya esté validada y lista para operar.
+
+    <div>
+      <code>https://api.alignet.io/</code>
+    </div>
+  </Card>
+</CardGroup>
+
+<Note>
+  Utiliza Pre-Producción para pruebas. No mezcles credenciales entre ambientes.
+</Note>
+
+---
+
 ## Consideraciones generales
 
-<Note>
-  Todos los montos se expresan en **centavos**. Ejemplo: S/. 10.50 → `"1050"`.
-</Note>
+<CardGroup cols={2}>
+  <Card title="Montos en centavos" icon="banknote">
+    Envía todos los importes en **centavos**. Ejemplo: S/. 10.50 → `"1050"`.
+  </Card>
 
-<Note>
-  El Access Token tiene una duración limitada. Renuévalo antes de que expire para evitar errores de autenticación.
-</Note>
+  <Card title="Token temporal" icon="key">
+    El **Access Token** tiene duración limitada. Renuévalo antes de su expiración.
+  </Card>
 
-<Note>
-  Todas las fechas devueltas por la API están en formato **UTC** y **Unix time**.
-</Note>
+  <Card title="Fechas en UTC" icon="clock">
+    Todas las fechas del API se manejan en formato **UTC (Unix time)**.
+  </Card>
+
+  <Card title="Validación en backend" icon="shield-check">
+    Valida siempre la respuesta final de la operación desde tu backend.
+  </Card>
+</CardGroup>
 
 ---
 
 ## Siguiente paso
 
 <Card title="Autenticación" icon="arrow-right" href="/autenticacion">
-  Genera tu Access Token para comenzar a usar la API.
+  Genera tu Access Token para comenzar la integración.
 </Card>
