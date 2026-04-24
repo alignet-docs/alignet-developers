@@ -1,63 +1,122 @@
 ---
-title: "Gestión de Devoluciones"
-sidebarTitle: "Introducción"
-description: "Aprende cómo funciona el API de Devoluciones de Pay-me y qué necesitas para integrarla."
+title: "Devoluciones"
+sidebarTitle: "Devoluciones"
+description: "Panorama general del módulo de Devoluciones y de las APIs disponibles para transacciones liquidadas."
 ---
 
-El API de Devoluciones de Pay-me permite solicitar el reembolso de una o más transacciones que se encuentren en estado `LIQUIDADO`.
+Pay-me ofrece a los comercios la funcionalidad de **Devoluciones**, permitiendo automatizar la gestión de devoluciones por medio de APIs especializadas.
+
+Las capacidades contempladas en este módulo son:
+
+- `API de Devoluciones`
+- `API de Consulta Unitaria de Devolución`
+- `API de Consulta Masiva de Devolución`
+- `Códigos de Respuesta - Devoluciones`
+
+---
+
+## Momento del ciclo
+
+<CardGroup cols={2}>
+  <Card title="Extorno" icon="rotate-left">
+    Se aplica sobre transacciones `AUTORIZADO`, antes de la liquidación.
+  </Card>
+
+  <Card title="Devolución" icon="corner-up-left">
+    Se aplica después de la autorización, únicamente sobre transacciones en estado `LIQUIDADO`.
+  </Card>
+</CardGroup>
+
+<Note>
+  La devolución no reemplaza al extorno. Operativamente corresponde a una etapa posterior del ciclo de vida del pago.
+</Note>
+
+---
+
+## APIs del módulo
+
+<CardGroup cols={2}>
+  <Card title="API de Devoluciones" icon="arrow-up-from-line" href="/devoluciones/referencia">
+    Permite registrar una o más solicitudes de devolución total o parcial para transacciones liquidadas.
+  </Card>
+
+  <Card title="API de Consulta Unitaria de Devolución" icon="magnifying-glass" href="/devoluciones/consulta-unitaria-devolucion">
+    Permite revisar el detalle y lifecycle de una solicitud específica de devolución.
+  </Card>
+
+  <Card title="API de Consulta Masiva de Devolución" icon="table-list" href="/devoluciones/consulta-masiva-devolucion">
+    Permite consultar múltiples solicitudes de devolución para control operativo y conciliación.
+  </Card>
+
+  <Card title="Códigos de Respuesta - Devoluciones" icon="receipt" href="/devoluciones/codigos-respuesta-devoluciones">
+    Resume los códigos funcionales y mensajes que debes interpretar en las respuestas del módulo.
+  </Card>
+</CardGroup>
 
 ---
 
 ## Métodos de pago soportados
 
-<Columns cols={3}>
-  <Column>
-    <Card title="CARD" icon="credit-card">
-      Tarjetas de crédito y débito.
-    </Card>
-  </Column>
-  <Column>
-    <Card title="YAPE" icon="mobile">
-      Pagos realizados con Yape.
-    </Card>
-  </Column>
-  <Column>
-    <Card title="CUOTEALO" icon="banknote">
-      Pagos en cuotas con Cuotéalo BCP.
-    </Card>
-  </Column>
-</Columns>
+<CardGroup cols={3}>
+  <Card title="CARD" icon="credit-card">
+    Tarjetas de crédito y débito liquidadas.
+  </Card>
+
+  <Card title="YAPE" icon="mobile">
+    Operaciones liquidadas procesadas con Yape.
+  </Card>
+
+  <Card title="CUOTEALO" icon="banknote">
+    Operaciones liquidadas procesadas con Cuotéalo.
+  </Card>
+</CardGroup>
 
 ---
 
-## Tipos de devolución
+## Reglas base
 
-| Tipo | Descripción |
-| :-- | :-- |
-| `TOTAL` | Devuelve el monto completo de la transacción. |
-| `PARTIAL` | Devuelve un monto parcial de la transacción. |
+<Check>
+  La devolución solo se efectúa sobre transacciones en estado `LIQUIDADO`.
+</Check>
+
+<Check>
+  Puedes enviar una o más operaciones en un mismo request.
+</Check>
+
+<Check>
+  El tipo de devolución soportado es `TOTAL` o `PARTIAL`.
+</Check>
+
+<Check>
+  Conserva `merchant_operation_number` y `transaction_id` para trazabilidad y conciliación.
+</Check>
 
 ---
 
-## Requisitos previos
+## Consejos de integración
 
-<Check>
-  Contar con un Access Token vigente del [API de Seguridad](/es/pay-me-api-orquestador/v2/api-de-seguridad).
-</Check>
+<CardGroup cols={2}>
+  <Card title="No cierres el caso solo con REGISTERED" icon="clock">
+    Toma `REGISTERED` como recepción de la solicitud. Usa las APIs de consulta para confirmar si la devolución avanza a `RESOLVED` o termina en `REJECTED`.
+  </Card>
 
-<Check>
-  La transacción debe estar en estado `LIQUIDADO`.
-</Check>
+  <Card title="Maneja parciales y lotes" icon="split">
+    Si integras devoluciones parciales o varias operaciones en un mismo request, revisa cada resultado individual y no solo el código global del `meta`.
+  </Card>
 
-<Check>
-  El método de pago debe ser `CARD`, `YAPE` o `CUOTEALO`.
-</Check>
+  <Card title="Valida elegibilidad antes de enviar" icon="shield-check">
+    Verifica que la transacción origen esté en `LIQUIDADO`, que el método sea soportado y que el monto a devolver cumpla tus reglas internas.
+  </Card>
 
+  <Card title="Guarda identificadores" icon="key">
+    Conserva `refund_id`, `merchant_operation_number` y `transaction_id` para conciliación, auditoría y soporte.
+  </Card>
+</CardGroup>
 
 ---
 
 ## Siguiente paso
 
-<Card title="Referencia del API" icon="arrow-right">
-  Consulta el endpoint, parámetros y ejemplos de request y response.
+<Card title="API de Devoluciones" icon="arrow-right" href="/devoluciones/referencia">
+  Revisa el endpoint `POST /refund`, la estructura del request, la respuesta y el ejemplo base del flujo.
 </Card>

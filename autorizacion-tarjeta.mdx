@@ -1,0 +1,839 @@
+---
+title: "API de Autorización con Tarjeta"
+sidebarTitle: "Tarjeta"
+description: "Inicia pagos con tarjeta desde el API de autorización de PayIn."
+---
+
+Usa este flujo para procesar pagos ecommerce con tarjeta desde el API de autorización de PayIn.
+
+<ParamField path="POST /charges" type="endpoint" />
+
+<Note>
+  Este flujo utiliza el mismo endpoint base de autorización. Revisa los ambientes y la configuración general en el [Overview](/payin/autorizacion).
+</Note>
+
+---
+
+## Características del flujo
+
+<CardGroup cols={2}>
+  <Card title="Tipo de flujo" icon="bolt">
+    Síncrono o con autenticación adicional, según la configuración del comercio y del emisor.
+  </Card>
+
+  <Card title="Método de pago" icon="credit-card">
+    Permite procesar pagos ecommerce con tarjeta.
+  </Card>
+
+  <Card title="Validación final" icon="shield-check">
+    La confirmación del resultado debe realizarse desde backend.
+  </Card>
+
+  <Card title="PCI" icon="lock">
+    Si el flujo envía o recibe datos sensibles de tarjeta, debes contar con cumplimiento PCI.
+  </Card>
+
+</CardGroup>
+<CardGroup cols={1}>
+  <Card title="Checkout Web (Flex)" icon="globe">
+    Si utilizas Checkout Web (Flex), en esta página también se documenta la estructura de respuesta que recibirás en `responseCallback`.
+  </Card>
+</CardGroup>
+
+
+---
+
+## Consideraciones
+
+<Note>
+  Este flujo puede operar en tres escenarios: autorización sin autenticación, autorización con autenticación 3DS Redirect y autorización con datos de autenticación 3DS obtenidos previamente.
+</Note>
+
+<Note>
+  Si trabajas con autenticación 3DS en un único flujo, revisa también las [Consideraciones para métodos con Redirect](/payin/autorizacion-metodos-con-redirect).
+</Note>
+
+<Warning>
+  No expongas datos sensibles de pago en frontend, logs o herramientas sin enmascaramiento. Si tu integración procesa directamente PAN, CVV o datos equivalentes, valida previamente la habilitación PCI de tu comercio.
+</Warning>
+
+---
+
+## Request
+
+<Note>
+  Antes de consumir este endpoint, solicita tu `Access Token` en [Autenticación](/autenticacion#param-post-token).
+</Note>
+
+### Headers
+
+| Campo | Descripción | Valor | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `Authorization` | Token Bearer obtenido desde autenticación | `Bearer {access_token}` | String | SI |
+| `Content-Type` | Formato del request | `application/json` | String | SI |
+| `ALG-API-VERSION` | Versión del API | `1709847567` | String | SI |
+
+```bash
+Authorization: Bearer {access_token}
+Content-Type: application/json
+ALG-API-VERSION: 1709847567
+```
+
+---
+
+### Body
+
+#### Objeto raíz del request
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `action` | Acción a ejecutar | `authorize` | String | SI |
+| `channel` | Canal de la operación | `ecommerce` | String | SI |
+| `merchant_code` | Código del comercio | `your_merchant_code` | String | SI |
+| `merchant_operation_number` | Identificador único de la operación en el comercio. **Debe ser diferente en cada transacción.** | `2391645` | String | SI |
+| `payment_method` | Objeto con la información del método de pago | Object | Object | SI |
+| `payment_details` | Objeto con el detalle del pago y datos del cliente | Object | Object | SI |
+
+---
+
+#### Objeto `payment_method`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `method_name` | Nombre del método de pago | `CARD` | String | SI |
+| `method_details` | Objeto con la información específica de la tarjeta | Object | Object | SI |
+
+---
+
+#### Objeto `payment_method.method_details`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `pan` | Número de la tarjeta | `4051420006041115` | String | SI |
+| `expiry_date` | Fecha de expiración en formato `MMYY` | `1231` | String | SI |
+| `security_code` | Código de seguridad de la tarjeta (CVV) | `123` | String | SI |
+| `card_holder` | Objeto con información del titular de la tarjeta | Object | Object | SI |
+| `redirect_url` | URL de retorno al finalizar la autenticación | `https://pay-me.com` | String | NO |
+| `callback_url` | URL para notificación host to host | `https://pay-me.com/callback` | String | NO |
+| `authentication_result` | Resultado de autenticación 3DS obtenida previamente | Object | Object | NO |
+| `installments` | Objeto con información de plan y cuotas | Object | Object | NO |
+
+---
+
+#### Objeto `payment_method.method_details.card_holder`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `first_name` | Nombres del titular | `Pedro` | String | SI |
+| `last_name` | Apellidos del titular | `Miranda` | String | SI |
+| `email` | Correo electrónico del titular | `pedro@pay-me.com` | String | SI |
+| `phone` | Objeto con el teléfono del titular | Object | Object | SI |
+
+---
+
+#### Objeto `payment_method.method_details.card_holder.phone`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `prefix` | Código de país del teléfono | `51` | String | SI |
+| `number` | Número del teléfono | `999835685` | String | SI |
+
+---
+
+#### Objeto `payment_method.method_details.authentication_result.3ds_secure`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `version` | Versión del protocolo 3DS | `2.1.0` | String | NO |
+| `electronic_commerce_indicator` | Valor del ECI | `05` | String | NO |
+| `cardholder_authentication_verification_value` | Valor del CAVV | `AJkBB5NBeQAAAD3MYENQdAAAAAA=` | String | NO |
+| `ds_transaction_id` | Directory Server Transaction ID | `ABC123` | String | NO |
+| `three_ds_server_transaction_id` | 3DS Server Transaction ID | `ABC123` | String | NO |
+| `trans_status` | Resultado de autenticación | `Y` | String | NO |
+
+---
+
+#### Objeto `payment_method.method_details.installments`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `plan` | Plan de cuotas a usar en la autorización | `01` | String | NO |
+| `number` | Cantidad de cuotas | `3` | String | NO |
+
+<Note>
+  Valores para `installments.plan`:
+  - `01`: Normal
+  - `02`: Diferido (no disponible)
+</Note>
+
+---
+
+### Ejemplo 1: sin autenticación
+
+```json
+{
+  "action": "authorize",
+  "channel": "ecommerce",
+  "merchant_code": "your_merchant_code",
+  "merchant_operation_number": "2391645",
+  "payment_method": {
+    "method_name": "CARD",
+    "method_details": {
+      "pan": "4051420006041115",
+      "expiry_date": "1231",
+      "security_code": "123",
+      "card_holder": {
+        "first_name": "Pedro",
+        "last_name": "Miranda",
+        "email": "pedro@pay-me.com",
+        "phone": {
+          "prefix": "51",
+          "number": "999835685"
+        }
+      },
+      "installments": {
+        "plan": "01",
+        "number": "3"
+      }
+    }
+  },
+  "payment_details": {
+    "amount": "15000",
+    "currency": "604",
+    "billing": {
+      "first_name": "Pedro",
+      "last_name": "Miranda",
+      "email": "pedro@pay-me.com",
+      "phone": {
+        "country_code": "+51",
+        "subscriber": "999835685"
+      },
+      "location": {
+        "line_1": "Av. Casimiro Ulloa 333",
+        "line_2": "Miraflores",
+        "city": "Lima",
+        "state": "Lima",
+        "country": "Peru"
+      }
+    },
+    "shipping": {
+      "first_name": "Pedro",
+      "last_name": "Miranda",
+      "email": "pedro@pay-me.com",
+      "phone": {
+        "country_code": "+51",
+        "subscriber": "999835685"
+      },
+      "location": {
+        "line_1": "Av. Casimiro Ulloa 333",
+        "line_2": "Miraflores",
+        "city": "Lima",
+        "state": "Lima",
+        "country": "Peru"
+      }
+    },
+    "customer": {
+      "first_name": "Pedro",
+      "last_name": "Miranda",
+      "email": "pedro@pay-me.com",
+      "phone": {
+        "country_code": "+51",
+        "subscriber": "999835685"
+      },
+      "location": {
+        "line_1": "Av. Casimiro Ulloa 333",
+        "line_2": "Miraflores",
+        "city": "Lima",
+        "state": "Lima",
+        "country": "Peru"
+      }
+    },
+    "product_details": []
+  }
+}
+```
+
+---
+
+### Ejemplo 2: con autenticación Redirect
+
+```json
+{
+  "action": "authorize",
+  "channel": "ecommerce",
+  "merchant_code": "your_merchant_code",
+  "merchant_operation_number": "2391645",
+  "payment_method": {
+    "method_name": "CARD",
+    "method_details": {
+      "pan": "4051420006041115",
+      "expiry_date": "1231",
+      "security_code": "123",
+      "card_holder": {
+        "first_name": "Pedro",
+        "last_name": "Miranda",
+        "email": "pedro@pay-me.com",
+        "phone": {
+          "prefix": "51",
+          "number": "999835685"
+        }
+      },
+      "redirect_url": "https://pay-me.com",
+      "callback_url": "https://pay-me.com/callback",
+      "installments": {
+        "plan": "01",
+        "number": "3"
+      }
+    }
+  },
+  "payment_details": {
+    "amount": "15000",
+    "currency": "604",
+    "billing": {
+      "first_name": "Pedro",
+      "last_name": "Miranda",
+      "email": "pedro@pay-me.com",
+      "phone": {
+        "country_code": "+51",
+        "subscriber": "999835685"
+      },
+      "location": {
+        "line_1": "Av. Casimiro Ulloa 333",
+        "line_2": "Miraflores",
+        "city": "Lima",
+        "state": "Lima",
+        "country": "Peru"
+      }
+    },
+    "shipping": {
+      "first_name": "Pedro",
+      "last_name": "Miranda",
+      "email": "pedro@pay-me.com",
+      "phone": {
+        "country_code": "+51",
+        "subscriber": "999835685"
+      },
+      "location": {
+        "line_1": "Av. Casimiro Ulloa 333",
+        "line_2": "Miraflores",
+        "city": "Lima",
+        "state": "Lima",
+        "country": "Peru"
+      }
+    },
+    "customer": {
+      "first_name": "Pedro",
+      "last_name": "Miranda",
+      "email": "pedro@pay-me.com",
+      "phone": {
+        "country_code": "+51",
+        "subscriber": "999835685"
+      },
+      "location": {
+        "line_1": "Av. Casimiro Ulloa 333",
+        "line_2": "Miraflores",
+        "city": "Lima",
+        "state": "Lima",
+        "country": "Peru"
+      }
+    },
+    "product_details": []
+  }
+}
+```
+
+<Note>
+  Para recibir el resultado final en flujos con autenticación Redirect, revisa las [Consideraciones para métodos con Redirect](/payin/autorizacion-metodos-con-redirect).
+</Note>
+
+---
+
+### Ejemplo 3: con datos de autenticación 3DS previos
+
+```json
+{
+  "action": "authorize",
+  "channel": "ecommerce",
+  "merchant_code": "your_merchant_code",
+  "merchant_operation_number": "2391645",
+  "payment_method": {
+    "method_name": "CARD",
+    "method_details": {
+      "pan": "4051420006041115",
+      "expiry_date": "1231",
+      "security_code": "123",
+      "card_holder": {
+        "first_name": "Pedro",
+        "last_name": "Miranda",
+        "email": "pedro@pay-me.com",
+        "phone": {
+          "prefix": "51",
+          "number": "999835685"
+        }
+      },
+      "authentication_result": {
+        "3ds_secure": {
+          "version": "2.1.0",
+          "electronic_commerce_indicator": "05",
+          "cardholder_authentication_verification_value": "AJkBB5NBeQAAAD3MYENQdAAAAAA=",
+          "ds_transaction_id": "ABC123",
+          "three_ds_server_transaction_id": "ABC123",
+          "trans_status": "Y"
+        }
+      },
+      "installments": {
+        "plan": "01",
+        "number": "3"
+      }
+    }
+  },
+  "payment_details": {
+    "amount": "15000",
+    "currency": "604",
+    "billing": {
+      "first_name": "Pedro",
+      "last_name": "Miranda",
+      "email": "pedro@pay-me.com",
+      "phone": {
+        "country_code": "+51",
+        "subscriber": "999835685"
+      },
+      "location": {
+        "line_1": "Av. Casimiro Ulloa 333",
+        "line_2": "Miraflores",
+        "city": "Lima",
+        "state": "Lima",
+        "country": "Peru"
+      }
+    },
+    "shipping": {
+      "first_name": "Pedro",
+      "last_name": "Miranda",
+      "email": "pedro@pay-me.com",
+      "phone": {
+        "country_code": "+51",
+        "subscriber": "999835685"
+      },
+      "location": {
+        "line_1": "Av. Casimiro Ulloa 333",
+        "line_2": "Miraflores",
+        "city": "Lima",
+        "state": "Lima",
+        "country": "Peru"
+      }
+    },
+    "customer": {
+      "first_name": "Pedro",
+      "last_name": "Miranda",
+      "email": "pedro@pay-me.com",
+      "phone": {
+        "country_code": "+51",
+        "subscriber": "999835685"
+      },
+      "location": {
+        "line_1": "Av. Casimiro Ulloa 333",
+        "line_2": "Miraflores",
+        "city": "Lima",
+        "state": "Lima",
+        "country": "Peru"
+      }
+    },
+    "product_details": []
+  }
+}
+```
+
+---
+
+## Response
+
+### Objeto `transaction`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `transaction_id` | Identificador único de la transacción | `5hk8rwa3h3cq9oyfs3a28v1ms` | String | SI |
+| `channel` | Canal de la transacción | `ecommerce` | String | SI |
+| `state` | Estado actual de la transacción | `AUTORIZADO` | String | SI |
+| `state_reason` | Motivo o descripción del estado actual | `Approval and completed successfully` | String | SI |
+| `amount` | Monto de la transacción | `15000` | String | SI |
+| `currency` | Código de moneda | `604` | String | SI |
+| `payment_method` | Objeto con información del método de pago | Object | Object | SI |
+| `continue_url` | URL para continuar el proceso de autenticación | `https://api.dev.alignet.io/payment/continue/card/...` | String | NO |
+| `expiration_date` | Fecha de expiración de la transacción | Object | Object | NO |
+| `processor_response` | Resultado devuelto por la procesadora | Object | Object | NO |
+| `authentication_result` | Resultado de autenticación aplicado a la transacción | Object | Object | NO |
+| `risk_evaluation` | Resultado de evaluación antifraude | Object | Object | NO |
+| `additional_fields` | Datos adicionales enviados en el request | Object | Object | NO |
+| `lifecycle` | Historial de estados de la transacción | Array | Array | SI |
+
+<Note>
+  `continue_url` y `expiration_date` se muestran cuando la transacción queda en estado `PENDIENTE`.
+</Note>
+
+---
+
+### Objeto `transaction.payment_method`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `method_name` | Método de pago utilizado | `CARD` | String | SI |
+| `method_details` | Objeto con información detallada del método | Object | Object | NO |
+
+---
+
+### Objeto `transaction.payment_method.method_details`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `masked_pan` | Tarjeta enmascarada | `411111********1111` | String | NO |
+| `brand` | Marca de la tarjeta | `VISA` | String | NO |
+| `bin` | BIN de la tarjeta | `411111` | String | NO |
+| `last_pan` | Últimos dígitos de la tarjeta | `9268` | String | NO |
+| `card_type` | Tipo de tarjeta | `DEBIT` | String | NO |
+| `card_country` | País de la tarjeta | `PE` | String | NO |
+| `issuer` | Banco emisor | `BANCO DE CREDITO DEL PERU - BCP` | String | NO |
+| `installments` | Información de plan y cuotas | Object | Object | NO |
+| `redirect_url` | URL de retorno enviada en el request | `https://pay-me.com` | String | NO |
+| `callback_url` | URL de callback enviada en el request | `https://pay-me.com/callback` | String | NO |
+
+---
+
+### Objeto `transaction.payment_method.method_details.installments`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `plan` | Plan aplicado a la transacción | `NORMAL` | String | NO |
+| `installment_number` | Número de cuotas | `2` | String | NO |
+
+---
+
+### Objeto `transaction.expiration_date`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `utc_time` | Fecha de expiración en UTC | `2024-03-12T22:49:36.018Z` | String | NO |
+| `unix_time` | Fecha de expiración en unix time | `1710282940` | Integer | NO |
+
+---
+
+### Objeto `transaction.processor_response`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `authorization_code` | Código de autorización | `055552` | String | NO |
+| `brand_transaction_id` | ID de la transacción ante la marca | `100B` | String | NO |
+| `result_message` | Mensaje del resultado de autorización | Object | Object | NO |
+
+---
+
+### Objeto `transaction.processor_response.result_message`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `code` | Código del resultado | `00` | String | NO |
+| `description` | Descripción del resultado | `Approval and completed successfully` | String | NO |
+
+---
+
+### Objeto `transaction.authentication_result`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `version` | Versión del protocolo de autenticación | `2.1.0` | String | NO |
+| `eci` | Electronic Commerce Indicator | `05` | String | NO |
+| `ds_transaction_id` | DS Transaction ID | `ABC123` | String | NO |
+| `3ds_transaction_id` | 3DS Server Transaction ID | `ABC123` | String | NO |
+| `trans_status` | Estado del resultado de autenticación | `A` | String | NO |
+
+---
+
+### Objeto `transaction.lifecycle`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `state` | Estado registrado en el historial | `AUTORIZADO` | String | SI |
+| `date` | Fecha del cambio de estado | Object | Object | SI |
+
+---
+
+### Objeto `transaction.lifecycle[].date`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `utc_time` | Fecha en UTC | `2024-03-12T22:49:36.018Z` | String | SI |
+| `unix_time` | Fecha en unix time | `1710282940` | Integer | SI |
+
+---
+
+### Ejemplo 1: sin autenticación
+
+```json
+{
+  "success": "true",
+  "action": "authorize",
+  "merchant_code": "your_merchant_code",
+  "merchant_operation_number": "2391645",
+  "transaction": {
+    "transaction_id": "5hk8rwa3h3cq9oyfs3a28v1ms",
+    "channel": "ecommerce",
+    "state": "AUTORIZADO",
+    "state_reason": "Approval and completed successfully",
+    "amount": "15000",
+    "currency": "604",
+    "payment_method": {
+      "method_name": "CARD",
+      "method_details": {
+        "masked_pan": "411111********1111",
+        "brand": "VISA",
+        "bin": "411111",
+        "last_pan": "9268",
+        "card_type": "DEBIT",
+        "card_country": "PE",
+        "issuer": "BANCO DE CREDITO DEL PERU - BCP",
+        "installments": {
+          "plan": "NORMAL",
+          "installment_number": "2"
+        }
+      }
+    },
+    "processor_response": {
+      "authorization_code": "055552",
+      "brand_transaction_id": "100B",
+      "result_message": {
+        "code": "00",
+        "description": "Approval and completed successfully"
+      }
+    },
+    "additional_fields": null,
+    "lifecycle": [
+      {
+        "state": "REGISTRADO",
+        "date": {
+          "utc_time": "2024-03-12T22:49:36.018Z",
+          "unix_time": 1710282940
+        }
+      },
+      {
+        "state": "PENDIENTE",
+        "date": {
+          "utc_time": "2024-03-12T22:49:36.018Z",
+          "unix_time": 1710282940
+        }
+      },
+      {
+        "state": "AUTORIZADO",
+        "date": {
+          "utc_time": "2024-03-12T22:49:36.018Z",
+          "unix_time": 1710282940
+        }
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Procesado correctamente"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+### Ejemplo 2: con autenticación Redirect
+
+```json
+{
+  "success": "true",
+  "action": "authorize",
+  "merchant_code": "your_merchant_code",
+  "merchant_operation_number": "2391645",
+  "transaction": {
+    "transaction_id": "5hk8rwa3h3cq9oyfs3a28v1ms",
+    "channel": "ecommerce",
+    "state": "PENDIENTE",
+    "state_reason": "Url generada para continuar con la Autenticacion",
+    "continue_url": "https://api.dev.alignet.io/payment/continue/card/81vrxn30vja1gwcfsdng4i5g5",
+    "amount": "15000",
+    "currency": "604",
+    "payment_method": {
+      "method_name": "CARD",
+      "method_details": {
+        "masked_pan": "411111********1111",
+        "brand": "VISA",
+        "bin": "411111",
+        "last_pan": "9268",
+        "card_type": "DEBIT",
+        "card_country": "PE",
+        "issuer": "BANCO DE CREDITO DEL PERU - BCP",
+        "installments": {
+          "plan": "NORMAL",
+          "installment_number": "2"
+        },
+        "redirect_url": "https://pay-me.com",
+        "callback_url": "https://pay-me.com/callback"
+      }
+    },
+    "processor_response": {
+      "authorization_code": "055552",
+      "brand_transaction_id": "100B",
+      "result_message": {
+        "code": "00",
+        "description": "Approval and completed successfully"
+      }
+    },
+    "additional_fields": null,
+    "lifecycle": [
+      {
+        "state": "REGISTRADO",
+        "date": {
+          "utc_time": "2024-03-12T22:49:36.018Z",
+          "unix_time": 1710282940
+        }
+      },
+      {
+        "state": "PENDIENTE",
+        "date": {
+          "utc_time": "2024-03-12T22:49:36.018Z",
+          "unix_time": 1710282940
+        }
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Procesado correctamente"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+### Ejemplo 3: con datos de autenticación 3DS previos
+
+```json
+{
+  "success": "true",
+  "action": "authorize",
+  "merchant_code": "your_merchant_code",
+  "merchant_operation_number": "2391645",
+  "transaction": {
+    "transaction_id": "5hk8rwa3h3cq9oyfs3a28v1ms",
+    "channel": "ecommerce",
+    "state": "AUTORIZADO",
+    "state_reason": "Approval and completed successfully",
+    "amount": "15000",
+    "currency": "604",
+    "payment_method": {
+      "method_name": "CARD",
+      "method_details": {
+        "masked_pan": "411111********1111",
+        "brand": "VISA",
+        "bin": "411111",
+        "last_pan": "9268",
+        "card_type": "DEBIT",
+        "card_country": "PE",
+        "issuer": "BANCO DE CREDITO DEL PERU - BCP",
+        "installments": {
+          "plan": "NORMAL",
+          "installment_number": "2"
+        }
+      }
+    },
+    "processor_response": {
+      "authorization_code": "055552",
+      "brand_transaction_id": "100B",
+      "result_message": {
+        "code": "00",
+        "description": "Approval and completed successfully"
+      }
+    },
+    "additional_fields": null,
+    "authentication_result": {
+      "version": "2.1.0",
+      "eci": "05",
+      "ds_transaction_id": "",
+      "3ds_transaction_id": "",
+      "trans_status": "A"
+    },
+    "lifecycle": [
+      {
+        "state": "REGISTRADO",
+        "date": {
+          "utc_time": "2024-03-12T22:49:36.018Z",
+          "unix_time": 1710282940
+        }
+      },
+      {
+        "state": "PENDIENTE",
+        "date": {
+          "utc_time": "2024-03-12T22:49:36.018Z",
+          "unix_time": 1710282940
+        }
+      },
+      {
+        "state": "AUTORIZADO",
+        "date": {
+          "utc_time": "2024-03-12T22:49:36.018Z",
+          "unix_time": 1710282940
+        }
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Procesado correctamente"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Buenas prácticas
+
+- Valida siempre el resultado desde backend.
+- Usa autenticación 3DS cuando aplique a tu modelo de riesgo o configuración.
+- No expongas PAN, CVV ni datos sensibles en frontend o logs.
+- Enmascara siempre la información sensible en observabilidad y soporte.
+- Revisa el estado final de la operación antes de tomar acciones de negocio.
+
+---
+
+## Errores comunes
+
+<CardGroup cols={2}>
+  <Card title="Datos sensibles expuestos" icon="triangle-exclamation">
+    No envíes ni almacenes PAN, CVV o datos sensibles en frontend, logs o herramientas sin protección.
+  </Card>
+
+  <Card title="Validación incompleta" icon="ban">
+    No tomes decisiones de negocio confiando únicamente en validaciones del lado cliente o en estados no confirmados.
+  </Card>
+</CardGroup>
+
+---
+
+## Siguiente paso
+
+<Card title="API de Consulta" icon="arrow-right" href="/payin/consulta">
+  Revisa cómo consultar el estado de una operación.
+</Card>

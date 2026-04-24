@@ -1,112 +1,100 @@
 ---
 title: "Referencia"
 sidebarTitle: "Referencia"
-description: "Estados de transacción, códigos de respuesta y datos de prueba para el módulo PayIn de Pay-me."
+description: "Punto de entrada para estados de transacción, datos de prueba y códigos de retorno de PayIn."
+icon: "book"
 ---
 
-## Estados de transacción
+Esta página concentra la información base que conviene tener a mano durante la integración de PayIn. Los catálogos detallados de pruebas y códigos viven en sus páginas dedicadas para evitar duplicidad y mantener esta referencia simple.
 
-Los estados por los que puede pasar una transacción en el flujo de PayIn:
+---
 
-| Estado | Descripción |
+## Accesos rápidos
+
+<CardGroup cols={2}>
+  <Card title="Estados de Transacción" icon="arrow-progress" href="/estados-de-transaccion">
+    Revisa el ciclo de vida del pago y los estados que debes mapear en tu backend.
+  </Card>
+
+  <Card title="Datos de Prueba" icon="credit-card-front" href="/flujos-de-pago">
+    Usa tarjetas, credenciales y escenarios sandbox para validar tus flujos.
+  </Card>
+
+  <Card title="Códigos de Retorno" icon="receipt" href="/codigos-de-respuesta">
+    Consulta los códigos de aprobación, rechazo y reintento por marca o procesador.
+  </Card>
+
+  <Card title="API de Consulta" icon="magnifying-glass" href="/payin/consulta">
+    Complementa tu integración con una segunda validación backend cuando la necesites.
+  </Card>
+</CardGroup>
+
+---
+
+## Lo esencial
+
+<CardGroup cols={2}>
+  <Card title="Montos en centavos" icon="banknote">
+    Envía y procesa montos en la unidad mínima de la moneda. Ejemplo: `15000` representa `150.00`.
+  </Card>
+
+  <Card title="Confirmación final" icon="shield-check">
+    No tomes el frontend como única fuente de verdad. Confirma el resultado final con [Notificaciones](/payin/notificaciones) o [Consulta](/payin/consulta).
+  </Card>
+
+  <Card title="Aprobación" icon="circle-check">
+    Considera aprobado el flujo cuando el resultado funcional y el código de retorno coincidan con la respuesta esperada del método o procesador.
+  </Card>
+
+  <Card title="Trazabilidad" icon="key">
+    Conserva `merchant_operation_number` y `transaction_id` para consulta, conciliación, cancelación y soporte.
+  </Card>
+</CardGroup>
+
+---
+
+## Lectura rápida de estados
+
+| Estado | Qué significa en integración |
 | :-- | :-- |
-| `REGISTRADO` | La transacción se registró correctamente en la pasarela. |
-| `PENDIENTE` | Enviada al procesador — en espera de respuesta o de que el usuario complete el pago. |
-| `AUTORIZADO` | El procesador aprobó la transacción y los fondos están reservados. |
-| `DENEGADO` | El procesador rechazó la transacción — fondos insuficientes, datos incorrectos u otro motivo. |
-| `INVALIDO` | La transacción fue invalidada por reglas de negocio o error de procesamiento. |
-| `CANCELADO` | El usuario o el comercio cancelaron la transacción antes de su liquidación. |
-| `EXPIRADO` | La transacción superó el tiempo límite sin completarse. |
-| `LIQUIDADO` | La transacción fue enviada al procesador para su liquidación final. |
-| `DEVUELTO` | La devolución fue enviada al procesador para reversión de fondos. 🔜 Próximamente |
-| `ABONADO` | El monto será acreditado en la cuenta del comercio. 🔜 Próximamente |
+| `PENDIENTE` | La transacción aún no terminó y puede requerir espera, redirección o acción del usuario. |
+| `AUTORIZADO` | El pago fue aprobado y ya puedes continuar tu flujo de negocio según tu modelo operativo. |
+| `DENEGADO` / `INVALIDO` | El pago no fue aprobado y debes manejar el mensaje mostrado al usuario y el registro interno. |
+| `CANCELADO` / `EXPIRADO` | La operación terminó sin pago exitoso. |
+| `EXTORNADO` / `LIQUIDADO` | Corresponden a etapas posteriores del ciclo de vida y conciliación. |
+
+<Note>
+  Si necesitas el detalle completo de cada estado, usa la página dedicada de [Estados de Transacción](/estados-de-transaccion).
+</Note>
 
 ---
 
-## Códigos de respuesta
+## Cómo usar esta sección
 
-Códigos retornados en el campo `meta.status.code` de todas las respuestas de PayIn:
+<Steps>
+  <Step title="Prueba en sandbox">
+    Usa [Datos de Prueba](/flujos-de-pago) para validar aprobaciones, rechazos y flujos por método de pago.
+  </Step>
 
-| Código | Descripción |
-| :-- | :-- |
-| `00` | Se procesó correctamente la petición |
-| `01` | Transacción rechazada por el procesador |
-| `02` | La transacción expiró |
-| `03` | Ocurrió un error |
-| `04` | No se pudo procesar la petición |
-| `05` | No se encontró el pedido |
-| `06` | Algunos datos no fueron enviados correctamente |
-| `07` | Comercio no existente |
-| `08` | Comercio requiere configuración de procesamiento |
-| `09` | Método de pago no soportado |
-| `10` | Se requiere un token de acceso |
-| `11` | Token de acceso inválido |
-| `12` | La operación se encuentra finalizada |
-| `13` | La operación se encuentra en proceso |
-| `14` | Usuario regresó al comercio sin seleccionar método de pago |
-| `15` | Usuario canceló la transacción y regresó al comercio |
+  <Step title="Mapea respuestas">
+    Usa [Códigos de Retorno](/codigos-de-respuesta) para definir qué considera tu sistema como aprobado, rechazado o reintento.
+  </Step>
 
----
-
-## Datos de prueba
-
-<Warning>
-  Las tarjetas listadas son **ficticias** — solo para entornos de desarrollo y certificación. No son válidas en producción ni cumplen el algoritmo de Luhn.
-</Warning>
-
-### Tarjetas
-
-<Tabs>
-  <Tab title="VISA">
-    | Número | Expiración | CVV | Resultado |
-    | :-- | :-- | :-- | :-- |
-    | `4474118355632240` | 03/28 | 111 | ✅ Exitosa |
-    | `4041650444437904` | 03/28 | 111 | ❌ Denegada |
-  </Tab>
-  <Tab title="Mastercard">
-    | Número | Expiración | CVV | Resultado |
-    | :-- | :-- | :-- | :-- |
-    | `5455460920094260` | 03/28 | 111 | ✅ Exitosa |
-    | `5115422225052734` | 03/28 | 111 | ❌ Denegada |
-  </Tab>
-  <Tab title="AMEX">
-    | Número | Expiración | CVV | Resultado |
-    | :-- | :-- | :-- | :-- |
-    | `371064649323968` | 03/28 | 1111 | ✅ Exitosa |
-    | `371327381068590` | 03/28 | 1111 | ❌ Denegada |
-  </Tab>
-  <Tab title="Diners">
-    | Número | Expiración | CVV | Resultado |
-    | :-- | :-- | :-- | :-- |
-    | `36006616055724` | 03/28 | 111 | ✅ Exitosa |
-    | `36344311372031` | 03/28 | 111 | ❌ Denegada |
-  </Tab>
-</Tabs>
-
-### Yape
-
-| Teléfono | Código de aprobación | Resultado |
-| :-- | :-- | :-- |
-| `969929157` | `557454` | ✅ Exitosa |
-| `999999999` | `284563` | ❌ Denegada |
-
-### Transferencia Bancaria
-
-| Número de tarjeta | Clave | Nro de documento | Token digital | Resultado |
-| :-- | :-- | :-- | :-- | :-- |
-| `123456` | `123456` | `123456` | `123456` | ✅ Exitosa |
-| `123456` | `123456` | `123456` | `222222` | ❌ Denegada |
-
-### Cuotéalo
-
-| DNI | Número de tarjeta | Clave | Monto | Resultado |
-| :-- | :-- | :-- | :-- | :-- |
-| `46699676` | `4557885801589196` | `111111` | S/. 100.00 | ✅ Exitosa |
+  <Step title="Confirma desde backend">
+    Cierra tu lógica operativa con [Notificaciones](/payin/notificaciones) o [API de Consulta](/payin/consulta), especialmente en métodos asíncronos.
+  </Step>
+</Steps>
 
 ---
 
 ## Siguiente paso
 
-<Card title="Pagos Recurrentes" icon="arrow-right">
-  Aprende cómo automatizar cobros periódicos con afiliaciones y carga masiva.
-</Card>
+<CardGroup cols={2}>
+  <Card title="API de Autorización" icon="arrow-right" href="/payin/autorizacion">
+    Vuelve al punto de entrada de creación de cargos y selección del método de pago.
+  </Card>
+
+  <Card title="API de Notificaciones S2S" icon="bell" href="/payin/notificaciones">
+    Implementa la confirmación backend del resultado final de autorización.
+  </Card>
+</CardGroup>

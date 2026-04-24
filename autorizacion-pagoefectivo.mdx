@@ -1,0 +1,394 @@
+---
+title: "API de Autorización con PagoEfectivo"
+sidebarTitle: "PagoEfectivo"
+description: "Inicia pagos con PagoEfectivo usando el API de autorización de PayIn."
+---
+
+Usa este flujo para iniciar pagos ecommerce con PagoEfectivo desde el API de autorización de PayIn.
+
+<ParamField path="POST /charges" type="endpoint" />
+
+<Note>
+  Este flujo utiliza el mismo endpoint base de autorización. Revisa los ambientes y la configuración general en el [Overview](/payin/autorizacion).
+</Note>
+
+---
+
+## Características del flujo
+
+<CardGroup cols={2}>
+  <Card title="Tipo de flujo" icon="clock">
+    Asíncrono.
+  </Card>
+
+  <Card title="Método de pago" icon="money-bill">
+    Permite iniciar cobros ecommerce con PagoEfectivo.
+  </Card>
+
+  <Card title="Código de pago" icon="receipt">
+    El API devuelve un CIP y una URL de pago para que el usuario complete la operación fuera del checkout.
+  </Card>
+
+  <Card title="Validación final" icon="shield-check">
+    El resultado final debe confirmarse por backend con notificación o consulta.
+  </Card>
+</CardGroup>
+
+---
+
+## Consideraciones
+
+<Note>
+  Este flujo requiere `redirect_url` para retornar al comercio cuando finalice la autorización y permite enviar `callback_url` para notificación host to host.
+</Note>
+
+<Note>
+  El usuario puede completar el pago después de la sesión inicial usando el CIP o la URL generada por PagoEfectivo. Complementa este flujo con [Notificaciones](/payin/notificaciones) o con [Consulta](/payin/consulta-pagoefectivo).
+</Note>
+
+<Warning>
+  No tomes como final la respuesta inicial del `POST /charges`. Generar el CIP no equivale a recibir el pago. Confirma el resultado con [Notificaciones](/payin/notificaciones) o con [Consulta](/payin/consulta-pagoefectivo).
+</Warning>
+
+---
+
+## Request
+
+<Note>
+  Antes de consumir este endpoint, solicita tu `Access Token` en [Autenticación](/autenticacion#param-post-token).
+</Note>
+
+### Headers
+
+| Campo | Descripción | Valor | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `Authorization` | Token Bearer obtenido desde autenticación | `Bearer {access_token}` | String | SI |
+| `Content-Type` | Formato del request | `application/json` | String | SI |
+| `ALG-API-VERSION` | Versión del API | `1709847567` | String | SI |
+
+```bash
+Authorization: Bearer {access_token}
+Content-Type: application/json
+ALG-API-VERSION: 1709847567
+```
+
+---
+
+### Body
+
+#### Objeto raíz del request
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `action` | Acción a ejecutar | `authorize` | String | SI |
+| `channel` | Canal de la operación | `ecommerce` | String | SI |
+| `merchant_code` | Código del comercio | `your_merchant_code` | String | SI |
+| `merchant_operation_number` | Identificador único de la operación en el comercio. **Debe ser diferente en cada transacción.** | `5974483` | String | SI |
+| `payment_method` | Objeto con la información del método de pago | Object | Object | SI |
+| `payment_details` | Objeto con el detalle del pago y datos del cliente | Object | Object | SI |
+
+---
+
+#### Objeto `payment_method`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `method_name` | Nombre del método de pago | `PAGOEFECTIVO` | String | SI |
+| `method_details` | Objeto con la información específica de PagoEfectivo | Object | Object | SI |
+
+---
+
+#### Objeto `payment_method.method_details`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `redirect_url` | URL donde se realizará el redirect cuando finalice la autorización | `https://pay-me.com` | String | SI |
+| `callback_url` | URL donde se realizará la notificación host to host (server to server) | `https://pay-me.com/callback` | String | NO |
+
+<Note>
+  `redirect_url` debe apuntar a una ruta de tu comercio preparada para recibir el retorno del usuario. Si envías `callback_url`, asegúrate de que sea accesible desde backend.
+</Note>
+
+---
+
+#### Objeto `payment_details`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `amount` | Monto de la operación en centavos | `15000` | String | SI |
+| `currency` | Código de la moneda | `604` | String | SI |
+| `billing` | Datos de facturación | Object | Object | SI |
+| `shipping` | Datos de envío | Object | Object | SI |
+| `customer` | Datos del cliente | Object | Object | SI |
+| `product_details` | Lista de productos asociados a la operación | `[]` | Array | SI |
+
+<Note>
+  Para `billing`, `shipping` y `customer`, usa la estructura ecommerce estándar con `first_name`, `last_name`, `email`, `phone` y `location`.
+</Note>
+
+---
+
+### Ejemplo de request
+
+```json
+{
+  "action": "authorize",
+  "channel": "ecommerce",
+  "merchant_code": "your_merchant_code",
+  "merchant_operation_number": "5974483",
+  "payment_method": {
+    "method_name": "PAGOEFECTIVO",
+    "method_details": {
+      "redirect_url": "https://pay-me.com",
+      "callback_url": "https://pay-me.com/callback"
+    }
+  },
+  "payment_details": {
+    "amount": "15000",
+    "currency": "604",
+    "billing": {
+      "first_name": "Pedro",
+      "last_name": "Miranda",
+      "email": "pedro@pay-me.com",
+      "phone": {
+        "country_code": "+51",
+        "subscriber": "999835685"
+      },
+      "location": {
+        "line_1": "Av. Casimiro Ulloa 333",
+        "line_2": "Miraflores",
+        "city": "Lima",
+        "state": "Lima",
+        "country": "Peru"
+      }
+    },
+    "shipping": {
+      "first_name": "Pedro",
+      "last_name": "Miranda",
+      "email": "pedro@pay-me.com",
+      "phone": {
+        "country_code": "+51",
+        "subscriber": "999835685"
+      },
+      "location": {
+        "line_1": "Av. Casimiro Ulloa 333",
+        "line_2": "Miraflores",
+        "city": "Lima",
+        "state": "Lima",
+        "country": "Peru"
+      }
+    },
+    "customer": {
+      "first_name": "Pedro",
+      "last_name": "Miranda",
+      "email": "pedro@pay-me.com",
+      "phone": {
+        "country_code": "+51",
+        "subscriber": "999835685"
+      },
+      "location": {
+        "line_1": "Av. Casimiro Ulloa 333",
+        "line_2": "Miraflores",
+        "city": "Lima",
+        "state": "Lima",
+        "country": "Peru"
+      }
+    },
+    "product_details": []
+  }
+}
+```
+
+---
+
+## Response
+
+<Note>
+  La respuesta inicial normalmente deja la transacción en seguimiento. Confirma el resultado final con notificaciones o con consulta antes de actualizar la orden.
+</Note>
+
+### Objeto `transaction`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `transaction_id` | Identificador único de la transacción | `5hk8rwa3h3cq9oyfs3a28v1ms` | String | SI |
+| `channel` | Canal por el cual se realizó la transacción | `ecommerce` | String | SI |
+| `state` | Estado actual de la transacción | `PENDIENTE` | String | SI |
+| `state_reason` | Observación o descripción del estado actual | `Código CIP generado exitosamente` | String | SI |
+| `amount` | Monto de la transacción | `15000` | String | SI |
+| `currency` | Código de la moneda de la operación | `604` | String | SI |
+| `payment_method` | Objeto con información del método de pago usado en la transacción | Object | Object | SI |
+| `expiration_date` | Fecha en la que expirará la transacción | Object | Object | NO |
+| `processor_response` | Resultado devuelto por la procesadora con datos del CIP | Object | Object | NO |
+| `additional_fields` | Datos adicionales enviados en el request | Object | Object | NO |
+| `lifecycle` | Historial de estados por los que pasó la transacción | Array | Array | SI |
+
+<Note>
+  `state` puede devolver valores como `PENDIENTE` o `INVALIDO`. Cuando el CIP fue generado correctamente, la transacción normalmente queda en `PENDIENTE` hasta que el usuario complete el pago o expire.
+</Note>
+
+---
+
+### Objeto `transaction.payment_method`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `method_name` | Nombre del método de pago usado en la transacción | `PAGOEFECTIVO` | String | SI |
+| `method_details` | Objeto que contiene el detalle del método de pago usado en la transacción | Object | Object | SI |
+
+---
+
+### Objeto `transaction.payment_method.method_details`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `callback_url` | URL donde se realizará la notificación host to host (server to server) | `https://pay-me.com/callback` | String | NO |
+
+---
+
+### Objeto `transaction.expiration_date`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `utc_time` | Fecha de expiración en UTC | `2024-03-12T22:49:36.018Z` | String | NO |
+| `unix_time` | Fecha de expiración en unix time | `1711585037` | Integer | NO |
+
+---
+
+### Objeto `transaction.processor_response`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `cip` | Código CIP de PagoEfectivo | `1508405` | String | NO |
+| `cip_url` | URL de PagoEfectivo con el detalle e indicaciones de pago | `https://pre1a.payment.pagoefectivo.pe/72217FA5-4580-4B16-A345-24F028F53356.html` | String | NO |
+| `result_message` | Mensaje del resultado de la autorización | Object | Object | NO |
+
+---
+
+### Objeto `transaction.processor_response.result_message`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `code` | Código del resultado de la autorización | `100` | String | NO |
+| `description` | Descripción del resultado de la autorización | `Solicitud exitosa.` | String | NO |
+
+---
+
+### Objeto `transaction.lifecycle`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `state` | Estado registrado en el historial | `PENDIENTE` | String | SI |
+| `date` | Fecha del cambio de estado | Object | Object | SI |
+
+<Note>
+  En `lifecycle` puedes recibir estados como `REGISTRADO`, `PENDIENTE` e `INVALIDO`.
+</Note>
+
+---
+
+### Objeto `transaction.lifecycle[].date`
+
+| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- | :-- |
+| `utc_time` | Fecha en UTC | `2024-03-12T22:49:36.018Z` | String | SI |
+| `unix_time` | Fecha en unix time | `1710282940` | Integer | SI |
+
+---
+
+### Ejemplo de response
+
+```json
+{
+  "success": "true",
+  "action": "authorize",
+  "merchant_code": "your_merchant_code",
+  "merchant_operation_number": "2391645",
+  "transaction": {
+    "transaction_id": "5hk8rwa3h3cq9oyfs3a28v1ms",
+    "channel": "ecommerce",
+    "state": "PENDIENTE",
+    "state_reason": "Código CIP generado exitosamente",
+    "amount": "15000",
+    "currency": "604",
+    "payment_method": {
+      "method_name": "PAGOEFECTIVO",
+      "method_details": {
+        "callback_url": "https://pay-me.com/callback"
+      }
+    },
+    "expiration_date": {
+      "utc_time": "2024-03-12T22:49:36.018Z",
+      "unix_time": 1711585037
+    },
+    "processor_response": {
+      "cip": "1508405",
+      "cip_url": "https://pre1a.payment.pagoefectivo.pe/72217FA5-4580-4B16-A345-24F028F53356.html",
+      "result_message": {
+        "code": "100",
+        "description": "Solicitud exitosa."
+      }
+    },
+    "additional_fields": null,
+    "lifecycle": [
+      {
+        "state": "REGISTRADO",
+        "date": {
+          "utc_time": "2024-03-12T22:49:36.018Z",
+          "unix_time": 1710282940
+        }
+      },
+      {
+        "state": "PENDIENTE",
+        "date": {
+          "utc_time": "2024-03-12T22:49:36.018Z",
+          "unix_time": 1710282940
+        }
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Procesado correctamente"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Buenas prácticas
+
+- Confirma el resultado final por backend antes de actualizar la orden.
+- Asegúrate de enviar un `merchant_operation_number` único por transacción.
+- No asumas que un CIP generado significa pago completado; interpreta `PENDIENTE` como un estado intermedio.
+- Usa `callback_url` si tu operación necesita confirmación server to server.
+- Conserva `transaction_id`, `merchant_operation_number`, `cip`, `cip_url` y la fecha de expiración para seguimiento, soporte y conciliación.
+
+---
+
+## Errores comunes
+
+<CardGroup cols={2}>
+  <Card title="Pago asumido como exitoso" icon="triangle-exclamation">
+    Generar el CIP no equivale a recibir el pago. El usuario todavía debe completar el abono en el canal habilitado por PagoEfectivo.
+  </Card>
+
+  <Card title="CIP expirado" icon="ban">
+    Si el usuario intenta pagar después de `expiration_date`, deberás generar una nueva operación en lugar de reutilizar la anterior.
+  </Card>
+</CardGroup>
+
+---
+
+## Siguiente paso
+
+<Card title="Api de Consulta con PagoEfectivo" icon="arrow-right" href="/payin/consulta-pagoefectivo">
+  Verifica cómo consultar una operación iniciada con PagoEfectivo.
+</Card>

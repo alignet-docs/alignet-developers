@@ -1,122 +1,140 @@
 ---
-title: "Autorización"
-sidebarTitle: "Autorización"
-description: "Endpoints de autorización para todos los métodos de pago disponibles en Pay-me."
+title: "API de Autorización - ecommerce"
+sidebarTitle: "Overview"
+description: "Overview del API de autorización para los métodos de pago ecommerce disponibles en PayIn."
 ---
 
-El endpoint de autorización inicia el flujo de pago. Dependiendo del método elegido, la respuesta puede ser inmediata o requerir una redirección del usuario para completar el proceso.
+El API de autorización es el punto de entrada para iniciar un cobro en PayIn. Desde aquí puedes procesar pagos ecommerce con tarjeta, Yape, QR, transferencia bancaria, Cuotéalo y PagoEfectivo.
 
----
-
-## Endpoint
-
-| Ambiente | URL | Método |
-| :-- | :-- | :-- |
-| Pre-Producción | `https://api.preprod.alignet.io/charges` | `POST` |
-| Producción | `https://api.alignet.io/charges` | `POST` |
-
----
-
-## Métodos soportados
+<ParamField path="POST /charges" type="endpoint" />
 
 <CardGroup cols={2}>
-  <Card title="Tarjeta" icon="credit-card">
-    Síncrono · Sin redirección
+  <Card title="Pre-Producción" icon="flask">
+    <code>https://api.preprod.alignet.io/charges</code>
   </Card>
-  <Card title="Tarjeta Presente" icon="cash-register">
-    Síncrono · Sin redirección
+  <Card title="Producción" icon="rocket">
+    <code>https://api.alignet.io/charges</code>
   </Card>
-  <Card title="Yape" icon="mobile">
-    Síncrono · Sin redirección
+</CardGroup>
+
+<Note>
+  Usa el mismo endpoint base `POST /charges` para todos los métodos de autorización. El comportamiento final depende del método de pago y del flujo configurado.
+</Note>
+
+<Note>
+  Si integras Checkout Web (Flex), la respuesta que recibes en `responseCallback` sigue la misma estructura documentada en esta sección de autorización.
+</Note>
+
+<Note>
+  Usa esta misma referencia para interpretar estados, `payment_method`, `processor_response`, `meta` y variaciones por método cuando recibas el resultado final desde Flex.
+</Note>
+
+---
+
+## Métodos disponibles
+
+### Flujos síncronos
+
+<CardGroup cols={2}>
+  <Card title="API de Autorización con Tarjeta" icon="credit-card" href="/payin/autorizacion-tarjeta">
+    Flujo síncrono para pagos con tarjeta en ecommerce.
   </Card>
-  <Card title="QR" icon="qrcode">
-    Asíncrono · Con redirección
+  <Card title="API de Autorización con Yape" icon="mobile" href="/payin/autorizacion-yape">
+    Flujo síncrono para cobros con billetera Yape.
   </Card>
-  <Card title="Transferencia Bancaria" icon="building-columns">
-    Asíncrono · Con redirección
+</CardGroup>
+
+### Flujos asíncronos
+
+<CardGroup cols={2}>
+  <Card title="API de Autorización con Transferencia Bancaria" icon="building-columns" href="/payin/autorizacion-transferencia-bancaria">
+    Flujo asíncrono con redirección a banca en línea.
   </Card>
-  <Card title="Cuotéalo" icon="receipt">
-    Asíncrono · Con redirección
+  <Card title="API de Autorización con QR" icon="qrcode" href="/payin/autorizacion-qr">
+    Flujo asíncrono con generación del QR en la misma respuesta.
   </Card>
-  <Card title="PagoEfectivo" icon="money-bill">
-    Asíncrono · Con redirección
+  <Card title="API de Autorización con Cuotéalo" icon="receipt" href="/payin/autorizacion-cuotealo">
+    Flujo asíncrono con experiencia de pago en cuotas.
+  </Card>
+  <Card title="API de Autorización con PagoEfectivo" icon="money-bill" href="/payin/autorizacion-pagoefectivo">
+    Flujo asíncrono para pagos fuera de la sesión principal.
+  </Card>
+  <Card title="Consideraciones para métodos con Redirect" icon="arrow-up-right-from-square" href="/payin/autorizacion-metodos-con-redirect">
+    Reglas comunes para CARD cuando usa Redirect, transferencia bancaria y Cuotéalo.
   </Card>
 </CardGroup>
 
 ---
 
-## Métodos con redirección
+## ¿Qué cubre esta sección?
 
-Los métodos **QR, Transferencia Bancaria, Cuotéalo y PagoEfectivo** requieren redirigir al usuario a una página externa para completar el pago. El flujo es el siguiente:
+<CardGroup cols={2}>
+  <Card title="Flujos síncronos" icon="bolt">
+    Tarjeta y Yape responden dentro de la misma sesión de pago, aunque la validación final siempre debe hacerse desde backend.
+  </Card>
 
-<Steps>
-  <Step title="Recibe la URL de redirección">
-    La respuesta del `POST` de autorización incluye una URL a la que debes redirigir al usuario para que complete el pago en la plataforma correspondiente.
-  </Step>
-  <Step title="Redirige al usuario">
-    Redirige al usuario a esa URL. El proceso de pago ocurre fuera de tu plataforma.
-  </Step>
-  <Step title="Recibe el retorno">
-    Una vez que el usuario completa o cancela el pago, es redirigido de vuelta a tu `redirect_url` con dos parámetros:
-    - `authorization_result` — JSON en Base64 con el resultado de la autorización
-    - `signature` — firma digital para verificar la autenticidad del resultado
-  </Step>
-  <Step title="Verifica el signature">
-    Antes de procesar el resultado, verifica el `signature` usando la llave pública de Pay-me. Consulta el proceso completo en [Notificaciones](/payin/notificaciones).
-  </Step>
-  <Step title="Confirma con notificación S2S">
-    Adicionalmente Pay-me envía una [notificación Server-to-Server](/payin/notificaciones) a tu endpoint con el resultado final — úsala como confirmación adicional.
-  </Step>
-</Steps>
+  <Card title="Flujos con redirect" icon="arrow-up-right-from-square">
+    CARD cuando usa Redirect, Transferencia Bancaria y Cuotéalo comparten reglas de redirección y retorno al comercio.
+  </Card>
 
-<Warning>
-  El parámetro `authorization_result` viene en **Base64** — decodifícalo antes de procesarlo.
-</Warning>
+  <Card title="Validación del resultado" icon="shield-check">
+    Para métodos asíncronos, confirma el estado final con [Notificaciones](/payin/notificaciones) o con el [API de Consulta](/payin/consulta).
+  </Card>
 
-<Warning>
-  Los códigos `14` y `15` de los [códigos de respuesta](/payin/referencia) indican que el usuario regresó sin completar el pago o que lo canceló explícitamente. Maneja estos casos en tu flujo de retorno.
-</Warning>
+  <Card title="Montos y formatos" icon="receipt">
+    Todos los importes se envían en centavos y el detalle de respuesta puede variar según el método de pago.
+  </Card>
 
----
+  <Card title="Checkout Web (Flex)" icon="globe">
+    El `payload` de Flex reutiliza la estructura del request de autorización sin `payment_method`, y `responseCallback` reutiliza la respuesta de autorización.
+  </Card>
 
-## Headers requeridos
-
-| Campo | Valor | Tipo | Obligatorio |
-| :-- | :-- | :-- | :-- |
-| `Authorization` | `Bearer <Access Token>` | `String` | SI |
-| `ALG-API-VERSION` | `1709847567` | `String` | SI |
-| `payment-facilitator-code` | Código del PF — solo para Facilitadores de Pago | `String` | NO |
-
----
-
-## Consideraciones generales
+</CardGroup>
 
 <Note>
-  Los montos siempre se expresan en **centavos**. Ejemplo: S/. 10.50 → `"1050"`.
-</Note>
-
-<Note>
-  Para métodos asíncronos el estado final llega vía [notificación S2S](/payin/notificaciones) o mediante la [API de Consulta](/payin/consulta). No dependas únicamente de la respuesta del `POST` inicial.
-</Note>
-
-<Note>
-  El campo `transaction.processor_response` varía según el método de pago — tómalo como referencial ya que puede cambiar en el tiempo.
+  Si no cuentas con PCI, utiliza flujos con tokenización o checkout alojado.
 </Note>
 
 ---
 
-## Referencia técnica
+## PCI y manejo de datos sensibles
 
-La especificación completa — esquemas JSON por método, parámetros detallados, ejemplos de request y response, y colección Postman — está publicada en GitHub.
+Si tu integración consume APIs que envían o reciben datos sensibles de pago, debes cumplir con los estándares de seguridad PCI.
 
-<Card title="Ver referencia en GitHub" icon="github" href="https://github.com/alignet">
-  Tarjeta · Tarjeta Presente · Yape · QR · Transferencia · Cuotéalo · PagoEfectivo
-</Card>
+### Requisitos generales
+
+- Protección de datos en tránsito y en reposo  
+- Enmascaramiento de información sensible  
+- No exposición en frontend, logs o herramientas externas  
+
+---
+
+### Facilitadores de pago (PF)
+
+Los facilitadores de pago pueden utilizar la integración por API, pero asumen responsabilidades adicionales en el manejo de datos sensibles.
+
+<CardGroup cols={2}>
+  <Card title="Responsabilidad" icon="user-shield">
+    El PF asume responsabilidad directa sobre sus subcomercios y su cumplimiento PCI.
+  </Card>
+
+  <Card title="Seguridad" icon="lock">
+    Debe garantizar almacenamiento, transmisión y protección segura de los datos sensibles.
+  </Card>
+
+  <Card title="Modelo centralizado" icon="server">
+    El PF procesa directamente los pagos y gestiona la información sensible.
+  </Card>
+
+  <Card title="Modelo híbrido" icon="shuffle">
+    El PF delega el manejo de datos sensibles a Pay-me para reducir su alcance PCI.
+  </Card>
+</CardGroup>
 
 ---
 
 ## Siguiente paso
 
-<Card title="Consulta" icon="arrow-right">
-  Verifica el estado de una transacción después de la autorización.
+<Card title="API de Autorización con Tarjeta" icon="arrow-right" href="/payin/autorizacion-tarjeta">
+  Revisa el primer flujo específico por método para iniciar tu integración.
 </Card>

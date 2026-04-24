@@ -37,6 +37,7 @@
                 "pages": [
                   {
                     "group": "E-commerce",
+                    "icon": "store",
                     "pages": [
                       {
                         "group": "WooCommerce",
@@ -83,17 +84,21 @@
                   },
                   {
                     "group": "Checkout Web",
+                    "icon": "globe",
                     "pages": [
                       "introduccion-2",
                       "requisitos-de-negocio",
                       {
                         "group": "Flex",
+                        "icon": "credit-card-front",
                         "pages": [
                           "introduccion-3",
-                          "api-nonce",
+                          "autenticacion",
                           {
                             "group": "Inicializar Pay Me Flex",
+                            "icon": "gear-complex",
                             "pages": [
+                              "api-nonce",
                               "incluir-libreria-y-estilos-basicos",
                               "funcionalidad-de-cobros",
                               "funcionalidad-debito-automatica"
@@ -104,12 +109,14 @@
                       },
                       {
                         "group": "Modal",
+                        "icon": "window-maximize",
                         "pages": [
                           "requisitos-tecnicos-1",
                           "ambientes-de-integracion-1",
                           "configuracion-inicial",
                           {
                             "group": "Integración con V-POS2",
+                            "icon": "code",
                             "pages": [
                               "parametros-de-envio-y-respuesta",
                               "notificaciones-de-respuesta"
@@ -123,6 +130,7 @@
                   },
                   {
                     "group": "SDK Mobile",
+                    "icon": "mobile-screen",
                     "pages": [
                       {
                         "group": "SDK Android",
@@ -178,15 +186,42 @@
                   },
                   {
                     "group": "API de Pagos",
+                    "icon": "credit-card-front",
                     "pages": [
                       "introduccion-5",
                       "autenticacion",
                       {
                         "group": "PayIn",
+                        "icon": "wallet",
                         "pages": [
                           "introduccion-6",
-                          "autorizacion",
-                          "consulta",
+                          {
+                            "group": "API de Autorización - ecommerce",
+                            "icon": "credit-card",
+                            "pages": [
+                              "autorizacion",
+                              "autorizacion-tarjeta",
+                              "autorizacion-yape",
+                              "autorizacion-transferencia-bancaria",
+                              "autorizacion-qr",
+                              "autorizacion-cuotealo",
+                              "autorizacion-pagoefectivo",
+                              "autorizacion-metodos-con-redirect"
+                            ]
+                          },
+                          {
+                            "group": "API de Consulta",
+                            "icon": "magnifying-glass",
+                            "pages": [
+                              "consulta",
+                              "consulta-tarjeta",
+                              "consulta-yape",
+                              "consulta-transferencia-bancaria",
+                              "consulta-qr",
+                              "consulta-cuotealo",
+                              "consulta-pagoefectivo"
+                            ]
+                          },
                           "cancelacion",
                           "notificaciones",
                           "referencia"
@@ -194,6 +229,7 @@
                       },
                       {
                         "group": "Pagos Recurrentes",
+                        "icon": "rotate",
                         "pages": [
                           "introduc",
                           "afiliaciones",
@@ -203,13 +239,18 @@
                       },
                       {
                         "group": "Devoluciones",
+                        "icon": "arrow-up-from-line",
                         "pages": [
                           "introduccion-7",
-                          "referencia-1"
+                          "referencia-1",
+                          "consulta-unitaria-devolucion",
+                          "consulta-masiva-devolucion",
+                          "codigos-respuesta-devoluciones"
                         ]
                       },
                       {
                         "group": "Onboarding de Comercios",
+                        "icon": "store",
                         "pages": [
                           "introduccion-8",
                           "registro-individual",
@@ -226,6 +267,7 @@
                 "pages": [
                   {
                     "group": "Conceptos Fundamentales",
+                    "icon": "lightbulb",
                     "pages": [
                       "operaciones-inteligentes",
                       "estados-de-transaccion"
@@ -233,6 +275,7 @@
                   },
                   {
                     "group": "Sandbox y pruebas",
+                    "icon": "flask",
                     "pages": [
                       "flujos-de-pago",
                       "codigos-de-respuesta"
@@ -246,6 +289,7 @@
                 "pages": [
                   {
                     "group": "Dashboard",
+                    "icon": "table-columns",
                     "pages": [
                       "dashboard",
                       "consulta-operaciones",
@@ -258,9 +302,13 @@
                   },
                   {
                     "group": "Gestión de devoluciones",
+                    "icon": "rotate-left",
                     "pages": [
                       "introduccion-4",
-                      "referencia-del-api-de-devoluciones"
+                      "referencia-del-api-de-devoluciones",
+                      "consulta-unitaria-devolucion",
+                      "consulta-masiva-devolucion",
+                      "codigos-respuesta-devoluciones"
                     ]
                   }
                 ]

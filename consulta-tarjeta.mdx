@@ -1,0 +1,430 @@
+---
+title: "Api de Consulta con Tarjeta"
+sidebarTitle: "Tarjeta"
+description: "Consulta el estado de una operación con tarjeta en PayIn."
+---
+
+Usa esta consulta para validar el estado de una transacción con tarjeta, realizar conciliación o confirmar el resultado final desde backend.
+
+<ParamField path="GET /charges/{merchant_code}/{merchant_operation_number}/{transaction_id}" type="endpoint" />
+
+<Note>
+  Este flujo usa la misma estructura general documentada en el [Overview de Consulta](/payin/consulta). Aquí se detalla específicamente el objeto `operation.transactions[]` para pagos con tarjeta.
+</Note>
+
+---
+
+## ¿Cuándo usarla?
+
+<CardGroup cols={2}>
+  <Card title="Conciliación" icon="rotate">
+    Cuando necesitas validar el resultado almacenado en tu sistema con el estado real de la transacción.
+  </Card>
+
+  <Card title="Segunda validación" icon="shield-check">
+    Cuando debes confirmar desde backend si el pago con tarjeta terminó autorizado, pendiente, denegado o expirado.
+  </Card>
+
+  <Card title="Flujos con redirect" icon="arrow-up-right-from-square">
+    Cuando la tarjeta requiere autenticación 3DS Redirect y necesitas consultar `continue_url`, expiración o el resultado posterior.
+  </Card>
+
+  <Card title="Checkout Web (Flex)" icon="globe">
+    Si integras Flex, usa esta consulta como validación final antes de cerrar la orden, no solo el resultado mostrado en frontend.
+  </Card>
+</CardGroup>
+
+---
+
+## Consideraciones
+
+<Note>
+  Conserva `merchant_code`, `merchant_operation_number` y `transaction_id` desde la autorización para consultar sin ambigüedad.
+</Note>
+
+<Note>
+  En esta documentación se usa `method_details` para mantener consistencia con el resto de la referencia. Si en material previo encuentras `method_detail`, trátalo como el mismo objeto.
+</Note>
+
+---
+
+## Response
+
+Objeto `operation.transactions[]` para pagos con tarjeta dentro de la trama de respuesta del [API de Consulta](/payin/consulta).
+
+### Objeto `operation.transactions[]`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].transaction_id` | Identificador único de la transacción. | String | SI |
+| `operation.transactions[].channel` | Canal por el cual se realizó la transacción. Valor esperado: `ecommerce`. | String | SI |
+| `operation.transactions[].state` | Estado actual de la transacción. Valores frecuentes: `PENDIENTE`, `INVALIDO`, `AUTORIZADO`, `DENEGADO`, `CANCELADO`, `EXPIRADO`, `LIQUIDADO`. | String | SI |
+| `operation.transactions[].state_reason` | Observación o detalle del estado. | String | SI |
+| `operation.transactions[].amount` | Monto de la transacción. | String | SI |
+| `operation.transactions[].currency` | Código de moneda de la operación. | String | SI |
+| `operation.transactions[].payment_method` | Objeto que contiene información sobre el método de pago usado en la transacción. En este flujo el método es `CARD`. | Object | SI |
+| `operation.transactions[].payment_method.method_name` | Nombre del método de pago usado en la transacción. | String | SI |
+| `operation.transactions[].payment_method.method_details` | Objeto que contiene información detallada relacionada al método. | Object | NO |
+| `operation.transactions[].continue_url` | Visible en estado `PENDIENTE`. URL para continuar el proceso de pago cuando el método CARD requiere autenticación. | String | NO |
+| `operation.transactions[].expiration_date` | Visible en estado `PENDIENTE`. Objeto que contiene la fecha en la que expirará la transacción. | Object | NO |
+| `operation.transactions[].processor_response` | Visible normalmente en estados `AUTORIZADO`, `DENEGADO` o `EXTORNADO`. Objeto con el resultado de autorización devuelto por la procesadora. | Object | NO |
+| `operation.transactions[].authentication_result` | Objeto que contiene el resultado de la autenticación usada en la transacción. | Object | NO |
+| `operation.transactions[].risk_evaluation` | Objeto que contiene el resultado de la evaluación de antifraude. | Object | NO |
+| `operation.transactions[].additional_fields` | Objeto que contiene los datos adicionales enviados en el request de autorización. | Object | NO |
+| `operation.transactions[].lifecycle` | Array que contiene el listado de estados por los que pasó la transacción. | Array | SI |
+
+---
+
+### Objeto `operation.transactions[].payment_method.method_details`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].payment_method.method_details.masked_pan` | Tarjeta enmascarada usada en la transacción. | String | NO |
+| `operation.transactions[].payment_method.method_details.brand` | Marca de la tarjeta usada en la transacción. | String | NO |
+| `operation.transactions[].payment_method.method_details.bin` | BIN de la tarjeta usada en la transacción. | String | NO |
+| `operation.transactions[].payment_method.method_details.last_pan` | Últimos 4 dígitos de la tarjeta usada en la transacción. | String | NO |
+| `operation.transactions[].payment_method.method_details.card_type` | Tipo de tarjeta. | String | NO |
+| `operation.transactions[].payment_method.method_details.card_country` | País de la tarjeta. | String | NO |
+| `operation.transactions[].payment_method.method_details.issuer` | Banco emisor de la tarjeta. | String | NO |
+| `operation.transactions[].payment_method.method_details.installments` | Objeto que contiene información de planes y cuotas usadas en la transacción. | Object | NO |
+| `operation.transactions[].payment_method.method_details.redirect_url` | Visible cuando aplica redirect. URL enviada en el request de autorización. | String | NO |
+| `operation.transactions[].payment_method.method_details.callback_url` | URL de callback enviada en el request de autorización. | String | NO |
+
+---
+
+### Objeto `operation.transactions[].payment_method.method_details.installments`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].payment_method.method_details.installments.plan` | Plan de cuotas. Valores frecuentes: `NORMAL`, `DIFERIDO`. | String | NO |
+| `operation.transactions[].payment_method.method_details.installments.installment_number` | Número de cuotas. | String | NO |
+
+---
+
+### Objeto `operation.transactions[].expiration_date`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].expiration_date.utc_time` | Fecha en UTC. | String | NO |
+| `operation.transactions[].expiration_date.unix_time` | Fecha en Unix time. | Integer | NO |
+
+---
+
+### Objeto `operation.transactions[].processor_response`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].processor_response.authorization_code` | Código de autorización. | String | NO |
+| `operation.transactions[].processor_response.brand_transaction_id` | ID de la transacción ante la marca. | String | NO |
+| `operation.transactions[].processor_response.result_message` | Objeto que contiene el mensaje del resultado de la autorización. | Object | NO |
+
+---
+
+### Objeto `operation.transactions[].processor_response.result_message`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].processor_response.result_message.code` | Código del resultado de la autorización. | String | NO |
+| `operation.transactions[].processor_response.result_message.description` | Descripción del resultado de la autorización. | String | NO |
+
+---
+
+### Objeto `operation.transactions[].authentication_result`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].authentication_result.version` | Versión del protocolo de autenticación. | String | NO |
+| `operation.transactions[].authentication_result.eci` | ECI. | String | NO |
+| `operation.transactions[].authentication_result.vci` | VCI. | String | NO |
+| `operation.transactions[].authentication_result.ds_transaction_id` | DS Transaction ID. | String | NO |
+| `operation.transactions[].authentication_result.3ds_transaction_id` | 3DS Server Transaction ID. | String | NO |
+
+---
+
+### Objeto `operation.transactions[].lifecycle`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].lifecycle[].state` | Estado de la transacción. Valores frecuentes: `REGISTRADO`, `PENDIENTE`, `INVALIDO`, `AUTORIZADO`, `DENEGADO`, `CANCELADO`, `EXPIRADO`, `LIQUIDADO`. | String | SI |
+| `operation.transactions[].lifecycle[].date` | Objeto que contiene la fecha en la que se realizó el cambio de estado. | Object | SI |
+
+---
+
+### Objeto `operation.transactions[].lifecycle[].date`
+
+| Campo | Descripción | Tipo | Obligatorio |
+| :-- | :-- | :-- | :-- |
+| `operation.transactions[].lifecycle[].date.utc_time` | Fecha en UTC. | String | SI |
+| `operation.transactions[].lifecycle[].date.unix_time` | Fecha en Unix time. | Integer | SI |
+
+---
+
+## Ejemplo 1: sin autenticación
+
+Response de consulta de tarjeta sin autenticación.
+
+```json
+{
+  "success": true,
+  "merchant_code": "abc",
+  "operation": {
+    "merchant_operation_number": "2391645",
+    "state": "AUTORIZADO",
+    "amount": "15000",
+    "currency": "604",
+    "transactions": [
+      {
+        "transaction_id": "5hk8rwa3h3cq9oyfs3a28v1ms",
+        "channel": "ecommerce",
+        "state": "AUTORIZADO",
+        "state_reason": "Approval and completed successfully",
+        "amount": "15000",
+        "currency": "604",
+        "payment_method": {
+          "method_name": "CARD",
+          "method_details": {
+            "masked_pan": "455788******9268",
+            "brand": "VISA",
+            "bin": "455788",
+            "last_pan": "9268",
+            "card_type": "DEBIT",
+            "card_country": "PE",
+            "issuer": "BANCO DE CREDITO DEL PERU - BCP",
+            "installments": {
+              "plan": "NORMAL",
+              "installment_number": "2"
+            },
+            "redirect_url": "https://pay-me.com",
+            "callback_url": "https://pay-me.com/callback"
+          }
+        },
+        "processor_response": {
+          "authorization_code": "055552",
+          "brand_transaction_id": "A055552",
+          "result_message": {
+            "code": "00",
+            "description": "Approval and completed successfully"
+          }
+        },
+        "lifecycle": [
+          {
+            "state": "REGISTRADO",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          },
+          {
+            "state": "PENDIENTE",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          },
+          {
+            "state": "AUTORIZADO",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Se proceso correctamente"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Ejemplo 2: con autenticación Redirect
+
+Response de consulta de tarjeta con Redirect para un API único de autorización más autenticación 3DS.
+
+```json
+{
+  "success": true,
+  "merchant_code": "abc",
+  "operation": {
+    "merchant_operation_number": "2391645",
+    "state": "PENDIENTE",
+    "amount": "15000",
+    "currency": "604",
+    "transactions": [
+      {
+        "transaction_id": "5hk8rwa3h3cq9oyfs3a28v1ms",
+        "channel": "ecommerce",
+        "state": "PENDIENTE",
+        "state_reason": "Url generada para continuar con la Autenticacion",
+        "continue_url": "https://api.dev.alignet.io/payment/continue/card/81vrxn30vja1gwcfsdng4i5g5",
+        "expiration_date": {
+          "utc_time": "2024-03-12T22:49:36.018Z",
+          "unix_time": 1711585037
+        },
+        "amount": "15000",
+        "currency": "604",
+        "payment_method": {
+          "method_name": "CARD",
+          "method_details": {
+            "masked_pan": "455788******9268",
+            "brand": "VISA",
+            "bin": "455788",
+            "last_pan": "9268",
+            "card_type": "DEBIT",
+            "card_country": "PE",
+            "issuer": "BANCO DE CREDITO DEL PERU - BCP",
+            "installments": {
+              "plan": "NORMAL",
+              "installment_number": "2"
+            },
+            "redirect_url": "https://pay-me.com",
+            "callback_url": "https://pay-me.com/callback"
+          }
+        },
+        "lifecycle": [
+          {
+            "state": "REGISTRADO",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          },
+          {
+            "state": "PENDIENTE",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Se proceso correctamente"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Ejemplo 3: con datos de autenticación
+
+Response de consulta de tarjeta con datos resultado de autenticación 3DS obtenidos previamente por otro API 3DS.
+
+```json
+{
+  "success": true,
+  "merchant_code": "abc",
+  "operation": {
+    "merchant_operation_number": "2391645",
+    "state": "AUTORIZADO",
+    "amount": "15000",
+    "currency": "604",
+    "transactions": [
+      {
+        "transaction_id": "5hk8rwa3h3cq9oyfs3a28v1ms",
+        "channel": "ecommerce",
+        "state": "AUTORIZADO",
+        "state_reason": "Approval and completed successfully",
+        "amount": "15000",
+        "currency": "604",
+        "payment_method": {
+          "method_name": "CARD",
+          "method_details": {
+            "masked_pan": "411111********1111",
+            "brand": "VISA",
+            "bin": "411111",
+            "last_pan": "9268",
+            "card_type": "DEBIT",
+            "card_country": "PE",
+            "issuer": "BANCO DE CREDITO DEL PERU - BCP",
+            "installments": {
+              "plan": "NORMAL",
+              "installment_number": "2"
+            },
+            "callback_url": "https://pay-me.com/callback"
+          }
+        },
+        "processor_response": {
+          "authorization_code": "055552",
+          "brand_transaction_id": "100B",
+          "result_message": {
+            "code": "00",
+            "description": "Approval and completed successfully"
+          }
+        },
+        "additional_fields": null,
+        "authentication_result": {
+          "version": "2.1.0",
+          "eci": "05",
+          "vci": "TSYF",
+          "ds_transaction_id": "",
+          "3ds_transaction_id": ""
+        },
+        "lifecycle": [
+          {
+            "state": "REGISTRADO",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          },
+          {
+            "state": "PENDIENTE",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          },
+          {
+            "state": "AUTORIZADO",
+            "date": {
+              "utc_time": "2024-03-12T22:49:36.018Z",
+              "unix_time": 1710282940
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "meta": {
+    "status": {
+      "code": "00",
+      "message_ilgn": [
+        {
+          "locale": "es_PE",
+          "value": "Procesado correctamente"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
+## Siguiente paso
+
+<Card title="API de Cancelación" icon="arrow-right" href="/payin/cancelacion">
+  Si la transacción sigue autorizada, revisa cómo cancelarla antes de liquidación.
+</Card>

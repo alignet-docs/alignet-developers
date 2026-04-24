@@ -1,0 +1,71 @@
+---
+title: "Códigos de Respuesta - Devoluciones"
+sidebarTitle: "Códigos de Respuesta"
+description: "Códigos válidos del objeto meta para las APIs del módulo de Devoluciones."
+---
+
+Los códigos de respuesta válidos en el objeto `meta` para todos los APIs de **Devolución** son los siguientes:
+
+| Código | Descripción |
+| :-- | :-- |
+| `00` | Se procesó correctamente la petición |
+| `01` | Algunas operaciones fueron rechazadas |
+| `03` | Ocurrió un error |
+| `05` | No se encontró el pedido |
+| `06` | Algunos datos no fueron enviados correctamente |
+
+---
+
+## Cómo interpretarlos
+
+<CardGroup cols={2}>
+  <Card title="Éxito total" icon="circle-check">
+    Usa `00` cuando la petición fue procesada correctamente a nivel del flujo.
+  </Card>
+
+  <Card title="Éxito parcial" icon="triangle-exclamation">
+    Usa `01` cuando el request fue aceptado, pero una o más operaciones fueron rechazadas dentro del lote.
+  </Card>
+
+  <Card title="Error funcional" icon="xmark">
+    Usa `05` y `06` para errores de negocio o datos incompletos que deben corregirse antes de reintentar.
+  </Card>
+
+  <Card title="Error general" icon="bug">
+    Usa `03` para fallas no controladas o errores de procesamiento del flujo.
+  </Card>
+</CardGroup>
+
+---
+
+## Consejos de integración
+
+<AccordionGroup>
+  <Accordion title="No dependas solo de meta.status.code" defaultOpen icon="list-check">
+    Aunque `meta.status.code` resume el resultado del request, también debes revisar `operations[].state` y `operations[].refund_reason` para conocer el resultado real de cada devolución.
+  </Accordion>
+
+  <Accordion title="Distingue registro de resolución" icon="clock">
+    Que una devolución quede en `REGISTERED` no significa que ya terminó. Usa las APIs de consulta para seguir su avance hasta `RESOLVED` o `REJECTED`.
+  </Accordion>
+
+  <Accordion title="Maneja lotes parcialmente rechazados" icon="split">
+    Cuando recibas `01`, procesa el detalle por operación. No asumas que todo el batch falló ni que todo el batch fue aceptado.
+  </Accordion>
+
+  <Accordion title="Conserva identificadores" icon="key">
+    Guarda `refund_id`, `merchant_operation_number` y `transaction_id` para conciliación, soporte y reprocesos.
+  </Accordion>
+
+  <Accordion title="Valida montos y estado origen" icon="shield-check">
+    Antes de solicitar una devolución, confirma que la transacción original esté en `LIQUIDADO` y que el monto cumpla con tus reglas internas para devoluciones totales o parciales.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Recomendación operativa
+
+<Note>
+  Para integraciones backend, lo más seguro es tratar `POST /refund` como una solicitud inicial y luego confirmar el estado definitivo con la consulta unitaria o masiva cuando tu flujo necesite conciliación o seguimiento.
+</Note>
