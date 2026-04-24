@@ -381,7 +381,7 @@
   "footer": {
     "socials": {
       "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "linkedin": "https://www.linkedin.com/company/alignet/"
     }
   },
 
@@ -413,5 +413,8 @@
     "light": "/images/favicon.ico",
     "dark": "/images/favicon.ico"
   },
-  "description": "Plataforma de pagos de Alignet para integrar, procesar y gestionar transacciones en canales e-commerce y POS. Incluye APIs, SDKs y herramientas para adquirentes, facilitadores de pago y comercios."
+  "description": "Plataforma de pagos de Alignet para integrar, procesar y gestionar transacciones en canales e-commerce y POS. Incluye APIs, SDKs y herramientas para adquirentes, facilitadores de pago y comercios.",
+  "styling": {
+    "codeblocks": "dark"
+  }
 }
