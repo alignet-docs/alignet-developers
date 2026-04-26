@@ -380,7 +380,6 @@
 
   "footer": {
     "socials": {
-      "github": "https://github.com/mintlify",
       "linkedin": "https://www.linkedin.com/company/alignet/"
     }
   },
@@ -391,7 +390,7 @@
 
   "logo": {
     "light": "/images/AlgDocs_bk.png",
-    "dark": "/images/AlgDocs_white.png"
+    "dark": "/images/AlgDocs_bk.png"
   },
 
   "appearance": {
@@ -401,13 +400,13 @@
 
   "background": {
     "color": {
-      "dark": "#000000"
+      "dark": "#181818"
     },
     "decoration": "windows"
   },
   "banner": {
     "content": "Estamos mejorando esta documentación para ti",
-    "dismissible": true
+    "dismissible": false
   },
   "favicon": {
     "light": "/images/favicon.ico",
@@ -415,6 +414,6 @@
   },
   "description": "Plataforma de pagos de Alignet para integrar, procesar y gestionar transacciones en canales e-commerce y POS. Incluye APIs, SDKs y herramientas para adquirentes, facilitadores de pago y comercios.",
   "styling": {
-    "codeblocks": "dark"
+    "codeblocks": "system"
   }
 }
