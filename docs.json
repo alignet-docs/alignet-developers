@@ -406,7 +406,7 @@
   },
   "banner": {
     "content": "Estamos mejorando esta documentación para ti",
-    "dismissible": true
+    "dismissible": false
   },
   "favicon": {
     "light": "/images/favicon.ico",
