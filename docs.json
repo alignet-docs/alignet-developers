@@ -410,5 +410,10 @@
   "styling": {
     "codeblocks": "system"
   },
-  "favicon": "/images/apple-touch-icon.png"
+  "favicon": "/images/apple-touch-icon.png",
+  "integrations": {
+    "ga4": {
+      "measurementId": "G-H7BWFCWK8R"
+    }
+  }
 }
