@@ -1,76 +1,84 @@
 ---
 title: "Métodos de integración"
-description: "Elige cómo integrar Pay-me según tu canal: web, app móvil o ecommerce."
+description: "Elige la mejor forma de conectar tu negocio con Pay-me según tu canal y nivel técnico."
 icon: "bullseye-pointer"
 ---
 
 <Frame>
-  ![Image](/images/image-47.png)
+  ![Métodos de Integración](/images/image-47.png)
 </Frame>
 
-Selecciona la opción que mejor se adapte a tu negocio y canal de venta.
+Contamos con soluciones que van desde la integración inmediata sin código hasta el control total del flujo de pago mediante API. Selecciona la opción que mejor se adapte a tu canal de venta.
 
-### Integración directa
+## Integración Directa
 
-Para comercios que integran pagos en sus propias aplicaciones o sistemas.
+Para comercios que integran pagos en sus propias aplicaciones móviles o sistemas web personalizados.
 
 <CardGroup cols={2}>
   <Card title="SDK Mobile (iOS / Android)" icon="mobile-screen-button" horizontal href="https://docs.pay-me.com/sdk/">
-    Pagos nativos dentro de tu app móvil.
+    Pagos nativos optimizados para apps móviles.
   </Card>
 
   <Card title="Checkout Web (Flex)" icon="globe" horizontal href="https://docs.pay-me.com/flex/">
-    Checkout alojado para integración rápida en web.
+    La forma más rápida de integrar pagos seguros en la web.
   </Card>
 
-  <Card title="Checkout Modal" icon="money-from-bracket" horizontal href="https://docs.pay-me.com/modal/">
-    Flujo embebido sin redirecciones.
+  <Card title="Checkout Modal" icon="window-restore" horizontal href="https://docs.pay-me.com/modal/">
+    Flujo embebido que mantiene al usuario en tu sitio.
   </Card>
 
   <Card title="API de Pagos (Orquestador)" icon="plug-circle-bolt" horizontal href="https://docs.pay-me.com/pay-me-api-orquestador/">
-    Control total del flujo desde backend.
+    Control total del flujo y diseño desde el backend.
   </Card>
 </CardGroup>
 
-### E-commerce (CMS)
+## E-commerce (Plugins CMS)
 
-Para comercios que utilizan plataformas ecommerce y buscan una integración rápida.
+Ideal para negocios que utilizan plataformas comerciales y buscan una activación inmediata sin desarrollo de código.
 
 <CardGroup cols={3}>
-  <Card title="WooCommerce" icon="shopping-cart" href="https://docs.pay-me.com/wordpress-woocommerce/">
+  <Card title="WooCommerce" icon="wordpress" href="https://docs.pay-me.com/wordpress-woocommerce/">
     Plugin para WordPress.
   </Card>
 
-  <Card title="Prestashop" icon="store" href="https://docs.pay-me.com/prestashop/">
-    Activación sin desarrollo.
+  <Card title="PrestaShop" icon="store" href="https://docs.pay-me.com/prestashop/">
+    Activación modular.
   </Card>
 
-  <Card title="VTEX" icon="shopping-bag" href="https://docs.pay-me.com/vtex/">
-    Integración para ecommerce avanzado.
+  <Card title="VTEX" icon="shopping-cart" href="https://docs.pay-me.com/vtex/">
+    Ecommerce empresarial.
   </Card>
 </CardGroup>
 
-## Clasificación de métodos
+---
 
-- **Web:** Checkout Web (Flex), Checkout Modal
-- **E-commerce:** WooCommerce, Prestashop, VTEX
-- **Presencial:** POS (Alignet)
-- **Mobile:** SDK Mobile
-- **Backend:** API de Pagos
+## Comparativa de Esfuerzo y Capacidades
 
-## Esfuerzo de integración
+La elección del método depende del equilibrio que busques entre la **rapidez de salida a producción** y el **nivel de personalización** del flujo de pago.
 
-| Método | Canal | Tiempo | Facilidad | Control |
-| --- | --- | --- | --- | --- |
-| **SDK Mobile** | App | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| **Checkout Web (Flex)** | Web | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
-| **Checkout Modal** | Web | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
-| **API de Pagos** | Backend | ⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐⭐ |
-| **Plugins CMS** | E-commerce | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐ |
-| **POS (Alignet)** | Presencial | ⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
+| Método de Integración | Canal Principal | Salida a Producción | Esfuerzo Técnico | Nivel de Control | Requisito Clave |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Plugins CMS** | E-commerce | **Inmediata** | ⭐⭐⭐⭐⭐ | Bajo | Credenciales de comercio |
+| **Checkout Web** | Web (Flex/Modal) | **Muy Rápida** | ⭐⭐⭐⭐ | Medio | Script de frontend |
+| **SDK Mobile** | Apps Nativas | **Moderada** | ⭐⭐⭐ | Alto | App iOS/Android |
+| **API de Pagos** | Servidor a Servidor| **Estratégica** | ⭐⭐ | **Total** | Certificación PCI-DSS |
+
+### Análisis de Capacidades
+
+* **Plugins CMS:** No requiere programación. La configuración es administrativa y delegas toda la seguridad a nuestro plugin.
+* **Checkout Web:** La mejor relación esfuerzo-beneficio. Procesamos los datos sensibles en nuestro entorno seguro, reduciendo tu carga de cumplimiento (PCI).
+* **SDK Mobile:** Permite una experiencia de usuario fluida y nativa, ideal para integrar pagos sin sacar al cliente de tu aplicación.
+* **API de Pagos:** Diseñada para empresas con equipos de ingeniería robustos que necesitan controlar cada detalle del flujo y gestionar la lógica desde su propio backend.
+
+> [!TIP]
+> **¿Por dónde empezar?** Si necesitas validar tu modelo de negocio o salir a producción en pocos días, te recomendamos iniciar con **Checkout Web** o **Plugins CMS**. Podrás migrar a una integración por **API** en el futuro sin afectar tus operaciones.
 
 ---
 
 ## Siguiente paso
 
-Continúa con el **Inicio rápido** para configurar tu integración y realizar tu primera transacción.
+¿Ya elegiste tu método? Continúa con nuestra guía de inicio rápido para configurar tus credenciales y realizar tu primera transacción de prueba.
+
+<Card title="Inicio Rápido" icon="bolt" href="/quickstart">
+  Configura tu entorno de pruebas y obtén tus credenciales de integración.
+</Card>

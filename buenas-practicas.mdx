@@ -4,118 +4,100 @@ description: "Lineamientos para una integración segura, robusta y escalable con
 icon: "shield-check"
 ---
 
-## Lineamientos de integración
+## Seguridad: El pilar fundamental
 
-Sigue estas recomendaciones para construir una integración segura, confiable y mantenible con Pay-me.
+La seguridad de los datos de pago es nuestra prioridad. Sigue estas reglas de oro para proteger tu negocio y a tus clientes.
 
 <Warning>
-Nunca expongas tu `Client Secret`, `API Keys` o tokens en el frontend. Todas las operaciones sensibles deben ejecutarse exclusivamente desde tu backend mediante HTTPS.
+  **Nunca expongas tus credenciales:** El `Client Secret`, `API Keys` o tokens jamás deben estar en el frontend (JS, HTML). Todas las operaciones sensibles deben ejecutarse exclusivamente **Server-to-Server** mediante HTTPS.
 </Warning>
 
 ---
 
-## Arquitectura recomendada
+## Arquitectura de Referencia
+
+Para una integración profesional, tu sistema debe seguir este flujo de responsabilidad:
 
 <CardGroup cols={2}>
-  <Card title="Backend como fuente de verdad" icon="server">
-    Valida siempre el estado de las transacciones desde tu backend antes de confirmar una operación.
+  <Card title="Backend: El Orquestador" icon="server">
+    Es la **fuente de verdad**. Valida estados, procesa webhooks y gestiona la base de datos de pedidos.
   </Card>
 
-  <Card title="Frontend desacoplado" icon="table-layout">
-    El frontend debe encargarse solo de la experiencia de usuario, no de la lógica de pagos.
+  <Card title="Frontend: La Experiencia" icon="table-layout">
+    Se encarga únicamente de capturar la intención de pago y mostrar estados amigables al usuario.
   </Card>
 </CardGroup>
 
 ---
 
+## Flujo de Validación Robusta
+
+No consideres una transacción como exitosa basándote solo en lo que el navegador muestra. Implementa este ciclo de validación:
+
+<Steps>
+  <Step title="Captura de Respuesta">
+    Recibe la respuesta inicial del Checkout o SDK en el frontend.
+  </Step>
+  <Step title="Validación S2S (Server-to-Server)">
+    Tu backend debe consultar el estado de la transacción directamente a la **API de Alignet** usando el ID de la operación.
+  </Step>
+  <Step title="Escucha de Webhooks">
+    Configura notificaciones asíncronas para recibir actualizaciones de estado incluso si el usuario cierra el navegador.
+  </Step>
+  <Step title="Confirmación Final">
+    Solo cuando el backend confirma el estado `APROBADO`, actualiza el inventario o libera el servicio.
+  </Step>
+</Steps>
+
+---
+
+## Recomendaciones por Categoría
+
 <AccordionGroup>
-  <Accordion title="Manejo de transacciones" icon="rotate">
-    Para asegurar una gestión de pagos confiable:
-
-    - Validación desde backend: No confíes únicamente en la respuesta del frontend.
-    - Gestión de estados: Maneja correctamente estados como `aprobado`, `pendiente` y `rechazado`.
-    - Confirmación obligatoria: No consideres una transacción como exitosa sin validación final.
-    - Idempotencia: Evita procesar múltiples veces la misma transacción ante reintentos.
+  <Accordion title="Gestión de Transacciones" icon="rotate">
+    - **Idempotencia:** Envía siempre un `order_id` único para evitar cargos duplicados en caso de reintentos de red.
+    - **Manejo de estados:** Tu sistema debe ser capaz de procesar estados `aprobado`, `rechazado`, `pendiente` y `expirado`.
+    - **Timeouts:** Configura tiempos de espera razonables y maneja las excepciones de conexión de forma resiliente.
   </Accordion>
 
-  <Accordion title="Notificaciones (Webhooks / S2S)" icon="bell">
-    La comunicación asincrónica es clave para mantener la consistencia:
-
-    - Endpoint seguro: Expón una URL protegida para recibir notificaciones.
-    - Validación de origen: Verifica la autenticidad de las notificaciones.
-    - Idempotencia: Procesa cada notificación una sola vez.
-    - Reintentos: Diseña tu sistema para manejar notificaciones duplicadas o fuera de orden.
+  <Accordion title="Notificaciones (Webhooks)" icon="bell">
+    - **Endpoint Seguro:** Utiliza una URL HTTPS protegida para recibir los Webhooks.
+    - **Validación de Firma:** Verifica que la notificación provenga realmente de Alignet para evitar ataques de suplantación.
+    - **Respuesta Rápida:** Responde con un `200 OK` inmediatamente al recibir el webhook y procesa la lógica en segundo plano.
   </Accordion>
 
-  <Accordion title="Implementación técnica" icon="gears">
-    Mejora la calidad de tu integración:
-
-    - Logs y monitoreo: Implementa registros detallados para facilitar debugging.
-    - Identificadores únicos: Usa un `order_id` único por cada transacción.
-    - Manejo de errores: Controla excepciones y muestra mensajes claros.
-    - Timeouts y reintentos: Maneja fallos de red de forma resiliente.
+  <Accordion title="Logs y Monitoreo" icon="gears">
+    - **Trazabilidad:** Almacena el `transaction_id` de Alignet junto a tu pedido local para facilitar auditorías y soporte.
+    - **Logs de Errores:** Registra los payloads de error de la API; esto reducirá el tiempo de debugging drásticamente.
   </Accordion>
 </AccordionGroup>
 
 ---
 
-## Seguridad
+## Anti-patrones (Qué evitar)
 
-- Utiliza siempre HTTPS en todos los entornos
-- No almacenes credenciales en código fuente
-- Restringe accesos a endpoints sensibles
-- Protege la integridad de las transacciones
+Identifica y corrige estos errores comunes antes de solicitar tu pase a producción.
 
----
-
-## Errores comunes
-
-Evita los siguientes errores durante la integración:
-
-<CardGroup cols={2}>
-  <Card title="Exponer credenciales" icon="key">
-    No expongas `Client Secret` o API Keys en el frontend. Esto compromete la seguridad de tu integración.
+<CardGroup cols={3}>
+  <Card title="Hardcoding" color="#ef4444" icon="code">
+    No guardes API Keys directamente en el código fuente. Usa variables de entorno.
   </Card>
 
-  <Card title="Confiar solo en el frontend" icon="monitor-waveform">
-    No confirmes pagos únicamente con la respuesta del cliente. Valida siempre desde tu backend.
+  <Card title="Confianza Ciega" color="#f59e0b" icon="eye-slash">
+    Nunca des por pagado un pedido solo porque el frontend devolvió un "éxito".
   </Card>
 
-  <Card title="No usar webhooks" icon="bell-exclamation">
-    Ignorar notificaciones puede generar inconsistencias en el estado de las transacciones.
-  </Card>
-
-  <Card title="No manejar idempotencia" icon="repeat">
-    Procesar múltiples veces una misma transacción puede generar duplicidad de cargos.
-  </Card>
-
-  <Card title="Saltar pruebas en sandbox" icon="flask-gear">
-    No validar previamente en sandbox aumenta el riesgo de errores en producción.
-  </Card>
-
-  <Card title="No validar en producción controlada" icon="triangle-exclamation">
-    Ir directo a producción sin pruebas controladas puede generar fallos críticos.
+  <Card title="Omitir Sandbox" color="#3b82f6" icon="vial">
+    No pases a producción sin haber completado al menos una transacción exitosa de cada tipo en el entorno de pruebas.
   </Card>
 </CardGroup>
 
 ---
 
-## Recomendaciones finales
+## Checklist de Certificación
 
-<CardGroup cols={4}>
-  <Card title="Consistencia" icon="database">
-    Asegura que el estado de las transacciones en tu sistema coincida con el de Pay-me.
-  </Card>
+¿Listo para salir a producción? Asegúrate de cumplir con estos puntos clave.
 
-  <Card title="Trazabilidad" icon="magnifying-glass">
-    Mantén un registro completo de cada operación para auditoría y soporte.
-  </Card>
-
-  <Card title="Experiencia de usuario" icon="user">
-    Maneja errores de forma clara para evitar fricciones en el proceso de pago.
-  </Card>
-
-  <Card title="Certificación técnica" icon="clipboard-check" href="/technical-certification-checklist">
-    Valida tu integración utilizando el checklist antes de pasar a producción.
-  </Card>
-</CardGroup>
+<Card title="Checklist de Certificación Técnica" icon="clipboard-check" horizontal href="/technical-certification-checklist">
+  Revisa los requisitos obligatorios para obtener tus credenciales de producción.
+</Card>
