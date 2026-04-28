@@ -22,7 +22,7 @@ Cuando se crea una nueva instancia del componente es necesario un objeto de conf
 
 | Campo | Obligatorio | Tipo | Descripción |
 | :-- | :-- | :-- | :-- |
-| `nonce` | SI | Alfanumérico | Código encriptado que contiene el valor de la key del comercio. Debe ser generado en backend desde el servicio OAuth de Alignet, a través del [API Nonce](/api-nonce). |
+| `nonce` | SI | Alfanumérico | Código encriptado que contiene el valor de la key del comercio. Debe ser generado en backend desde el servicio OAuth de Alignet, a través del [API Nonce](/checkout-web/flex/api-nonce). |
 | `payload` | SI | Objeto JSON | JSON con los detalles necesarios para inicializar el formulario, incluyendo datos de la compra y datos del comprador. |
 | `display_settings` | NO | Objeto | Configuraciones de visualización del formulario. |
 | `display_settings.methods` | NO | Array de String | Métodos de pago a mostrar. Valores posibles: `CARD`, `YAPE`, `QR`, `BANK_TRANSFER`, `CUOTEALO`, `PAGOEFECTIVO`. Si no se envía, se mostrarán todos los métodos habilitados para el comercio por defecto. |
