@@ -1,7 +1,6 @@
 ---
 title: "Datos de Prueba"
 description: "Utiliza estas credenciales para simular transacciones en nuestro ambiente de Sandbox."
-icon: "credit-card-front"
 ---
 
 <Warning>
@@ -86,25 +85,64 @@ Utiliza las siguientes tarjetas para probar los flujos de pagos exitosos y recha
 
 Simula pagos con billeteras digitales y transferencias bancarias.
 
-### Yape
+<CardGroup cols={3}>
+  <Card title="Yape" icon="mobile-screen">
+    Valida escenarios rápidos de aprobación y rechazo con número de teléfono y código.
+  </Card>
 
-| Teléfono | Código de aprobación | Resultado esperado |
-| :-- | :-- | :-- |
-| `969929157` | `557454` | <span style={{color: '#2ecc71'}}>**Aprobado**</span> |
-| `999999999` | `284563` | <span style={{color: '#e74c3c'}}>**Denegado**</span> |
+  <Card title="Transferencia Bancaria" icon="building-columns">
+    Simula autenticación y respuesta final con credenciales de prueba controladas.
+  </Card>
 
-### Transferencia Bancaria
+  <Card title="Cuotéalo" icon="receipt">
+    Prueba el flujo de financiamiento con un escenario sandbox disponible.
+  </Card>
+</CardGroup>
 
-| Tarjeta | Clave | Doc. Identidad | Token | Resultado |
-| :-- | :-- | :-- | :-- | :-- |
-| `123456` | `123456` | `123456` | `123456` | **Exitoso** |
-| `123456` | `123456` | `123456` | `222222` | **Denegado** |
+<Tabs>
+  <Tab title="Yape">
+    <CardGroup cols={2}>
+      <Card title="Aprobado" color="#2ecc71" icon="check" iconType="solid">
+        **Teléfono:** `969929157`\
+        **Código de aprobación:** `557454`
+      </Card>
 
-### Cuotéalo
+      <Card title="Denegado" color="#e74c3c" icon="xmark" iconType="solid">
+        **Teléfono:** `999999999`\
+        **Código de aprobación:** `284563`
+      </Card>
+    </CardGroup>
+  </Tab>
 
-| DNI | Tarjeta | Clave | Monto (PEN) | Resultado |
-| :-- | :-- | :-- | :-- | :-- |
-| `46699676` | `4557885801589196` | `111111` | `100.00` | **Exitoso** |
+  <Tab title="Transferencia Bancaria">
+    <CardGroup cols={2}>
+      <Card title="Exitoso" color="#2ecc71" icon="check" iconType="solid">
+        **Tarjeta:** `123456`\
+        **Clave:** `123456`\
+        **Doc. Identidad:** `123456`\
+        **Token:** `123456`
+      </Card>
+
+      <Card title="Denegado" color="#e74c3c" icon="xmark" iconType="solid">
+        **Tarjeta:** `123456`\
+        **Clave:** `123456`\
+        **Doc. Identidad:** `123456`\
+        **Token:** `222222`
+      </Card>
+    </CardGroup>
+  </Tab>
+
+  <Tab title="Cuotéalo">
+    <CardGroup cols={1}>
+      <Card title="Escenario disponible" color="#2ecc71" icon="check" iconType="solid">
+        **DNI:** `46699676`\
+        **Tarjeta:** `4557885801589196`\
+        **Clave:** `111111`\
+        **Monto (PEN):** `100.00`
+      </Card>
+    </CardGroup>
+  </Tab>
+</Tabs>
 
 ---
 

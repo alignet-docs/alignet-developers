@@ -86,7 +86,7 @@ El API de autorización es el punto de entrada para iniciar un cobro en PayIn. D
   </Card>
 
   <Card title="Checkout Web (Flex)" icon="globe">
-    El `payload` de Flex reutiliza la estructura del request de autorización sin `payment_method`, y `responseCallback` reutiliza la respuesta de autorización.
+    El `payload` de Flex reutiliza la estructura del request de autorización enviando `payment_method: {}` en raíz, y `responseCallback` reutiliza la respuesta de autorización.
   </Card>
 
 </CardGroup>

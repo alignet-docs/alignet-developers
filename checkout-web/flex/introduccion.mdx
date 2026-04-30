@@ -1,10 +1,9 @@
 ---
 title: "Introducción"
-description: "Integra fácilmente un formulario de pago en tu aplicación web con Pay-me Flex"
-icon: "book-open-reader"
+description: "Integra fácilmente un formulario de pago en tu aplicación web con Pay-me Flex."
 ---
 
-El Pay-me Flex permite a los desarrolladores integrar fácilmente un formulario de pago en aplicaciones web. Proporciona métodos y funciones que facilitan la interacción con el formulario de pago y la gestión de transacciones.
+Pay-me Flex permite integrar un formulario de pago en aplicaciones web usando una sola interfaz para múltiples métodos de pago. El flujo recomendado combina autenticación, generación de `nonce`, construcción del `payload`, inicialización del componente y captura del resultado desde `responseCallback`.
 
 ---
 
@@ -27,6 +26,26 @@ El Pay-me Flex permite a los desarrolladores integrar fácilmente un formulario 
 <Note>
   En Flex, el orden correcto es `Autenticación` → `API Nonce` → inclusión de librería y luego la inicialización del componente.
 </Note>
+
+## Implementación del cobro
+
+<CardGroup cols={3}>
+  <Card title="Construcción del payload" icon="receipt" href="/checkout-web/flex/construccion-del-payload">
+    Arma el `payload` reutilizando la estructura del API de autorización y enviando `payment_method: {}` en el objeto raíz.
+  </Card>
+
+  <Card title="Inicializar el componente" icon="gear" href="/checkout-web/flex/inicializar-el-componente">
+    Crea la instancia de `FlexPaymentForms`, define métodos visibles y monta el formulario en tu DOM.
+  </Card>
+
+  <Card title="Capturar callbacks" icon="bolt" href="/checkout-web/flex/capturar-funciones-callback">
+    Procesa `responseCallback`, `trackingCallback` y `onErrorCallback` según el método de pago seleccionado.
+  </Card>
+</CardGroup>
+
+<Info>
+  En Flex, el resultado visible para el frontend entra por `responseCallback(response)`, y ese `response` reutiliza el contrato del API de PayIn correspondiente al método de pago usado.
+</Info>
 
 ## ¿Por qué Pay-me Flex?
 

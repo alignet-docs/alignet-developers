@@ -5,20 +5,25 @@ description: "Valida tu integración en Sandbox antes de pasar al ambiente de pr
 
 Antes de habilitar los pagos reales, es obligatorio realizar pruebas de extremo a extremo para asegurar que los pedidos se creen correctamente y que tu servidor reciba las notificaciones de pago (S2S).
 
-## 1. Datos de Tarjetas de Prueba
+## 1. Datos de prueba para Sandbox
 
-Utiliza las siguientes tarjetas en el **Modo Sandbox** para simular diferentes escenarios de respuesta.
+Para evitar duplicidad, los escenarios de prueba se consultan desde una sola página compartida:
 
-| Escenario | Número de Tarjeta | CVV | Fecha Exp. |
-| :--- | :--- | :--- | :--- |
-| **Pago Exitoso (Visa)** | `4111 1111 1111 1111` | `123` | 12 / 2026 |
-| **Pago Exitoso (Mastercard)** | `5555 5555 5555 4444` | `123` | 12 / 2026 |
-| **Fondos Insuficientes** | `4111 1111 1111 5151` | `123` | 12 / 2026 |
-| **Tarjeta Expirada** | `4111 1111 1111 5454` | `123` | 01 / 2020 |
-| **PIN/CVV Erróneo** | `4111 1111 1111 5555` | `000` | 12 / 2026 |
+<CardGroup cols={2}>
+  <Card title="Abrir datos de prueba" icon="credit-card" href="/pagos/datos-de-prueba">
+    Revisa tarjetas, Yape, transferencias y otros escenarios sandbox desde una referencia central.
+  </Card>
+  <Card title="Usar solo en Sandbox" icon="flask">
+    Ejecuta estas validaciones con el plugin en modo prueba y credenciales sandbox activas.
+  </Card>
+</CardGroup>
+
+<Note>
+  En WooCommerce, utiliza esa referencia para cubrir aprobaciones, rechazos y métodos alternativos sin repetir aquí los mismos datos.
+</Note>
 
 <Tip>
-  Para métodos como **Yape** o **PagoEfectivo** en Sandbox, puedes simular el éxito desde el simulador interno de Pay-me o contactando a soporte para la aprobación manual del ticket de prueba.
+  Para métodos como **PagoEfectivo** o flujos que requieran confirmación diferida, puedes apoyarte con el equipo de soporte si necesitas validar la aprobación manual del escenario.
 </Tip>
 
 ---

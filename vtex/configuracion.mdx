@@ -4,21 +4,39 @@ sidebarTitle: "Configuración"
 description: "Configura Pay-me como proveedor de pagos en VTEX y habilita los métodos de pago."
 ---
 
-## ⚙️ Configuración en VTEX
+## Configuración en VTEX
 
 ---
 
-## 1️⃣ Crear proveedor Pay-me
+## 1. Crear proveedor Pay-me
 
-Ruta:
+<CardGroup cols={2}>
+  <Card title="Ruta en VTEX Admin" icon="store">
+    `Store Settings → Payments → Providers`
+  </Card>
+  <Card title="Qué harás aquí" icon="plus">
+    Crearás el provider **Pay-me** para luego cargar credenciales y habilitar los métodos de pago de tu comercio.
+  </Card>
+</CardGroup>
 
-```text
-Store Settings → Payments → Providers
-```
+<Note>
+  Si no ubicas esta opción en el menú lateral, usa el buscador superior del Admin y escribe `Providers`.
+</Note>
 
-1. Haz clic en **New Provider** (arriba a la derecha).
-2. En la ventana de búsqueda, escribe **Pay-me**.
-3. Selecciona el proveedor **Pay-me** (tipo: _Payment_).
+<Steps>
+  <Step title="Entrar a Providers">
+    Ve a `Store Settings → Payments → Providers`.
+  </Step>
+  <Step title="Crear un nuevo proveedor">
+    Haz clic en **New Provider** en la parte superior derecha.
+  </Step>
+  <Step title="Buscar Pay-me">
+    En la ventana de búsqueda, escribe **Pay-me** para filtrar el listado.
+  </Step>
+  <Step title="Seleccionar el provider correcto">
+    Elige el proveedor **Pay-me** con tipo **Payment** para continuar con la configuración.
+  </Step>
+</Steps>
 
 <Frame>
   ![Image](/images/image-48.png)
@@ -27,3 +45,11 @@ Store Settings → Payments → Providers
 <Check>
   Con este paso, la tienda queda lista para que configures las credenciales y detalles de la integración.
 </Check>
+
+<Card
+  title="Siguiente paso"
+  icon="arrow-right"
+  href="/vtex/configuracion-de-credenciales-y-metodos-de-pago"
+>
+  Continúa con la carga de credenciales, el control del ambiente y la activación de métodos de pago.
+</Card>

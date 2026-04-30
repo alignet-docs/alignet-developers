@@ -1,0 +1,112 @@
+---
+title: "Inicializar el componente"
+description: "Crea la instancia de Pay-me Flex y monta el formulario dentro de tu aplicación web."
+---
+
+Una vez que ya tienes el `payload` y un `nonce` vigente, el siguiente paso es crear la instancia de `FlexPaymentForms` y renderizar el formulario dentro de tu DOM.
+
+## Parámetros de inicialización
+
+| Campo | Obligatorio | Tipo | Descripción |
+| :-- | :-- | :-- | :-- |
+| `nonce` | SI | Alfanumérico | Código encriptado que contiene el valor de la key del comercio. Debe ser generado en backend desde el servicio OAuth de Alignet, a través del [API Nonce](/checkout-web/flex/api-nonce). |
+| `payload` | SI | Objeto JSON | JSON con los detalles necesarios para inicializar el formulario, incluyendo datos de la compra y datos del comprador. |
+| `settings` | NO | Objeto | Configuraciones generales del comportamiento visual del componente. |
+| `settings.display_result_screen` | NO | Boolean | Muestra la pantalla de resultado al finalizar el proceso. |
+| `settings.show_close_button` | NO | Boolean | Muestra el botón para cerrar el componente. |
+| `settings.show_border` | NO | Boolean | Activa o desactiva el borde visual del componente. |
+| `settings.show_operation_number` | NO | Boolean | Muestra el número de operación dentro del flujo. |
+| `display_settings` | NO | Objeto | Configuraciones de visualización del formulario. |
+| `display_settings.methods` | NO | Array de String | Métodos de pago a mostrar. Valores posibles: `CARD`, `YAPE`, `QR`, `BANK_TRANSFER`, `CUOTEALO`, `PAGOEFECTIVO`. Si no se envía, se mostrarán todos los métodos habilitados para el comercio por defecto. |
+| `i18n` | NO | Objeto | Configuración de idioma del componente. |
+| `i18n.mode` | NO | String | Modo de idiomas. Para este flujo se usa `multi`. |
+| `i18n.default_language` | NO | String | Idioma por defecto del formulario. Valores soportados: `es` o `en`. |
+| `i18n.languages` | NO | Array de String | Lista de idiomas habilitados para el componente. Actualmente solo se soporta `es` y `en`. |
+
+## Qué defines en este paso
+
+<CardGroup cols={3}>
+  <Card title="Seguridad" icon="key">
+    Envías el `nonce` generado en backend para que Flex pueda iniciar el flujo de forma segura.
+  </Card>
+
+  <Card title="Datos de la operación" icon="receipt">
+    Reutilizas el `payload` que construiste para el request de autorización ecommerce.
+  </Card>
+
+  <Card title="Métodos visibles" icon="list-check">
+    Puedes limitar qué medios aparecen en pantalla con `display_settings.methods`.
+  </Card>
+
+  <Card title="Comportamiento visual" icon="gear">
+    Controlas pantallas de resultado, botón de cierre, borde y visibilidad del número de operación.
+  </Card>
+
+  <Card title="Idiomas" icon="language">
+    Puedes configurar `i18n`, pero actualmente el componente solo soporta `es` y `en`.
+  </Card>
+</CardGroup>
+
+## Crear la instancia
+
+```javascript
+var paymentForm = new FlexPaymentForms({
+    nonce,
+    payload,
+    settings: {
+        display_result_screen: true,
+        show_close_button: true,
+        show_border: false,
+        show_operation_number: true
+    },
+    display_settings: {
+        methods: ["QR", "BANK_TRANSFER", "CARD"]
+    },
+    i18n: {
+        mode: "multi",
+        default_language: "es",
+        languages: ["es", "en"]
+    }
+});
+```
+
+<Note>
+  Si no envías `display_settings.methods`, Flex mostrará todos los métodos habilitados para el comercio según su configuración.
+</Note>
+
+<Note>
+  En `i18n`, actualmente solo están disponibles los idiomas `es` y `en`. Si defines `default_language`, debe ser uno de esos dos valores.
+</Note>
+
+## Montar el formulario en el DOM
+
+Después de crear la instancia, renderiza el componente dentro del contenedor donde quieres mostrar el formulario.
+
+```javascript
+paymentForm.init(
+    document.querySelector("#demo"),
+    responseCallback,
+    trackingCallback,
+    onErrorCallback
+);
+```
+
+<Info>
+  `#demo` es solo un ejemplo. Debe existir previamente en tu HTML o en el árbol del framework donde integrarás Flex.
+</Info>
+
+<Warning>
+  El segundo, tercer y cuarto parámetro de `paymentForm.init(...)` son funciones callback. Si quieres entender cómo procesarlas y cómo interpretar el JSON final, continúa con la guía de callbacks.
+</Warning>
+
+## Siguiente paso
+
+<CardGroup cols={2}>
+  <Card title="Capturar funciones callback" icon="arrow-right" href="/checkout-web/flex/capturar-funciones-callback">
+    Define `responseCallback`, `trackingCallback` y `onErrorCallback` para reaccionar correctamente al flujo.
+  </Card>
+
+  <Card title="Construcción del payload" icon="arrow-left" href="/checkout-web/flex/construccion-del-payload">
+    Si todavía no armaste el objeto de la operación, vuelve a la guía del `payload`.
+  </Card>
+</CardGroup>

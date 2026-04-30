@@ -1,254 +1,80 @@
 ---
 title: "Funcionalidad de cobros"
-description: "Inicializa y muestra el formulario de cobros de Pay-me Flex."
-icon: "money-bill"
+description: "Recorre el flujo de cobro en Pay-me Flex: payload, inicialización y callbacks."
 ---
 
-## Inicializar componente
+El flujo de cobro en Flex conviene trabajarlo en tres pasos separados: construir el `payload`, inicializar el componente y capturar los `callbacks` del proceso.
 
-Cuando se crea una nueva instancia del componente es necesario un objeto de configuración con las propiedades `nonce`, `payload` y `display_settings`.
+<Info>
+  En Checkout Web Flex, el método de pago se elige dentro del formulario. Por eso el `payload` reutiliza la estructura del API de autorización enviando `payment_method: {}` en el objeto raíz.
+</Info>
 
-- `nonce`: valor de seguridad para intercambiar por un token
-- `payload`: información de la transacción a procesar
-- `display_settings`: configuraciones del formulario
+## Panorama general
+
+<CardGroup cols={3}>
+  <Card title="1. Construcción del payload" icon="receipt" href="/checkout-web/flex/construccion-del-payload">
+    Arma la información de la operación, comprador, facturación y envío usando el mismo contrato base de PayIn.
+  </Card>
+
+  <Card title="2. Inicializar el componente" icon="gear" href="/checkout-web/flex/inicializar-el-componente">
+    Crea la instancia de `FlexPaymentForms`, envía `nonce`, `payload` y define cómo mostrar el formulario.
+  </Card>
+
+  <Card title="3. Capturar callbacks" icon="bolt" href="/checkout-web/flex/capturar-funciones-callback">
+    Procesa `responseCallback`, `trackingCallback` y `onErrorCallback` según el resultado del flujo.
+  </Card>
+</CardGroup>
+
+## Secuencia recomendada
+
+<Steps>
+  <Step title="Construye el payload">
+    Prepara la operación con el mismo request de autorización ecommerce, incluyendo `payment_method: {}` porque Flex resolverá el método real en pantalla.
+  </Step>
+
+  <Step title="Crea la instancia">
+    Inicializa `FlexPaymentForms` con el `nonce` vigente y el `payload` ya validado desde backend.
+  </Step>
+
+  <Step title="Monta el formulario">
+    Usa `paymentForm.init(...)` para renderizar el componente dentro del elemento del DOM donde quieres mostrar el checkout.
+  </Step>
+
+  <Step title="Procesa la respuesta">
+    Toma el resultado desde `responseCallback(response)` y usa ese JSON como referencia principal del frontend.
+  </Step>
+
+  <Step title="Confirma desde backend">
+    Para cerrar la orden o marcar el pago como final, complementa con [API de Consulta](/payin/consulta) y, si aplica, con [Notificaciones](/payin/notificaciones).
+  </Step>
+</Steps>
+
+## Qué respuesta debes tomar
 
 <Note>
-  El `payload` mantiene la misma estructura del **API de Autorización - ecommerce** sin incluir el objeto `payment_method`, ya que el método de pago será seleccionado dentro de Flex.
+  El objeto `response` recibido en `responseCallback` reutiliza el contrato del [API de Autorización - ecommerce](/payin/autorizacion). La referencia exacta depende del método que el cliente eligió dentro de Flex.
 </Note>
 
----
+<Warning>
+  No cierres la orden usando solo el frontend en métodos asíncronos como `BANK_TRANSFER`, `QR`, `CUOTEALO` o `PAGOEFECTIVO`. Confirma siempre el estado final desde backend.
+</Warning>
 
-## Parámetros
-
-| Campo | Obligatorio | Tipo | Descripción |
-| :-- | :-- | :-- | :-- |
-| `nonce` | SI | Alfanumérico | Código encriptado que contiene el valor de la key del comercio. Debe ser generado en backend desde el servicio OAuth de Alignet, a través del [API Nonce](/checkout-web/flex/api-nonce). |
-| `payload` | SI | Objeto JSON | JSON con los detalles necesarios para inicializar el formulario, incluyendo datos de la compra y datos del comprador. |
-| `display_settings` | NO | Objeto | Configuraciones de visualización del formulario. |
-| `display_settings.methods` | NO | Array de String | Métodos de pago a mostrar. Valores posibles: `CARD`, `YAPE`, `QR`, `BANK_TRANSFER`, `CUOTEALO`, `PAGOEFECTIVO`. Si no se envía, se mostrarán todos los métodos habilitados para el comercio por defecto. |
-
----
-
-## Objeto `payload`
-
-El objeto `payload` mantiene la misma estructura de **API de Autorización - ecommerce** sin incluir el objeto `payment_method`.
-
-### Objeto raíz
-
-| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
-| :-- | :-- | :-- | :-- | :-- |
-| `action` | Acción a ejecutar | `authorize` | String | SI |
-| `channel` | Canal donde se ejecutará la transacción | `ecommerce` | String | SI |
-| `merchant_code` | Identificador del comercio | Cadena alfanumérica | String | SI |
-| `merchant_operation_number` | Número de pedido de la operación | Cadena numérica entre 6 y 12 dígitos | String | SI |
-| `payment_details` | Objeto con información de la transacción | Object | Object | SI |
-
-### Objeto `payment_details`
-
-| Campo | Descripción | Ejemplo | Tipo | Obligatorio |
-| :-- | :-- | :-- | :-- | :-- |
-| `payment_details.amount` | Monto en centavos de la operación | `1050` | String | SI |
-| `payment_details.currency` | Código [ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) de la moneda de la operación | `604` | String | SI |
-| `payment_details.additional_fields` | Diccionario para enviar campos y valores personalizados según `key:value` | `external_id:5468724` | Dictionary | NO |
-| `payment_details.customer` | Objeto con información del cliente que realiza la compra | Object | Object | NO |
-| `payment_details.billing` | Objeto con información de facturación | Object | Object | SI |
-| `payment_details.shipping` | Objeto con información de envío | Object | Object | NO |
-
-<Note>
-  Para S/. 10.50 se debe enviar `1050` y en `currency` el valor `604` para Soles.
-</Note>
-
-### Objeto `payment_details.customer`
-
-| Campo | Descripción | Tipo | Obligatorio |
-| :-- | :-- | :-- | :-- |
-| `payment_details.customer.first_name` | Nombres | String | NO |
-| `payment_details.customer.last_name` | Apellidos | String | NO |
-| `payment_details.customer.email` | Correo electrónico | String | NO |
-| `payment_details.customer.phone` | Objeto con información del teléfono | Object | NO |
-| `payment_details.customer.phone.country_code` | Código del país del teléfono | String | NO |
-| `payment_details.customer.phone.subscriber` | Número del teléfono | String | NO |
-| `payment_details.customer.identity_document` | Objeto con información del documento de identidad | Object | NO |
-| `payment_details.customer.identity_document.country` | País del documento | String | NO |
-| `payment_details.customer.identity_document.type` | Tipo de documento | String | NO |
-| `payment_details.customer.identity_document.identifier` | Número de documento | String | NO |
-| `payment_details.customer.location` | Objeto con información de ubicación | Object | NO |
-| `payment_details.customer.location.line_1` | Dirección 1 | String | NO |
-| `payment_details.customer.location.line_2` | Dirección 2 | String | NO |
-| `payment_details.customer.location.city` | Ciudad | String | NO |
-| `payment_details.customer.location.state` | Estado | String | NO |
-| `payment_details.customer.location.country` | País | String | NO |
-
-### Objeto `payment_details.billing`
-
-| Campo | Descripción | Tipo | Obligatorio |
-| :-- | :-- | :-- | :-- |
-| `payment_details.billing.first_name` | Nombres | String | SI |
-| `payment_details.billing.last_name` | Apellidos | String | SI |
-| `payment_details.billing.email` | Correo electrónico | String | SI |
-| `payment_details.billing.phone` | Objeto con información del teléfono | Object | SI |
-| `payment_details.billing.phone.country_code` | Código del país del teléfono | String | SI |
-| `payment_details.billing.phone.subscriber` | Número del teléfono | String | SI |
-| `payment_details.billing.location` | Objeto con información de ubicación | Object | SI |
-| `payment_details.billing.location.line_1` | Dirección 1 | String | SI |
-| `payment_details.billing.location.line_2` | Dirección 2 | String | NO |
-| `payment_details.billing.location.city` | Ciudad | String | SI |
-| `payment_details.billing.location.state` | Estado | String | SI |
-| `payment_details.billing.location.country` | País | String | SI |
-
-### Objeto `payment_details.shipping`
-
-| Campo | Descripción | Tipo | Obligatorio |
-| :-- | :-- | :-- | :-- |
-| `payment_details.shipping.first_name` | Nombres | String | NO |
-| `payment_details.shipping.last_name` | Apellidos | String | NO |
-| `payment_details.shipping.email` | Correo electrónico | String | NO |
-| `payment_details.shipping.phone` | Objeto con información del teléfono | Object | NO |
-| `payment_details.shipping.phone.country_code` | Código del país del teléfono | String | NO |
-| `payment_details.shipping.phone.subscriber` | Número del teléfono | String | NO |
-| `payment_details.shipping.location` | Objeto con información de ubicación | Object | NO |
-| `payment_details.shipping.location.line_1` | Dirección 1 | String | NO |
-| `payment_details.shipping.location.line_2` | Dirección 2 | String | NO |
-| `payment_details.shipping.location.city` | Ciudad | String | NO |
-| `payment_details.shipping.location.state` | Estado | String | NO |
-| `payment_details.shipping.location.country` | País | String | NO |
-
-### Ejemplo
-
-```javascript
-var payload = {
-    "action": "authorize",
-    "channel": "ecommerce",
-    "merchant_code": "b0deb6f3-e51a-48a7-9268-f1441d46f7bd",
-    "merchant_operation_number": "221354",
-    "payment_details": {
-        "amount": "7000",
-        "currency": "604",
-        "billing": {
-            "first_name": "Levis",
-            "last_name": "Silvestre",
-            "email": "levis.silvestre@alignet.com",
-            "phone": {
-                "country_code": "+51",
-                "subscriber": "958435685"
-            },
-            "location": {
-                "line_1": "Av. San Borja Norte 1743",
-                "line_2": "",
-                "city": "Lima",
-                "state": "Lima",
-                "country": "PE"
-            }
-        },
-        "shipping": {
-            "first_name": "Levis",
-            "last_name": "Silvestre",
-            "email": "levis.silvestre@alignet.com",
-            "phone": {
-                "country_code": "+51",
-                "subscriber": "958435685"
-            },
-            "location": {
-                "line_1": "Av. San Borja Norte 1743",
-                "line_2": "",
-                "city": "Lima",
-                "state": "Lima",
-                "country": "PE"
-            }
-        },
-        "customer": {
-            "first_name": "Levis",
-            "last_name": "Silvestre",
-            "email": "levis.silvestre@alignet.com",
-            "phone": {
-                "country_code": "+51",
-                "subscriber": "958435685"
-            },
-            "identity_document": {
-                "country": "PER",
-                "type": "DNI",
-                "identifier": "72661927"
-            },
-            "location": {
-                "line_1": "Av. San Borja Norte 1743",
-                "line_2": "",
-                "city": "Lima",
-                "state": "Lima",
-                "country": "PE"
-            }
-        }
-    }
-}
-```
-
----
-
-## Inicializar el componente
-
-```javascript
-var paymentForm = new FlexPaymentForms({
-    "nonce": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJBbGlnbmV0IEpXVCBCdWlsZGVyIiwiaWF0IjoxNzEwNTQzMDAyLCJleHAiOjE3MTA1NDMwMzIsImF1ZCI6Imh0dHBzOi8vYXBpLmRldi5hbGlnbmV0LmlvIiwic3ViIjoiejhXd0FWN3JkMmpDVTBTaXZ3dFFWdjk0MWtxWmNFb3UiLCJub25jZSI6IjA0OTIwZTZjLTI0ZTgtNDYzMC05MmVkLWUxMjA2ZDg5YTNjZSIsInNjb3BlIjoiY3JlYXRlOnRva2VuIHBvc3Q6Y2hhcmdlcyB0ZXN0IiwiZ3R5IjoiY2xpZW50X2NyZWRlbnRpYWxzIn0.eOK4e_i6QaNuNlUd1or28qbPNyI3pRq19Cj-eGxqJs8",
-    "payload": payload,
-    "display_settings": {
-        methods: ["QR", "BANK_TRANSFER", "CARD"]
-    }
-});
-```
-
----
-
-## Mostrar Pay-me Flex
-
-Este es el paso final, donde indicamos dentro de qué elemento del DOM se debe mostrar el formulario y una función callback para ejecutarse al finalizar el proceso.
-
-Como parámetros adicionales se pueden agregar dos funciones callback. No son obligatorias, pero sirven para obtener mayor información del proceso:
-
-| Callback | Descripción |
-| :-- | :-- |
-| `responseCallback` | Se ejecuta cuando se tiene un proceso completado (`AUTORIZADO` / `DENEGADO`). |
-| `trackingCallback` | Se ejecuta por cada evento disparado durante el proceso, por ejemplo click en pagar, click en método de pago o click en información de pago. |
-| `onErrorCallback` | Se ejecuta cuando hay un error durante el proceso. |
-
-### Mostrar formulario de pago
-
-```javascript
-function responseCallback(response) {
-    console.log("-------Respuesta-------");
-    console.log({response});
-}
-
-function trackingCallback(trackdata) {
-    console.log("-------Tracking de Eventos-------");
-    console.log({trackdata});
-}
-
-function onErrorCallback(error) {
-    console.log("-------Error en el proceso-------");
-    console.log({error});
-}
-
-paymentForm.init(
-    document.querySelector("#demo"),
-    responseCallback,
-    trackingCallback,
-    onErrorCallback
-);
-```
-
-<Note>
-  El objeto `response` de la función `responseCallback` tendrá la misma estructura que la respuesta del [API de Autorización - ecommerce](/payin/autorizacion). Toma esa sección como referencia principal para request/response del flujo de autorización.
-</Note>
-
----
-
-## Referencia relacionada
+## Guías del flujo
 
 <CardGroup cols={2}>
-  <Card title="API de Autorización - ecommerce" icon="arrow-right" href="/payin/autorizacion">
-    Usa esta referencia para el contrato de respuesta que recibes en `responseCallback`.
+  <Card title="Construcción del payload" icon="arrow-right" href="/checkout-web/flex/construccion-del-payload">
+    Revisa la estructura completa del request que Flex necesita para iniciar una operación.
+  </Card>
+
+  <Card title="Inicializar el componente" icon="arrow-right" href="/checkout-web/flex/inicializar-el-componente">
+    Aprende a crear la instancia, definir métodos visibles y renderizar el formulario.
+  </Card>
+
+  <Card title="Capturar funciones callback" icon="arrow-right" href="/checkout-web/flex/capturar-funciones-callback">
+    Entiende cómo leer `responseCallback` y cómo relacionarlo con cada método de PayIn.
   </Card>
 
   <Card title="API de Consulta" icon="arrow-right" href="/payin/consulta">
-    Si integras Flex, usa consulta como segunda validación backend antes de cerrar la orden.
+    Usa consulta como segunda validación backend antes de confirmar el resultado final al negocio.
   </Card>
 </CardGroup>

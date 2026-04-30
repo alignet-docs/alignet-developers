@@ -16,9 +16,25 @@ description: "Integra Pay-me en tu tienda VTEX de forma rápida, segura y sin de
 
 Pay-me para VTEX es un conector listo para usar que permite a los comercios procesar pagos sin necesidad de desarrollo, aprovechando la infraestructura nativa de VTEX IO.
 
+<Info>
+  Esta integración está pensada para equipos e-commerce que buscan activar Pay-me con una configuración administrativa, manteniendo el checkout nativo de VTEX.
+</Info>
+
+<CardGroup cols={3}>
+  <Card title="Implementación rápida" icon="rocket">
+    Activa Pay-me en menos pasos, sin construir un flujo de pago desde cero.
+  </Card>
+  <Card title="Checkout nativo" icon="shopping-cart">
+    Conserva la experiencia de compra de VTEX y centraliza la operación en tu tienda.
+  </Card>
+  <Card title="Control por ambiente" icon="gear">
+    Configura sandbox y producción con credenciales y métodos de pago según tu operación.
+  </Card>
+</CardGroup>
+
 ---
 
-## 🚀 Descripción general
+## Descripción general
 
 Con nuestro conector de pagos para VTEX podrás integrar Pay-me de forma rápida, segura y escalable, centralizando múltiples métodos de pago en una sola configuración.
 
@@ -26,44 +42,82 @@ El conector está diseñado para minimizar el esfuerzo técnico y acelerar el ti
 
 ---
 
-## 📦 ¿Qué incluye el conector?
+## ¿Qué incluye el conector?
 
-- Checkout integrado directamente en VTEX
-- Soporte de **3-D Secure 2.0** mediante la librería de Alignet
-- Procesamiento de pagos con múltiples medios:
-  - Tarjetas de crédito y débito
-  - Yape
-  - Billeteras móviles (QR)
-  - PagoEfectivo
-  - Cuotéalo
+<CardGroup cols={2}>
+  <Card title="Medios de pago" icon="credit-card">
+    Habilita tarjetas de crédito y débito, Yape, billeteras móviles con QR, PagoEfectivo y Cuotéalo, según lo contratado para tu comercio.
+  </Card>
+  <Card title="Seguridad y cobertura" icon="shield-check">
+    Opera con checkout integrado en VTEX, soporte de **3-D Secure 2.0** y una arquitectura lista para crecer con tu operación.
+  </Card>
+</CardGroup>
 
 ---
 
-## ✅ Requisitos previos
+## ¿Cómo avanza la implementación?
+
+<Steps>
+  <Step title="Instala el conector">
+    Despliega la aplicación en tu cuenta VTEX usando VTEX IO CLI.
+  </Step>
+  <Step title="Configura el proveedor">
+    Registra `App Key`, `App Token` y `Merchant Code` para conectar tu comercio con Pay-me.
+  </Step>
+  <Step title="Activa tus métodos de pago">
+    Habilita solo los medios previamente contratados y define las condiciones comerciales necesarias.
+  </Step>
+  <Step title="Prueba el checkout completo">
+    Valida pagos aprobados y rechazados antes de mover la integración a producción.
+  </Step>
+</Steps>
+
+---
+
+## Requisitos previos
 
 Antes de comenzar, asegúrate de contar con:
 
-- Una tienda activa en VTEX
-- Credenciales habilitadas con Pay-me (sandbox o producción)
-- Llaves de integración:
-  - **App Key** (llave pública)
-  - **App Token** (token secreto)
-  - **Merchant Code** (identificador del comercio)
+<Check>
+  Una tienda activa en VTEX con acceso administrativo al módulo de pagos.
+</Check>
+
+<Check>
+  Credenciales habilitadas con Pay-me para `sandbox` o `producción`.
+</Check>
+
+<Check>
+  Llaves de integración: **App Key**, **App Token** y **Merchant Code**.
+</Check>
+
+<Check>
+  Métodos de pago previamente contratados con Pay-me para poder habilitarlos en tu tienda.
+</Check>
 
 Estas credenciales serán proporcionadas por el equipo de Pay-me.
 
 ---
 
-## ⚡ Beneficios clave
+## Beneficios clave
 
-- **Sin desarrollo adicional**: integración mediante plugin
-- **Rápida implementación**: listo para operar en minutos
-- **Seguridad avanzada**: cumplimiento con 3DS 2.0
-- **Escalable**: soporta múltiples métodos de pago
-- **Optimización de conversión**: experiencia de pago integrada
+<CardGroup cols={2}>
+  <Card title="Menor esfuerzo técnico" icon="bolt">
+    La integración se realiza mediante configuración guiada, sin desarrollar un checkout nuevo ni mantener una personalización compleja.
+  </Card>
+  <Card title="Operación escalable" icon="database">
+    Centraliza varios métodos de pago en una sola configuración y prepara tu tienda para crecer con mayor orden operativo.
+  </Card>
+</CardGroup>
 
 ---
 
-## 🔗 Siguiente paso
+## Siguiente paso
 
-Continúa con la instalación del conector para habilitar Pay-me en tu tienda VTEX.
+<CardGroup cols={2}>
+  <Card title="Instalación" icon="download" href="/vtex/instalacion">
+    Instala el conector en tu entorno VTEX y déjalo listo para la configuración inicial.
+  </Card>
+  <Card title="Flujo de pago" icon="arrow-right-arrow-left" href="/vtex/flujo-de-pago">
+    Revisa cómo viaja la transacción desde el checkout hasta la respuesta final del pago.
+  </Card>
+</CardGroup>

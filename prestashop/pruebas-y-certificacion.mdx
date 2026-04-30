@@ -5,19 +5,25 @@ description: "Valida tu integración en el ambiente Sandbox antes de procesar pa
 
 Antes de habilitar el modo de producción, es fundamental realizar un ciclo de pruebas completo para asegurar que los estados de los pedidos en el **Back Office** se actualicen correctamente.
 
-## 1. Tarjetas de Prueba (Ambiente Sandbox)
+## 1. Datos de prueba para Sandbox
 
-Utiliza los siguientes datos en el formulario de Payme cuando el módulo esté en **Modo Sandbox**:
+Los datos de prueba se mantienen en una página central para que puedas reutilizarlos sin duplicar información dentro de esta guía:
 
-| Escenario de Prueba | Número de Tarjeta | CVV | Expira |
-| :--- | :--- | :--- | :--- |
-| **Transacción Exitosa** | `4111 1111 1111 1111` | `123` | 12 / 2026 |
-| **Fondos Insuficientes** | `4111 1111 1111 5151` | `123` | 12 / 2026 |
-| **Tarjeta Expirada** | `4111 1111 1111 5454` | `123` | 01 / 2020 |
-| **Error de CVV** | `4111 1111 1111 5555` | `000` | 12 / 2026 |
+<CardGroup cols={2}>
+  <Card title="Abrir datos de prueba" icon="credit-card" href="/pagos/datos-de-prueba">
+    Consulta tarjetas, Yape, transferencias y otros escenarios sandbox desde una sola referencia.
+  </Card>
+  <Card title="Validar en modo prueba" icon="flask">
+    Asegúrate de que el módulo siga en Sandbox antes de ejecutar tus compras de validación.
+  </Card>
+</CardGroup>
+
+<Note>
+  En PrestaShop, esta guía se enfoca en el comportamiento del pedido, los estados y la certificación; los datos concretos viven en la referencia compartida.
+</Note>
 
 <Tip>
-  Para probar métodos asíncronos como **PagoEfectivo** o **QR** en Sandbox, contacta a nuestro equipo de soporte para simular la confirmación del depósito.
+  Para probar métodos asíncronos como **PagoEfectivo** o **QR** en Sandbox, contacta a nuestro equipo de soporte si necesitas simular la confirmación del pago.
 </Tip>
 
 ---

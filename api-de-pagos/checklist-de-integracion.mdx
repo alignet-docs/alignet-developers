@@ -1,0 +1,54 @@
+---
+title: "Checklist de integración"
+sidebarTitle: "Checklist"
+description: "Validaciones recomendadas para completar una integración por API de Pagos."
+---
+
+Este checklist aplica para integraciones server-to-server usando la **API de Pagos**.
+
+## 1. Preparación
+
+- Credenciales activas para sandbox.
+- Endpoint de autenticación probado.
+- Base URL correcta por ambiente configurada.
+- Módulo a implementar definido: PayIn, recurrentes, devoluciones u onboarding.
+
+## 2. Construcción técnica
+
+- Access Token generado y renovado correctamente.
+- Request en JSON con headers y formato válidos.
+- Identificadores únicos definidos por operación.
+- Validación de montos, moneda y datos obligatorios completada.
+
+## 3. Flujo transaccional
+
+- Operación aprobada validada de extremo a extremo.
+- Operación rechazada validada con manejo funcional.
+- Métodos asíncronos probados si están habilitados.
+- Consulta o cancelación revisadas si forman parte del flujo.
+
+## 4. Notificaciones y consistencia
+
+- Endpoint S2S accesible y seguro.
+- Firma, idempotencia y reintentos contemplados.
+- Estados conciliados entre tu sistema y la API.
+- Logs suficientes para seguimiento y soporte.
+
+## 5. Producción
+
+- Pruebas de sandbox completadas.
+- Validación controlada con credenciales productivas.
+- Monitoreo mínimo definido para el go-live.
+- Integración lista para operación real.
+
+## Guías relacionadas
+
+<CardGroup cols={2}>
+  <Card title="Autenticación" icon="shield-check" href="/api-de-pagos/autenticacion">
+    Genera el token base de la integración.
+  </Card>
+
+  <Card title="PayIn" icon="arrow-down-to-line" href="/payin/introduccion">
+    Revisa el módulo de cobros y autorizaciones.
+  </Card>
+</CardGroup>

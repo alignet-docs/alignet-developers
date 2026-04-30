@@ -36,6 +36,7 @@
                     "icon": "store",
                     "pages": [
                       "e-commerce/introduccion",
+                      "e-commerce/checklist-de-integracion",
                       {
                         "group": "WooCommerce",
                         "pages": [
@@ -84,44 +85,31 @@
                     "icon": "globe",
                     "pages": [
                       "checkout-web/introduccion",
+                      "checkout-web/checklist-de-integracion",
                       "checkout-web/requisitos-de-negocio",
                       {
                         "group": "Flex",
-                        "icon": "credit-card-front",
                         "pages": [
                           "checkout-web/flex/introduccion",
                           "api-de-pagos/autenticacion",
                           {
                             "group": "Inicializar Pay Me Flex",
-                            "icon": "gear-complex",
                             "pages": [
                               "checkout-web/flex/api-nonce",
                               "checkout-web/flex/libreria-y-estilos-basicos",
-                              "checkout-web/flex/funcionalidad-de-cobros",
+                              {
+                                "group": "Funcionalidad de cobros",
+                                "pages": [
+                                  "checkout-web/flex/funcionalidad-de-cobros",
+                                  "checkout-web/flex/construccion-del-payload",
+                                  "checkout-web/flex/inicializar-el-componente",
+                                  "checkout-web/flex/capturar-funciones-callback"
+                                ]
+                              },
                               "checkout-web/flex/funcionalidad-debito-automatica"
                             ]
                           },
-                          "checkout-web/flex/datos-de-prueba"
-                        ]
-                      },
-                      {
-                        "group": "Modal",
-                        "icon": "window-maximize",
-                        "pages": [
-                          "checkout-web/modal/introduccion",
-                          "checkout-web/modal/requisitos-tecnicos",
-                          "checkout-web/modal/ambientes-de-integracion",
-                          "checkout-web/modal/configuracion-inicial",
-                          {
-                            "group": "Integración con V-POS2",
-                            "icon": "code",
-                            "pages": [
-                              "checkout-web/modal/v-pos2/parametros-de-envio-y-respuesta",
-                              "checkout-web/modal/v-pos2/notificaciones-de-respuesta"
-                            ]
-                          },
-                          "checkout-web/modal/personalizacion-del-formulario",
-                          "checkout-web/modal/otros-medios-de-pago"
+                          "pagos/datos-de-prueba"
                         ]
                       }
                     ]
@@ -131,6 +119,7 @@
                     "icon": "mobile-screen",
                     "pages": [
                       "sdk-mobile/introduccion",
+                      "sdk-mobile/checklist-de-integracion",
                       {
                         "group": "SDK Android",
                         "pages": [
@@ -188,15 +177,14 @@
                     "icon": "credit-card-front",
                     "pages": [
                       "api-de-pagos/introduccion",
+                      "api-de-pagos/checklist-de-integracion",
                       "api-de-pagos/autenticacion",
                       {
                         "group": "PayIn",
-                        "icon": "wallet",
                         "pages": [
                           "payin/introduccion",
                           {
                             "group": "API de Autorización - ecommerce",
-                            "icon": "credit-card",
                             "pages": [
                               "payin/autorizacion",
                               "payin/autorizacion-tarjeta",
@@ -210,7 +198,6 @@
                           },
                           {
                             "group": "API de Consulta",
-                            "icon": "magnifying-glass",
                             "pages": [
                               "payin/consulta",
                               "payin/consulta-tarjeta",
@@ -228,7 +215,6 @@
                       },
                       {
                         "group": "Pagos Recurrentes",
-                        "icon": "rotate",
                         "pages": [
                           "pagos-recurrentes/introduccion",
                           "pagos-recurrentes/afiliaciones",
@@ -238,7 +224,6 @@
                       },
                       {
                         "group": "Devoluciones",
-                        "icon": "arrow-up-from-line",
                         "pages": [
                           "devoluciones/introduccion",
                           "devoluciones/api-de-devoluciones",
@@ -249,7 +234,6 @@
                       },
                       {
                         "group": "Onboarding de Comercios",
-                        "icon": "store",
                         "pages": [
                           "onboarding/introduccion",
                           "onboarding/registro-individual",
@@ -353,7 +337,7 @@
   "navbar": {
     "primary": {
       "type": "button",
-      "label": "Soporte",
+      "label": "Soporte de Integración",
       "href": "mailto:equipo.integraciones@pay-me.com"
     }
   },
@@ -396,7 +380,7 @@
   "styling": {
     "codeblocks": "system"
   },
-  "favicon": "/IconoDocs.ico",
+  "favicon": "/IcoDocsV2.ico",
   "integrations": {
     "ga4": {
       "measurementId": "G-H7BWFCWK8R"
@@ -537,7 +521,11 @@
     },
     {
       "source": "/datos-de-prueba-1",
-      "destination": "/checkout-web/flex/datos-de-prueba"
+      "destination": "/pagos/datos-de-prueba"
+    },
+    {
+      "source": "/checkout-web/flex/datos-de-prueba",
+      "destination": "/pagos/datos-de-prueba"
     },
     {
       "source": "/requisitos-tecnicos-1",
