@@ -376,7 +376,6 @@
   "styling": {
     "codeblocks": "system"
   },
-  "favicon": "/IcoDocsV2.ico",
   "integrations": {
     "ga4": {
       "measurementId": "G-H7BWFCWK8R"
@@ -907,5 +906,6 @@
   "logo": {
     "light": "/images/BlancoAlignetPay-meV2.png",
     "dark": "/images/OscuroAlignetPay-meV2.png"
-  }
+  },
+  "favicon": "/images/IcoDocsV2.ico"
 }
