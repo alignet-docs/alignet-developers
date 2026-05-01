@@ -363,8 +363,8 @@
     "family": "Roboto"
   },
   "logo": {
-    "light": "/images/Logos%20v2/BlancoAlignetPay-me.png",
-    "dark": "/images/Logos%20v2/OscuroAlignetPay-me.png"
+    "light": "/images/OscuroAlignetPay-me.png",
+    "dark": "/images/BlancoAlignetPay-me.png"
   },
   "appearance": {
     "strict": false,
