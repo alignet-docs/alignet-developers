@@ -362,10 +362,6 @@
   "fonts": {
     "family": "Roboto"
   },
-  "logo": {
-    "light": "/images/OscuroAlignetPay-me.png",
-    "dark": "/images/BlancoAlignetPay-me.png"
-  },
   "appearance": {
     "strict": false,
     "default": "light"
@@ -907,5 +903,9 @@
       "source": "/wordpress-woocommerce/metodos-asincronos",
       "destination": "/wordpress-woocommerce/gestion-de-pedidos-y-transacciones"
     }
-  ]
+  ],
+  "logo": {
+    "light": "/images/BlancoAlignetPay-meV2.png",
+    "dark": "/images/OscuroAlignetPay-meV2.png"
+  }
 }
