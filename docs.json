@@ -2,11 +2,13 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
   "name": "Alignet Integration Docs",
+
   "colors": {
     "primary": "#0d704c",
     "light": "#198960",
     "dark": "#1a4a6a"
   },
+
   "navigation": {
     "products": [
       {
@@ -21,10 +23,10 @@
                 "icon": "shoe-prints",
                 "pages": [
                   "index",
-                  "primeros-pasos/metodos-de-integracion",
-                  "primeros-pasos/inicio-rapido",
-                  "primeros-pasos/buenas-practicas",
-                  "primeros-pasos/checklist-de-certificacion"
+                  "metodos-de-integracion",
+                  "inicio-rapido",
+                  "buenas-practicas",
+                  "technical-certification-checklist"
                 ]
               },
               {
@@ -35,47 +37,45 @@
                     "group": "E-commerce",
                     "icon": "store",
                     "pages": [
-                      "e-commerce/introduccion",
-                      "e-commerce/checklist-de-integracion",
                       {
                         "group": "WooCommerce",
                         "pages": [
-                          "wordpress-woocommerce/introduccion",
-                          "wordpress-woocommerce/instalacion-y-activacion",
-                          "wordpress-woocommerce/configuracion-y-llaves",
-                          "wordpress-woocommerce/experiencia-del-checkout",
-                          "wordpress-woocommerce/gestion-de-pedidos-y-transacciones",
-                          "wordpress-woocommerce/pruebas-y-certificacion",
-                          "wordpress-woocommerce/solucion-de-problemas"
+                          "Intro",
+                          "instalacion",
+                          "configura",
+                          "experiencia-de-checkout",
+                          "gestion-de-pedidos-y-transacciones",
+                          "pruebas-y-certificacion",
+                          "solucion-de-problemas"
                         ]
                       },
                       {
                         "group": "Prestashop",
                         "pages": [
-                          "prestashop/introduccion",
-                          "prestashop/instalacion-y-activacion",
-                          "prestashop/configuracion-del-modulo",
-                          "prestashop/experiencia-del-cliente",
-                          "prestashop/gestion-de-pedidos-y-transacciones",
-                          "prestashop/pruebas-y-certificacion",
-                          "prestashop/solucion-de-problemas"
+                          "intro-prestashop",
+                          "instalacion-y-activacion",
+                          "configuracion-del-modulo",
+                          "experiencia-del-cliente",
+                          "gestion-de-pedidos-y-transacciones-1",
+                          "pruebas-y-certificacion-1",
+                          "solucion-de-problemas-1"
                         ]
                       },
                       {
                         "group": "VTEX",
                         "pages": [
-                          "vtex/introduccion",
+                          "introduccion-vtex",
                           {
                             "group": "Instalación VTEX",
                             "pages": [
-                              "vtex/instalacion",
-                              "vtex/configuracion",
-                              "vtex/configuracion-de-credenciales-y-metodos-de-pago",
-                              "vtex/configuracion-de-condiciones-de-pago"
+                              "instalacion-1",
+                              "configuracion-vtex",
+                              "configuracion-de-credenciales-y-metodos-de-pago",
+                              "configuracion-de-condiciones-de-pago-en-vtex"
                             ]
                           },
-                          "vtex/flujo-de-pago",
-                          "vtex/pruebas-y-troubleshooting"
+                          "flujo-de-pago-vtex",
+                          "pruebas-vtex"
                         ]
                       }
                     ]
@@ -84,32 +84,44 @@
                     "group": "Checkout Web",
                     "icon": "globe",
                     "pages": [
-                      "checkout-web/introduccion",
-                      "checkout-web/checklist-de-integracion",
-                      "checkout-web/requisitos-de-negocio",
+                      "introduccion-2",
+                      "requisitos-de-negocio",
                       {
                         "group": "Flex",
+                        "icon": "credit-card-front",
                         "pages": [
-                          "checkout-web/flex/introduccion",
-                          "api-de-pagos/autenticacion",
+                          "introduccion-3",
+                          "autenticacion",
                           {
                             "group": "Inicializar Pay Me Flex",
+                            "icon": "gear-complex",
                             "pages": [
-                              "checkout-web/flex/api-nonce",
-                              "checkout-web/flex/libreria-y-estilos-basicos",
-                              {
-                                "group": "Funcionalidad de cobros",
-                                "pages": [
-                                  "checkout-web/flex/funcionalidad-de-cobros",
-                                  "checkout-web/flex/construccion-del-payload",
-                                  "checkout-web/flex/inicializar-el-componente",
-                                  "checkout-web/flex/capturar-funciones-callback"
-                                ]
-                              },
-                              "checkout-web/flex/funcionalidad-debito-automatica"
+                              "api-nonce",
+                              "incluir-libreria-y-estilos-basicos",
+                              "funcionalidad-de-cobros",
+                              "funcionalidad-debito-automatica"
                             ]
                           },
-                          "pagos/datos-de-prueba"
+                          "datos-de-prueba-1"
+                        ]
+                      },
+                      {
+                        "group": "Modal",
+                        "icon": "window-maximize",
+                        "pages": [
+                          "requisitos-tecnicos-1",
+                          "ambientes-de-integracion-1",
+                          "configuracion-inicial",
+                          {
+                            "group": "Integración con V-POS2",
+                            "icon": "code",
+                            "pages": [
+                              "parametros-de-envio-y-respuesta",
+                              "notificaciones-de-respuesta"
+                            ]
+                          },
+                          "personalizacion-de-formulario",
+                          "otros-medios-de-pago"
                         ]
                       }
                     ]
@@ -118,56 +130,54 @@
                     "group": "SDK Mobile",
                     "icon": "mobile-screen",
                     "pages": [
-                      "sdk-mobile/introduccion",
-                      "sdk-mobile/checklist-de-integracion",
                       {
                         "group": "SDK Android",
                         "pages": [
-                          "sdk-mobile/android/introduccion",
-                          "sdk-mobile/android/requisitos",
-                          "sdk-mobile/android/instalacion",
+                          "introduccion",
+                          "requisitos-sdk-android",
+                          "instalacion-2",
                           {
                             "group": "Flujo de cobro",
                             "pages": [
-                              "sdk-mobile/android/flujo-de-cobro/inicializar-pay-me-sdk-android",
-                              "sdk-mobile/android/flujo-de-cobro/parametros-de-pay-me-sdk-android",
-                              "sdk-mobile/android/flujo-de-cobro/mensajes-de-errores"
+                              "flujo-de-cobro",
+                              "flujo-de-afiliacion",
+                              "cobros-mensajes-de-errores-de-pay-me-sdk"
                             ]
                           },
                           {
                             "group": "Función de afiliaciones",
                             "pages": [
-                              "sdk-mobile/android/afiliaciones/inicializar-sdk-android",
-                              "sdk-mobile/android/afiliaciones/parametros-de-sdk-android",
-                              "sdk-mobile/android/afiliaciones/mensajes-de-errores"
+                              "inicializar-sdk-android",
+                              "parametros-de-entrada-y-salida-de-sdk-android",
+                              "mensajes-de-errores-de-sdk"
                             ]
                           },
-                          "sdk-mobile/android/sandbox-y-datos-de-prueba"
+                          "datos-de-prueba"
                         ]
                       },
                       {
                         "group": "SDK IOS",
                         "pages": [
-                          "sdk-mobile/ios/introduccion",
-                          "sdk-mobile/ios/requisitos",
-                          "sdk-mobile/ios/instalacion",
+                          "introduccion-ios",
+                          "requisitos-ios",
+                          "instalacion-3",
                           {
                             "group": "Flujo de cobro",
                             "pages": [
-                              "sdk-mobile/ios/flujo-de-cobro/inicializar-pay-me-sdk-ios",
-                              "sdk-mobile/ios/flujo-de-cobro/parametros-de-pay-me-sdk-ios",
-                              "sdk-mobile/ios/flujo-de-cobro/mensajes-de-errores"
+                              "inicializar-pay-me-sdk-i-os",
+                              "parametros-de-entrada-y-salida-de-pay-me-sdk-i-os",
+                              "mensajes-de-errores-de-sdk-1"
                             ]
                           },
                           {
                             "group": "Función de afiliaciones",
                             "pages": [
-                              "sdk-mobile/ios/afiliaciones/inicializar-sdk-ios",
-                              "sdk-mobile/ios/afiliaciones/parametros-de-sdk-ios",
-                              "sdk-mobile/ios/afiliaciones/mensajes-de-errores"
+                              "inicializar-sdk-i-os",
+                              "parametros-de-entrada-y-salida-de-sdk-i-os",
+                              "mensajes-de-errores-de-sdk-2"
                             ]
                           },
-                          "sdk-mobile/ios/sandbox-y-datos-de-prueba"
+                          "sandbox-y-datos-de-prueba"
                         ]
                       }
                     ]
@@ -176,68 +186,73 @@
                     "group": "API de Pagos",
                     "icon": "credit-card-front",
                     "pages": [
-                      "api-de-pagos/introduccion",
-                      "api-de-pagos/checklist-de-integracion",
-                      "api-de-pagos/autenticacion",
+                      "introduccion-5",
+                      "autenticacion",
                       {
                         "group": "PayIn",
+                        "icon": "wallet",
                         "pages": [
-                          "payin/introduccion",
+                          "introduccion-6",
                           {
                             "group": "API de Autorización - ecommerce",
+                            "icon": "credit-card",
                             "pages": [
-                              "payin/autorizacion",
-                              "payin/autorizacion-tarjeta",
-                              "payin/autorizacion-yape",
-                              "payin/autorizacion-transferencia-bancaria",
-                              "payin/autorizacion-qr",
-                              "payin/autorizacion-cuotealo",
-                              "payin/autorizacion-pagoefectivo",
-                              "payin/autorizacion-metodos-con-redirect"
+                              "autorizacion",
+                              "autorizacion-tarjeta",
+                              "autorizacion-yape",
+                              "autorizacion-transferencia-bancaria",
+                              "autorizacion-qr",
+                              "autorizacion-cuotealo",
+                              "autorizacion-pagoefectivo",
+                              "autorizacion-metodos-con-redirect"
                             ]
                           },
                           {
                             "group": "API de Consulta",
+                            "icon": "magnifying-glass",
                             "pages": [
-                              "payin/consulta",
-                              "payin/consulta-tarjeta",
-                              "payin/consulta-yape",
-                              "payin/consulta-transferencia-bancaria",
-                              "payin/consulta-qr",
-                              "payin/consulta-cuotealo",
-                              "payin/consulta-pagoefectivo"
+                              "consulta",
+                              "consulta-tarjeta",
+                              "consulta-yape",
+                              "consulta-transferencia-bancaria",
+                              "consulta-qr",
+                              "consulta-cuotealo",
+                              "consulta-pagoefectivo"
                             ]
                           },
-                          "payin/cancelacion",
-                          "payin/notificaciones",
-                          "payin/referencia"
+                          "cancelacion",
+                          "notificaciones",
+                          "referencia"
                         ]
                       },
                       {
                         "group": "Pagos Recurrentes",
+                        "icon": "rotate",
                         "pages": [
-                          "pagos-recurrentes/introduccion",
-                          "pagos-recurrentes/afiliaciones",
-                          "pagos-recurrentes/cobros",
-                          "pagos-recurrentes/codigos-de-respuesta"
+                          "introduc",
+                          "afiliaciones",
+                          "cobros",
+                          "codigos-de-respuesta-1"
                         ]
                       },
                       {
                         "group": "Devoluciones",
+                        "icon": "arrow-up-from-line",
                         "pages": [
-                          "devoluciones/introduccion",
-                          "devoluciones/api-de-devoluciones",
-                          "devoluciones/consulta-unitaria",
-                          "devoluciones/consulta-masiva",
-                          "devoluciones/codigos-de-respuesta"
+                          "introduccion-7",
+                          "referencia-1",
+                          "consulta-unitaria-devolucion",
+                          "consulta-masiva-devolucion",
+                          "codigos-respuesta-devoluciones"
                         ]
                       },
                       {
                         "group": "Onboarding de Comercios",
+                        "icon": "store",
                         "pages": [
-                          "onboarding/introduccion",
-                          "onboarding/registro-individual",
-                          "onboarding/registro-masivo"
+                          "introduccion-8",
+                          "registro-individual",
+                          "registro-masivo"
                         ]
                       }
                     ]
@@ -252,16 +267,16 @@
                     "group": "Conceptos Fundamentales",
                     "icon": "lightbulb",
                     "pages": [
-                      "pagos/operaciones-inteligentes",
-                      "pagos/estados-de-transaccion"
+                      "operaciones-inteligentes",
+                      "estados-de-transaccion"
                     ]
                   },
                   {
                     "group": "Sandbox y pruebas",
                     "icon": "flask",
                     "pages": [
-                      "pagos/datos-de-prueba",
-                      "pagos/codigos-de-retorno"
+                      "flujos-de-pago",
+                      "codigos-de-respuesta"
                     ]
                   }
                 ]
@@ -274,24 +289,24 @@
                     "group": "Dashboard",
                     "icon": "table-columns",
                     "pages": [
-                      "dashboard/introduccion",
-                      "dashboard/consulta-operaciones",
-                      "dashboard/estados-de-transaccion",
-                      "dashboard/reporte-y-exportacion",
-                      "dashboard/extornos",
-                      "dashboard/devoluciones",
-                      "dashboard/recuperacion-de-contrasena"
+                      "dashboard",
+                      "consulta-operaciones",
+                      "estados-de-transaccion-1",
+                      "reporte-y-exportacion",
+                      "extornos",
+                      "devoluciones",
+                      "recuperacion-de-contrasena"
                     ]
                   },
                   {
                     "group": "Gestión de devoluciones",
                     "icon": "rotate-left",
                     "pages": [
-                      "gestion-de-devoluciones/introduccion",
-                      "gestion-de-devoluciones/api-de-devoluciones",
-                      "devoluciones/consulta-unitaria",
-                      "devoluciones/consulta-masiva",
-                      "devoluciones/codigos-de-respuesta"
+                      "introduccion-4",
+                      "referencia-del-api-de-devoluciones",
+                      "consulta-unitaria-devolucion",
+                      "consulta-masiva-devolucion",
+                      "codigos-respuesta-devoluciones"
                     ]
                   }
                 ]
@@ -316,10 +331,10 @@
                 "group": "PaymePOS",
                 "icon": "credit-card-front",
                 "pages": [
-                  "paymepos/configuracion-inicial",
-                  "paymepos/operaciones-de-venta",
-                  "paymepos/administracion-y-control",
-                  "paymepos/centro-de-ayuda-y-soporte"
+                  "introduccion-1",
+                  "primeros-pasos",
+                  "operacion-diaria",
+                  "administracion"
                 ]
               }
             ]
@@ -328,19 +343,29 @@
       }
     ]
   },
+
   "api": {
     "openapi": "openapi.json",
     "playground": {
       "display": "interactive"
     }
   },
+
   "navbar": {
+    "links": [
+      {
+        "label": "Soporte",
+        "href": "mailto:soporte@pay-me.com"
+      }
+      
+    ],
     "primary": {
       "type": "button",
-      "label": "Soporte de Integración",
-      "href": "mailto:equipo.integraciones@pay-me.com"
+      "label": "Dashboard",
+      "href": "https://dashboard.mintlify.com"
     }
   },
+
   "contextual": {
     "options": [
       "copy",
@@ -353,19 +378,28 @@
       "vscode"
     ]
   },
+
   "footer": {
     "socials": {
       "linkedin": "https://www.linkedin.com/company/alignet/",
       "website": "https://www.Alignet.com"
     }
   },
+
   "fonts": {
     "family": "Roboto"
   },
+
+  "logo": {
+    "light": "/images/logo_white_.png",
+    "dark": "/images/Logo_Black_.png"
+  },
+
   "appearance": {
     "strict": false,
     "default": "light"
   },
+
   "background": {
     "color": {
       "dark": "#181818"
@@ -381,535 +415,5 @@
       "measurementId": "G-H7BWFCWK8R"
     }
   },
-  "redirects": [
-    {
-      "source": "/metodos-de-integracion",
-      "destination": "/primeros-pasos/metodos-de-integracion"
-    },
-    {
-      "source": "/inicio-rapido",
-      "destination": "/primeros-pasos/inicio-rapido"
-    },
-    {
-      "source": "/buenas-practicas",
-      "destination": "/primeros-pasos/buenas-practicas"
-    },
-    {
-      "source": "/technical-certification-checklist",
-      "destination": "/primeros-pasos/checklist-de-certificacion"
-    },
-    {
-      "source": "/Intro",
-      "destination": "/wordpress-woocommerce/introduccion"
-    },
-    {
-      "source": "/instalacion",
-      "destination": "/wordpress-woocommerce/instalacion-y-activacion"
-    },
-    {
-      "source": "/configura",
-      "destination": "/wordpress-woocommerce/configuracion-y-llaves"
-    },
-    {
-      "source": "/experiencia-de-checkout",
-      "destination": "/wordpress-woocommerce/experiencia-del-checkout"
-    },
-    {
-      "source": "/gestion-de-pedidos-y-transacciones",
-      "destination": "/wordpress-woocommerce/gestion-de-pedidos-y-transacciones"
-    },
-    {
-      "source": "/pruebas-y-certificacion",
-      "destination": "/wordpress-woocommerce/pruebas-y-certificacion"
-    },
-    {
-      "source": "/solucion-de-problemas",
-      "destination": "/wordpress-woocommerce/solucion-de-problemas"
-    },
-    {
-      "source": "/intro-prestashop",
-      "destination": "/prestashop/introduccion"
-    },
-    {
-      "source": "/instalacion-y-activacion",
-      "destination": "/prestashop/instalacion-y-activacion"
-    },
-    {
-      "source": "/configuracion-del-modulo",
-      "destination": "/prestashop/configuracion-del-modulo"
-    },
-    {
-      "source": "/experiencia-del-cliente",
-      "destination": "/prestashop/experiencia-del-cliente"
-    },
-    {
-      "source": "/gestion-de-pedidos-y-transacciones-1",
-      "destination": "/prestashop/gestion-de-pedidos-y-transacciones"
-    },
-    {
-      "source": "/pruebas-y-certificacion-1",
-      "destination": "/prestashop/pruebas-y-certificacion"
-    },
-    {
-      "source": "/solucion-de-problemas-1",
-      "destination": "/prestashop/solucion-de-problemas"
-    },
-    {
-      "source": "/introduccion-vtex",
-      "destination": "/vtex/introduccion"
-    },
-    {
-      "source": "/instalacion-1",
-      "destination": "/vtex/instalacion"
-    },
-    {
-      "source": "/configuracion-vtex",
-      "destination": "/vtex/configuracion"
-    },
-    {
-      "source": "/configuracion-de-credenciales-y-metodos-de-pago",
-      "destination": "/vtex/configuracion-de-credenciales-y-metodos-de-pago"
-    },
-    {
-      "source": "/configuracion-de-condiciones-de-pago-en-vtex",
-      "destination": "/vtex/configuracion-de-condiciones-de-pago"
-    },
-    {
-      "source": "/flujo-de-pago-vtex",
-      "destination": "/vtex/flujo-de-pago"
-    },
-    {
-      "source": "/pruebas-vtex",
-      "destination": "/vtex/pruebas-y-troubleshooting"
-    },
-    {
-      "source": "/introduccion-2",
-      "destination": "/checkout-web/introduccion"
-    },
-    {
-      "source": "/requisitos-de-negocio",
-      "destination": "/checkout-web/requisitos-de-negocio"
-    },
-    {
-      "source": "/introduccion-3",
-      "destination": "/checkout-web/flex/introduccion"
-    },
-    {
-      "source": "/autenticacion",
-      "destination": "/api-de-pagos/autenticacion"
-    },
-    {
-      "source": "/api-nonce",
-      "destination": "/checkout-web/flex/api-nonce"
-    },
-    {
-      "source": "/incluir-libreria-y-estilos-basicos",
-      "destination": "/checkout-web/flex/libreria-y-estilos-basicos"
-    },
-    {
-      "source": "/funcionalidad-de-cobros",
-      "destination": "/checkout-web/flex/funcionalidad-de-cobros"
-    },
-    {
-      "source": "/funcionalidad-debito-automatica",
-      "destination": "/checkout-web/flex/funcionalidad-debito-automatica"
-    },
-    {
-      "source": "/datos-de-prueba-1",
-      "destination": "/pagos/datos-de-prueba"
-    },
-    {
-      "source": "/checkout-web/flex/datos-de-prueba",
-      "destination": "/pagos/datos-de-prueba"
-    },
-    {
-      "source": "/requisitos-tecnicos-1",
-      "destination": "/checkout-web/modal/requisitos-tecnicos"
-    },
-    {
-      "source": "/ambientes-de-integracion-1",
-      "destination": "/checkout-web/modal/ambientes-de-integracion"
-    },
-    {
-      "source": "/configuracion-inicial",
-      "destination": "/checkout-web/modal/configuracion-inicial"
-    },
-    {
-      "source": "/parametros-de-envio-y-respuesta",
-      "destination": "/checkout-web/modal/v-pos2/parametros-de-envio-y-respuesta"
-    },
-    {
-      "source": "/notificaciones-de-respuesta",
-      "destination": "/checkout-web/modal/v-pos2/notificaciones-de-respuesta"
-    },
-    {
-      "source": "/personalizacion-de-formulario",
-      "destination": "/checkout-web/modal/personalizacion-del-formulario"
-    },
-    {
-      "source": "/otros-medios-de-pago",
-      "destination": "/checkout-web/modal/otros-medios-de-pago"
-    },
-    {
-      "source": "/requisitos-sdk-android",
-      "destination": "/sdk-mobile/android/requisitos"
-    },
-    {
-      "source": "/instalacion-2",
-      "destination": "/sdk-mobile/android/instalacion"
-    },
-    {
-      "source": "/flujo-de-cobro",
-      "destination": "/sdk-mobile/android/flujo-de-cobro/inicializar-pay-me-sdk-android"
-    },
-    {
-      "source": "/flujo-de-afiliacion",
-      "destination": "/sdk-mobile/android/flujo-de-cobro/parametros-de-pay-me-sdk-android"
-    },
-    {
-      "source": "/cobros-mensajes-de-errores-de-pay-me-sdk",
-      "destination": "/sdk-mobile/android/flujo-de-cobro/mensajes-de-errores"
-    },
-    {
-      "source": "/inicializar-sdk-android",
-      "destination": "/sdk-mobile/android/afiliaciones/inicializar-sdk-android"
-    },
-    {
-      "source": "/parametros-de-entrada-y-salida-de-sdk-android",
-      "destination": "/sdk-mobile/android/afiliaciones/parametros-de-sdk-android"
-    },
-    {
-      "source": "/mensajes-de-errores-de-sdk",
-      "destination": "/sdk-mobile/android/afiliaciones/mensajes-de-errores"
-    },
-    {
-      "source": "/datos-de-prueba",
-      "destination": "/sdk-mobile/android/sandbox-y-datos-de-prueba"
-    },
-    {
-      "source": "/introduccion-ios",
-      "destination": "/sdk-mobile/ios/introduccion"
-    },
-    {
-      "source": "/requisitos-ios",
-      "destination": "/sdk-mobile/ios/requisitos"
-    },
-    {
-      "source": "/instalacion-3",
-      "destination": "/sdk-mobile/ios/instalacion"
-    },
-    {
-      "source": "/inicializar-pay-me-sdk-i-os",
-      "destination": "/sdk-mobile/ios/flujo-de-cobro/inicializar-pay-me-sdk-ios"
-    },
-    {
-      "source": "/parametros-de-entrada-y-salida-de-pay-me-sdk-i-os",
-      "destination": "/sdk-mobile/ios/flujo-de-cobro/parametros-de-pay-me-sdk-ios"
-    },
-    {
-      "source": "/mensajes-de-errores-de-sdk-1",
-      "destination": "/sdk-mobile/ios/flujo-de-cobro/mensajes-de-errores"
-    },
-    {
-      "source": "/inicializar-sdk-i-os",
-      "destination": "/sdk-mobile/ios/afiliaciones/inicializar-sdk-ios"
-    },
-    {
-      "source": "/parametros-de-entrada-y-salida-de-sdk-i-os",
-      "destination": "/sdk-mobile/ios/afiliaciones/parametros-de-sdk-ios"
-    },
-    {
-      "source": "/mensajes-de-errores-de-sdk-2",
-      "destination": "/sdk-mobile/ios/afiliaciones/mensajes-de-errores"
-    },
-    {
-      "source": "/sandbox-y-datos-de-prueba",
-      "destination": "/sdk-mobile/ios/sandbox-y-datos-de-prueba"
-    },
-    {
-      "source": "/introduccion",
-      "destination": "/api-de-pagos/introduccion"
-    },
-    {
-      "source": "/introduccion-5",
-      "destination": "/api-de-pagos/introduccion"
-    },
-    {
-      "source": "/introduccion-6",
-      "destination": "/payin/introduccion"
-    },
-    {
-      "source": "/autorizacion",
-      "destination": "/payin/autorizacion"
-    },
-    {
-      "source": "/autorizacion-tarjeta",
-      "destination": "/payin/autorizacion-tarjeta"
-    },
-    {
-      "source": "/autorizacion-yape",
-      "destination": "/payin/autorizacion-yape"
-    },
-    {
-      "source": "/autorizacion-transferencia-bancaria",
-      "destination": "/payin/autorizacion-transferencia-bancaria"
-    },
-    {
-      "source": "/autorizacion-qr",
-      "destination": "/payin/autorizacion-qr"
-    },
-    {
-      "source": "/autorizacion-cuotealo",
-      "destination": "/payin/autorizacion-cuotealo"
-    },
-    {
-      "source": "/autorizacion-pagoefectivo",
-      "destination": "/payin/autorizacion-pagoefectivo"
-    },
-    {
-      "source": "/autorizacion-metodos-con-redirect",
-      "destination": "/payin/autorizacion-metodos-con-redirect"
-    },
-    {
-      "source": "/consulta",
-      "destination": "/payin/consulta"
-    },
-    {
-      "source": "/consulta-tarjeta",
-      "destination": "/payin/consulta-tarjeta"
-    },
-    {
-      "source": "/consulta-yape",
-      "destination": "/payin/consulta-yape"
-    },
-    {
-      "source": "/consulta-transferencia-bancaria",
-      "destination": "/payin/consulta-transferencia-bancaria"
-    },
-    {
-      "source": "/consulta-qr",
-      "destination": "/payin/consulta-qr"
-    },
-    {
-      "source": "/consulta-cuotealo",
-      "destination": "/payin/consulta-cuotealo"
-    },
-    {
-      "source": "/consulta-pagoefectivo",
-      "destination": "/payin/consulta-pagoefectivo"
-    },
-    {
-      "source": "/cancelacion",
-      "destination": "/payin/cancelacion"
-    },
-    {
-      "source": "/notificaciones",
-      "destination": "/payin/notificaciones"
-    },
-    {
-      "source": "/referencia",
-      "destination": "/payin/referencia"
-    },
-    {
-      "source": "/introduc",
-      "destination": "/pagos-recurrentes/introduccion"
-    },
-    {
-      "source": "/afiliaciones",
-      "destination": "/pagos-recurrentes/afiliaciones"
-    },
-    {
-      "source": "/cobros",
-      "destination": "/pagos-recurrentes/cobros"
-    },
-    {
-      "source": "/codigos-de-respuesta-1",
-      "destination": "/pagos-recurrentes/codigos-de-respuesta"
-    },
-    {
-      "source": "/introduccion-7",
-      "destination": "/devoluciones/introduccion"
-    },
-    {
-      "source": "/referencia-1",
-      "destination": "/devoluciones/api-de-devoluciones"
-    },
-    {
-      "source": "/consulta-unitaria-devolucion",
-      "destination": "/devoluciones/consulta-unitaria"
-    },
-    {
-      "source": "/consulta-masiva-devolucion",
-      "destination": "/devoluciones/consulta-masiva"
-    },
-    {
-      "source": "/codigos-respuesta-devoluciones",
-      "destination": "/devoluciones/codigos-de-respuesta"
-    },
-    {
-      "source": "/introduccion-8",
-      "destination": "/onboarding/introduccion"
-    },
-    {
-      "source": "/registro-individual",
-      "destination": "/onboarding/registro-individual"
-    },
-    {
-      "source": "/registro-masivo",
-      "destination": "/onboarding/registro-masivo"
-    },
-    {
-      "source": "/operaciones-inteligentes",
-      "destination": "/pagos/operaciones-inteligentes"
-    },
-    {
-      "source": "/estados-de-transaccion",
-      "destination": "/pagos/estados-de-transaccion"
-    },
-    {
-      "source": "/flujos-de-pago",
-      "destination": "/pagos/datos-de-prueba"
-    },
-    {
-      "source": "/codigos-de-respuesta",
-      "destination": "/pagos/codigos-de-retorno"
-    },
-    {
-      "source": "/dashboard",
-      "destination": "/dashboard/introduccion"
-    },
-    {
-      "source": "/consulta-operaciones",
-      "destination": "/dashboard/consulta-operaciones"
-    },
-    {
-      "source": "/estados-de-transaccion-1",
-      "destination": "/dashboard/estados-de-transaccion"
-    },
-    {
-      "source": "/reporte-y-exportacion",
-      "destination": "/dashboard/reporte-y-exportacion"
-    },
-    {
-      "source": "/extornos",
-      "destination": "/dashboard/extornos"
-    },
-    {
-      "source": "/devoluciones",
-      "destination": "/dashboard/devoluciones"
-    },
-    {
-      "source": "/recuperacion-de-contrasena",
-      "destination": "/dashboard/recuperacion-de-contrasena"
-    },
-    {
-      "source": "/introduccion-4",
-      "destination": "/gestion-de-devoluciones/introduccion"
-    },
-    {
-      "source": "/referencia-del-api-de-devoluciones",
-      "destination": "/gestion-de-devoluciones/api-de-devoluciones"
-    },
-    {
-      "source": "/introduccion-1",
-      "destination": "/paymepos/configuracion-inicial"
-    },
-    {
-      "source": "/primeros-pasos",
-      "destination": "/paymepos/operaciones-de-venta"
-    },
-    {
-      "source": "/operacion-diaria",
-      "destination": "/paymepos/administracion-y-control"
-    },
-    {
-      "source": "/administracion",
-      "destination": "/paymepos/centro-de-ayuda-y-soporte"
-    },
-    {
-      "source": "/codigos-respuesta",
-      "destination": "/referencias/codigos-visa-mastercard"
-    },
-    {
-      "source": "/otros-procesadores",
-      "destination": "/referencias/codigos-otros-procesadores"
-    },
-    {
-      "source": "/codigos-visa-mastercard",
-      "destination": "/referencias/codigos-visa-mastercard"
-    },
-    {
-      "source": "/quickstart",
-      "destination": "/primeros-pasos/inicio-rapido"
-    },
-    {
-      "source": "/e-commerce",
-      "destination": "/e-commerce/introduccion"
-    },
-    {
-      "source": "/devoluciones/referencia",
-      "destination": "/devoluciones/api-de-devoluciones"
-    },
-    {
-      "source": "/devoluciones/consulta-unitaria-devolucion",
-      "destination": "/devoluciones/consulta-unitaria"
-    },
-    {
-      "source": "/devoluciones/consulta-masiva-devolucion",
-      "destination": "/devoluciones/consulta-masiva"
-    },
-    {
-      "source": "/devoluciones/codigos-respuesta-devoluciones",
-      "destination": "/devoluciones/codigos-de-respuesta"
-    },
-    {
-      "source": "/prestashop/instalacion",
-      "destination": "/prestashop/instalacion-y-activacion"
-    },
-    {
-      "source": "/prestashop/configuracion",
-      "destination": "/prestashop/configuracion-del-modulo"
-    },
-    {
-      "source": "/prestashop/experiencia-cliente",
-      "destination": "/prestashop/experiencia-del-cliente"
-    },
-    {
-      "source": "/prestashop/gestion-de-pedidos",
-      "destination": "/prestashop/gestion-de-pedidos-y-transacciones"
-    },
-    {
-      "source": "/prestashop/metodos-asincronos",
-      "destination": "/prestashop/gestion-de-pedidos-y-transacciones"
-    },
-    {
-      "source": "/wordpress-woocommerce/instalacion",
-      "destination": "/wordpress-woocommerce/instalacion-y-activacion"
-    },
-    {
-      "source": "/wordpress-woocommerce/configuracion",
-      "destination": "/wordpress-woocommerce/configuracion-y-llaves"
-    },
-    {
-      "source": "/wordpress-woocommerce/experiencia-checkout",
-      "destination": "/wordpress-woocommerce/experiencia-del-checkout"
-    },
-    {
-      "source": "/wordpress-woocommerce/gestion-de-pedidos",
-      "destination": "/wordpress-woocommerce/gestion-de-pedidos-y-transacciones"
-    },
-    {
-      "source": "/wordpress-woocommerce/metodos-asincronos",
-      "destination": "/wordpress-woocommerce/gestion-de-pedidos-y-transacciones"
-    }
-  ],
-  "logo": {
-    "light": "/images/BlancoAlignetPay-me_23.png",
-    "dark": "/images/blackAlignetPay-me_23.png",
-    "href": "https://docs.pay-me.com"
-  },
-  "search": {
-    "prompt": "Haz una pregunta"
-  },
-  "favicon": "/images/favi_.png"
+  "favicon": "/images/logoDocs.png"
 }
