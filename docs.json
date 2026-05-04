@@ -904,8 +904,9 @@
     }
   ],
   "logo": {
-    "light": "/images/BlancoAlignetPay-me_6_5.png",
-    "dark": "/images/BlackAlignetPay-me_6_5.png"
+    "light": "/images/BlancoAlignetPay-me_23.png",
+    "dark": "/images/blackAlignetPay-me_23.png",
+    "href": "https://docs.pay-me.com"
   },
   "favicon": "/images/IcoDocsV2.ico"
 }
