@@ -254,7 +254,7 @@
           "Authentication"
         ],
         "summary": "Generar Nonce",
-        "description": "Genera el Nonce necesario para inicializar Pay-me Flex despues de autenticarte.\n\nSi prefieres ver la solicitud documentada paso a paso, revisa [API Nonce](/api-nonce).",
+        "description": "Genera el Nonce temporal necesario para inicializar Pay-me Flex. Este endpoint debe consumirse desde backend usando un Bearer Token vigente.\n\nSi prefieres ver la solicitud documentada paso a paso, revisa [API Nonce](/checkout-web/flex/api-nonce).",
         "operationId": "generateNonce",
         "parameters": [
           {
@@ -456,6 +456,12 @@
           },
           "401": {
             "description": "Token invalido o expirado."
+          },
+          "403": {
+            "description": "El token no cuenta con el scope necesario para solicitar el nonce."
+          },
+          "500": {
+            "description": "Error temporal del servicio."
           }
         }
       }

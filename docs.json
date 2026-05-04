@@ -37,6 +37,7 @@
                     "pages": [
                       "e-commerce/introduccion",
                       "e-commerce/checklist-de-integracion",
+                      "e-commerce/buenas-practicas",
                       {
                         "group": "WooCommerce",
                         "pages": [
@@ -86,11 +87,13 @@
                     "pages": [
                       "checkout-web/introduccion",
                       "checkout-web/checklist-de-integracion",
+                      "checkout-web/buenas-practicas",
                       "checkout-web/requisitos-de-negocio",
                       {
                         "group": "Flex",
                         "pages": [
                           "checkout-web/flex/introduccion",
+                          "checkout-web/flex/ultimas-mejoras",
                           "api-de-pagos/autenticacion",
                           {
                             "group": "Inicializar Pay Me Flex",
@@ -120,6 +123,7 @@
                     "pages": [
                       "sdk-mobile/introduccion",
                       "sdk-mobile/checklist-de-integracion",
+                      "sdk-mobile/buenas-practicas",
                       {
                         "group": "SDK Android",
                         "pages": [
@@ -142,7 +146,7 @@
                               "sdk-mobile/android/afiliaciones/mensajes-de-errores"
                             ]
                           },
-                          "sdk-mobile/android/sandbox-y-datos-de-prueba"
+                          "pagos/datos-de-prueba"
                         ]
                       },
                       {
@@ -167,7 +171,7 @@
                               "sdk-mobile/ios/afiliaciones/mensajes-de-errores"
                             ]
                           },
-                          "sdk-mobile/ios/sandbox-y-datos-de-prueba"
+                          "pagos/datos-de-prueba"
                         ]
                       }
                     ]
@@ -178,6 +182,7 @@
                     "pages": [
                       "api-de-pagos/introduccion",
                       "api-de-pagos/checklist-de-integracion",
+                      "api-de-pagos/buenas-practicas",
                       "api-de-pagos/autenticacion",
                       {
                         "group": "PayIn",
@@ -584,7 +589,11 @@
     },
     {
       "source": "/datos-de-prueba",
-      "destination": "/sdk-mobile/android/sandbox-y-datos-de-prueba"
+      "destination": "/pagos/datos-de-prueba"
+    },
+    {
+      "source": "/sdk-mobile/android/sandbox-y-datos-de-prueba",
+      "destination": "/pagos/datos-de-prueba"
     },
     {
       "source": "/introduccion-ios",
@@ -624,7 +633,11 @@
     },
     {
       "source": "/sandbox-y-datos-de-prueba",
-      "destination": "/sdk-mobile/ios/sandbox-y-datos-de-prueba"
+      "destination": "/pagos/datos-de-prueba"
+    },
+    {
+      "source": "/sdk-mobile/ios/sandbox-y-datos-de-prueba",
+      "destination": "/pagos/datos-de-prueba"
     },
     {
       "source": "/introduccion",
@@ -911,5 +924,8 @@
   "search": {
     "prompt": "Haz una pregunta"
   },
-  "favicon": "/images/favi_.png"
+  "favicon": {
+    "light": "/icon/IconoOscuroPayMe.png",
+    "dark": "/icon/IconoClaroPayMe.png"
+  }
 }

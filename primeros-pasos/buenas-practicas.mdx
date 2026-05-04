@@ -1,103 +1,85 @@
 ---
-title: "Buenas prácticas"
-description: "Lineamientos para una integración segura, robusta y escalable con Pay-me."
+title: "Buenas prácticas generales"
+description: "Principios base para preparar una integración segura con Pay-me y ubicar las recomendaciones específicas por tipo de integración."
 icon: "shield-check"
 ---
 
-## Seguridad: El pilar fundamental
+Esta guía reúne los criterios generales que aplican a cualquier integración con Pay-me. Además de estos lineamientos, cada tipo de integración cuenta con sus propias recomendaciones técnicas, operativas y de seguridad.
 
-La seguridad de los datos de pago es nuestra prioridad. Sigue estas reglas de oro para proteger tu negocio y a tus clientes.
+<Info>
+  Usa esta página como punto de partida. Luego revisa las buenas prácticas específicas según el canal que vas a implementar: E-commerce, Checkout Web, SDK Mobile o API de Pagos.
+</Info>
 
-<Warning>
-  **Nunca expongas tus credenciales:** El `Client Secret`, `API Keys` o tokens jamás deben estar en el frontend (JS, HTML). Todas las operaciones sensibles deben ejecutarse exclusivamente **Server-to-Server** mediante HTTPS.
-</Warning>
-
----
-
-## Arquitectura de Referencia
-
-Para una integración profesional, tu sistema debe seguir este flujo de responsabilidad:
-
-<CardGroup cols={2}>
-  <Card title="Backend: El Orquestador" icon="server">
-    Es la **fuente de verdad**. Valida estados, procesa webhooks y gestiona la base de datos de pedidos.
-  </Card>
-
-  <Card title="Frontend: La Experiencia" icon="table-layout">
-    Se encarga únicamente de capturar la intención de pago y mostrar estados amigables al usuario.
-  </Card>
-</CardGroup>
-
----
-
-## Flujo de Validación Robusta
-
-No consideres una transacción como exitosa basándote solo en lo que el navegador muestra. Implementa este ciclo de validación:
-
-<Steps>
-  <Step title="Captura de Respuesta">
-    Recibe la respuesta inicial del Checkout o SDK en el frontend.
-  </Step>
-  <Step title="Validación S2S (Server-to-Server)">
-    Tu backend debe consultar el estado de la transacción directamente a la **API de Alignet** usando el ID de la operación.
-  </Step>
-  <Step title="Escucha de Webhooks">
-    Configura notificaciones asíncronas para recibir actualizaciones de estado incluso si el usuario cierra el navegador.
-  </Step>
-  <Step title="Confirmación Final">
-    Solo cuando el backend confirma el estado `APROBADO`, actualiza el inventario o libera el servicio.
-  </Step>
-</Steps>
-
----
-
-## Recomendaciones por Categoría
+## Principios transversales
 
 <AccordionGroup>
-  <Accordion title="Gestión de Transacciones" icon="rotate">
-    - **Idempotencia:** Envía siempre un `order_id` único para evitar cargos duplicados en caso de reintentos de red.
-    - **Manejo de estados:** Tu sistema debe ser capaz de procesar estados `aprobado`, `rechazado`, `pendiente` y `expirado`.
-    - **Timeouts:** Configura tiempos de espera razonables y maneja las excepciones de conexión de forma resiliente.
+  <Accordion title="Seguridad de credenciales" icon="key">
+    - No expongas credenciales, `Client Secret`, API keys o tokens en el frontend.
+    - Ejecuta operaciones sensibles desde tu backend mediante HTTPS.
+    - Usa variables de entorno o un gestor seguro de secretos para almacenar llaves.
   </Accordion>
 
-  <Accordion title="Notificaciones (Webhooks)" icon="bell">
-    - **Endpoint Seguro:** Utiliza una URL HTTPS protegida para recibir los Webhooks.
-    - **Validación de Firma:** Verifica que la notificación provenga realmente de Alignet para evitar ataques de suplantación.
-    - **Respuesta Rápida:** Responde con un `200 OK` inmediatamente al recibir el webhook y procesa la lógica en segundo plano.
+  <Accordion title="Validación de operaciones" icon="badge-check">
+    - No confirmes una venta solo con la respuesta visual del checkout, SDK o navegador.
+    - Valida el estado final desde backend usando los identificadores de operación.
+    - Guarda la relación entre tu pedido interno y el identificador devuelto por Pay-me.
   </Accordion>
 
-  <Accordion title="Logs y Monitoreo" icon="gears">
-    - **Trazabilidad:** Almacena el `transaction_id` de Alignet junto a tu pedido local para facilitar auditorías y soporte.
-    - **Logs de Errores:** Registra los payloads de error de la API; esto reducirá el tiempo de debugging drásticamente.
+  <Accordion title="Pruebas antes de producción" icon="vial">
+    - Completa pruebas por cada método de pago habilitado para tu comercio.
+    - Valida escenarios aprobados, denegados, pendientes, expirados y errores controlados.
+    - Solicita apoyo del equipo de integraciones cuando necesites validar simuladoras o flujos especiales.
+  </Accordion>
+
+  <Accordion title="Monitoreo y soporte" icon="chart-line">
+    - Registra errores, códigos de respuesta y payloads relevantes para trazabilidad.
+    - Conserva evidencias de pruebas para facilitar la certificación.
+    - Implementa alertas para rechazos inusuales, timeouts o fallas repetitivas.
   </Accordion>
 </AccordionGroup>
 
----
+## Consejos por tipo de integración
 
-## Anti-patrones (Qué evitar)
-
-Identifica y corrige estos errores comunes antes de solicitar tu pase a producción.
-
-<CardGroup cols={3}>
-  <Card title="Hardcoding" color="#ef4444" icon="code">
-    No guardes API Keys directamente en el código fuente. Usa variables de entorno.
+<CardGroup cols={2}>
+  <Card title="E-commerce" icon="store" href="/e-commerce/buenas-practicas">
+    Recomendaciones para plugins, plataformas de comercio, gestión de pedidos y operación diaria.
   </Card>
 
-  <Card title="Confianza Ciega" color="#f59e0b" icon="eye-slash">
-    Nunca des por pagado un pedido solo porque el frontend devolvió un "éxito".
+  <Card title="Checkout Web" icon="globe" href="/checkout-web/buenas-practicas">
+    Consejos para integrar Pay-me Flex, manejar `nonce`, callbacks, estilos y experiencia de pago web.
   </Card>
 
-  <Card title="Omitir Sandbox" color="#3b82f6" icon="vial">
-    No pases a producción sin haber completado al menos una transacción exitosa de cada tipo en el entorno de pruebas.
+  <Card title="SDK Mobile" icon="mobile-screen" href="/sdk-mobile/buenas-practicas">
+    Buenas prácticas para apps Android e iOS, empaquetado, callbacks, sesiones y pruebas en dispositivos.
+  </Card>
+
+  <Card title="API de Pagos" icon="credit-card-front" href="/api-de-pagos/buenas-practicas">
+    Lineamientos para integraciones server-to-server, autenticación, trazabilidad, PCI y manejo de respuestas.
   </Card>
 </CardGroup>
 
----
+## Ruta recomendada
 
-## Checklist de Certificación
+<Steps>
+  <Step title="Elige el tipo de integración">
+    Define si usarás E-commerce, Checkout Web, SDK Mobile o API de Pagos según tu canal y nivel de control técnico.
+  </Step>
 
-¿Listo para salir a producción? Asegúrate de cumplir con estos puntos clave.
+  <Step title="Revisa las buenas prácticas específicas">
+    Ingresa a la guía correspondiente para aplicar recomendaciones propias de ese flujo.
+  </Step>
 
-<Card title="Checklist de Certificación Técnica" icon="clipboard-check" horizontal href="/primeros-pasos/checklist-de-certificacion">
-  Revisa los requisitos obligatorios para obtener tus credenciales de producción.
+  <Step title="Ejecuta pruebas completas">
+    Valida credenciales, datos de prueba, respuestas esperadas, errores y trazabilidad antes de solicitar producción.
+  </Step>
+
+  <Step title="Completa la certificación">
+    Confirma que tu integración cumple los requisitos técnicos, operativos y de seguridad solicitados por Pay-me.
+  </Step>
+</Steps>
+
+## Checklist de certificación
+
+<Card title="Checklist de certificación técnica" icon="clipboard-check" horizontal href="/primeros-pasos/checklist-de-certificacion">
+  Revisa los requisitos necesarios antes de solicitar credenciales o pase a producción.
 </Card>

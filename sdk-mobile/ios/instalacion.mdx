@@ -1,24 +1,123 @@
 ---
-title: "Inicializar SDK"
+title: "Instalación SDK iOS"
 sidebarTitle: "Instalación"
-description: "Configura tu proyecto iOS para integrar Pay-me SDK."
+description: "Configura frameworks, embedding y ajustes necesarios para integrar Pay-me SDK en iOS."
 ---
 
+Esta guía describe cómo incorporar Pay-me SDK en tu proyecto iOS antes de implementar cobros o afiliaciones.
+
+<Info>
+  Utiliza siempre la versión de SDK entregada o confirmada por el equipo de integraciones para tu comercio.
+</Info>
+
+<Card title="Descargar SDK Pay-me iOS v3.3" icon="download" href="/sdk-mobile/librerias/SDK_Payme_iOS_v3.3.zip">
+  Descarga el paquete `.zip` con los frameworks necesarios para integrar el SDK iOS.
+</Card>
+
+## Artefactos requeridos
+
+El paquete de integración debe incluir los frameworks necesarios para ejecutar el flujo de pago.
+
+<CardGroup cols={2}>
+  <Card title="Payme.xcframework" icon="credit-card">
+    Framework principal del SDK.
+  </Card>
+
+  <Card title="SecureKey3DS.xcframework" icon="shield-check">
+    Framework para autenticación 3DS.
+  </Card>
+
+  <Card title="VisaSensoryBranding.xcframework" icon="sparkles">
+    Framework de experiencia Visa.
+  </Card>
+
+  <Card title="MastercardSonic.xcframework" icon="music">
+    Framework de experiencia Mastercard.
+  </Card>
+</CardGroup>
+
+<Warning>
+  No subas los artefactos del SDK a repositorios públicos. Trata los archivos entregados como dependencias privadas del comercio.
+</Warning>
+
+## Estructura recomendada
+
+Crea una carpeta para frameworks dentro del proyecto y coloca ahí los artefactos entregados.
+
+```text
+App/
+  Frameworks/
+    Payme.xcframework
+    SecureKey3DS.xcframework
+    VisaSensoryBranding.xcframework
+    MastercardSonic.xcframework
+```
+
+## Agregar frameworks en Xcode
+
+En Xcode, agrega los frameworks al proyecto usando:
+
+- **Copy items if needed**
+- **Create groups**
+- Target correcto de la aplicación
+
 <Note>
-  Contar con la última versión del SDK, [descargar aquí.](https://docs.pay-me.com/__attachments/165052417/SDK_Payme_iOS_v3.3_.zip?inst-v=d51f22dc-2194-4463-876b-25cb1b1dfd18)
+  Después de agregarlos, revisa que cada framework aparezca en el target de la app dentro de **Frameworks, Libraries, and Embedded Content**.
 </Note>
 
-Se debe agregar las librerías (Payme, SecureKey3DS, VisaSensoryBranding y MastercardSonic) al proyecto iOS. También se debe agregar el SDK de autenticación entregado por Alignet.
+## Embedding
 
-Se recomienda usar **"Copy items…"** y **"Create groups…"** al momento de agregar los frameworks al proyecto.
+Configura cada framework con la opción **Embed Without Signing** dentro del target iOS.
 
-<Frame>
-  ![Image 20221003 172047](/images/image-20221003-172047.png)
-</Frame>
+<AccordionGroup>
+  <Accordion title="Target de la app" icon="mobile-screen-button" defaultOpen>
+    - Abre el target principal de la aplicación.
+    - Ingresa a **General**.
+    - Ubica **Frameworks, Libraries, and Embedded Content**.
+    - Agrega los frameworks del SDK si no aparecen en la lista.
+  </Accordion>
 
-Ir a la sección **Frameworks, Libraries, and Embedded Content** que se encuentra en el Target del proyecto iOS. Asegurarse de que cada SDK tenga la opción **"Embed Without Signing"**.
+  <Accordion title="Embed" icon="box">
+    - Configura `Payme.xcframework` como **Embed Without Signing**.
+    - Configura `SecureKey3DS.xcframework` como **Embed Without Signing**.
+    - Configura `VisaSensoryBranding.xcframework` como **Embed Without Signing**.
+    - Configura `MastercardSonic.xcframework` como **Embed Without Signing**.
+  </Accordion>
+</AccordionGroup>
 
-<Frame>
-  ![Image 20221003 172057](/images/image-20221003-172057.png)
-</Frame>
+## Configuración Swift
 
+Importa `Payme` en el `ViewController` o clase desde donde invocarás el SDK.
+
+```swift
+import UIKit
+import Payme
+```
+
+## Validación rápida
+
+<AccordionGroup>
+  <Accordion title="Compilación" icon="hammer" defaultOpen>
+    - El proyecto compila sin errores de frameworks faltantes.
+    - Los `.xcframework` están asociados al target correcto.
+    - No existen conflictos con arquitecturas o versiones de Swift.
+  </Accordion>
+
+  <Accordion title="Configuración" icon="gear">
+    - Los frameworks están configurados como **Embed Without Signing**.
+    - El ambiente sandbox está identificado para las primeras pruebas.
+    - La app puede importar `Payme` correctamente.
+  </Accordion>
+
+  <Accordion title="Seguridad" icon="lock">
+    - Las credenciales se generan y protegen desde backend.
+    - No se exponen tokens ni secretos dentro de la app.
+    - Los logs de prueba no imprimen información sensible.
+  </Accordion>
+</AccordionGroup>
+
+## Siguiente paso
+
+<Card title="Inicializar Pay-me SDK iOS" icon="arrow-right" href="/sdk-mobile/ios/flujo-de-cobro/inicializar-pay-me-sdk-ios">
+  Crea la instancia de `PaymeClient` e inicia tu primer flujo de cobro.
+</Card>

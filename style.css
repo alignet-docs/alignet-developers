@@ -12,3 +12,45 @@ img.nav-logo {
     width: auto !important;
   }
 }
+
+.endpoint-request-line {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin: 1.25rem 0 1rem;
+}
+
+.endpoint-request-line .endpoint-method {
+  color: #0f7c57;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.endpoint-request-line code {
+  background: transparent;
+  color: inherit;
+  font-size: 1.05rem;
+  padding: 0;
+}
+
+.endpoint-request-line .endpoint-tag {
+  background: rgba(24, 24, 24, 0.06);
+  border-radius: 999px;
+  color: #525252;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 0.1rem 0.55rem;
+}
+
+.dark .endpoint-request-line .endpoint-method {
+  color: #53d39b;
+}
+
+.dark .endpoint-request-line .endpoint-tag {
+  background: rgba(255, 255, 255, 0.1);
+  color: #d4d4d4;
+}

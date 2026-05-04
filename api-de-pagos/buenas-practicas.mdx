@@ -1,0 +1,64 @@
+---
+title: "Buenas prácticas"
+sidebarTitle: "Buenas prácticas"
+description: "Recomendaciones para integrar directamente con la API de Pagos de forma segura y consistente."
+---
+
+Aplica estas recomendaciones cuando integres directamente con la **API de Pagos** mediante server-to-server.
+
+## Seguridad y PCI
+
+<Warning>
+  Si enviarás datos sensibles de tarjeta en requests `POST`, tu comercio debe contar con cumplimiento **PCI**. Si no cuentas con PCI, utiliza tokenización, SDK o checkout alojado.
+</Warning>
+
+<AccordionGroup>
+  <Accordion title="Credenciales" icon="key" defaultOpen>
+    - Guarda `client_id`, `client_secret` y tokens fuera del frontend.
+    - Usa variables de entorno o gestores de secretos.
+    - Separa credenciales de Pre-Producción y Producción.
+  </Accordion>
+
+  <Accordion title="Access Token" icon="shield-check">
+    - Reutiliza el token mientras esté vigente.
+    - Renueva antes de expiración.
+    - Controla concurrencia para no generar tokens innecesarios.
+  </Accordion>
+
+  <Accordion title="Datos sensibles" icon="lock">
+    - No imprimas PAN, CVV ni payloads completos en logs.
+    - Enmascara información de tarjeta y comprador.
+    - Restringe acceso a trazas, monitoreo y herramientas externas.
+  </Accordion>
+</AccordionGroup>
+
+## Consistencia transaccional
+
+<CardGroup cols={2}>
+  <Card title="Idempotencia" icon="fingerprint">
+    Usa identificadores únicos por operación para evitar duplicados ante reintentos.
+  </Card>
+
+  <Card title="Estados finales" icon="database">
+    No cierres una orden con una respuesta preliminar. Confirma con consulta o notificación.
+  </Card>
+
+  <Card title="Notificaciones" icon="bell">
+    Implementa endpoint S2S seguro y responde rápido con `HTTP 200`.
+  </Card>
+
+  <Card title="Observabilidad" icon="chart-line">
+    Registra operación, estado, timestamp y código de respuesta para soporte.
+  </Card>
+</CardGroup>
+
+## Antes de producción
+
+- Validar aprobados, denegados, pendientes y expirados.
+- Probar reintentos, timeouts y errores de autenticación.
+- Confirmar manejo de métodos asíncronos.
+- Preparar monitoreo mínimo para el go-live.
+
+<Card title="Checklist de integración" icon="clipboard-check" href="/api-de-pagos/checklist-de-integracion">
+  Revisa el checklist específico para API de Pagos.
+</Card>

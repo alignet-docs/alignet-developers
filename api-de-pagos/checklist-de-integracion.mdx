@@ -1,45 +1,197 @@
 ---
 title: "Checklist de integración"
 sidebarTitle: "Checklist"
-description: "Validaciones recomendadas para completar una integración por API de Pagos."
+description: "Validaciones recomendadas para completar una integración server-to-server con la API de Pagos."
 ---
 
-Este checklist aplica para integraciones server-to-server usando la **API de Pagos**.
+Usa este checklist como una guía rápida antes de pedir validación final de una integración **API de Pagos**.
 
-## 1. Preparación
+<Info>
+  Esta guía aplica para integraciones server-to-server con PayIn, Pagos Recurrentes, Devoluciones y Onboarding de Comercios.
+</Info>
 
-- Credenciales activas para sandbox.
-- Endpoint de autenticación probado.
-- Base URL correcta por ambiente configurada.
-- Módulo a implementar definido: PayIn, recurrentes, devoluciones u onboarding.
+## Panorama general
 
-## 2. Construcción técnica
+<CardGroup cols={2}>
+  <Card title="Preparación" icon="key">
+    Credenciales, ambientes, módulo de integración y alcance funcional definidos antes de desarrollar.
+  </Card>
 
-- Access Token generado y renovado correctamente.
-- Request en JSON con headers y formato válidos.
-- Identificadores únicos definidos por operación.
-- Validación de montos, moneda y datos obligatorios completada.
+  <Card title="Construcción técnica" icon="server">
+    Autenticación, headers, payloads, identificadores únicos y validaciones implementadas.
+  </Card>
 
-## 3. Flujo transaccional
+  <Card title="Validación funcional" icon="credit-card">
+    Operaciones aprobadas, rechazadas, pendientes y asíncronas probadas en Pre-Producción.
+  </Card>
 
-- Operación aprobada validada de extremo a extremo.
-- Operación rechazada validada con manejo funcional.
-- Métodos asíncronos probados si están habilitados.
-- Consulta o cancelación revisadas si forman parte del flujo.
+  <Card title="Salida a producción" icon="rocket">
+    Evidencias listas, credenciales productivas revisadas y monitoreo mínimo definido.
+  </Card>
+</CardGroup>
 
-## 4. Notificaciones y consistencia
+## Ruta sugerida
 
-- Endpoint S2S accesible y seguro.
-- Firma, idempotencia y reintentos contemplados.
-- Estados conciliados entre tu sistema y la API.
-- Logs suficientes para seguimiento y soporte.
+<Steps>
+  <Step title="Prepara el entorno">
+    Confirma credenciales, Base URL, módulo a implementar y métodos de pago o operaciones habilitadas.
+  </Step>
 
-## 5. Producción
+  <Step title="Implementa autenticación">
+    Genera y reutiliza el `Access Token` con el [API de Autenticación](/api-de-pagos/autenticacion).
+  </Step>
 
-- Pruebas de sandbox completadas.
-- Validación controlada con credenciales productivas.
-- Monitoreo mínimo definido para el go-live.
-- Integración lista para operación real.
+  <Step title="Construye tus requests">
+    Envía headers, montos, moneda, identificadores y campos obligatorios con formato válido.
+  </Step>
+
+  <Step title="Valida operaciones">
+    Ejecuta escenarios aprobados, rechazados, pendientes y errores controlados usando [Datos de prueba](/pagos/datos-de-prueba).
+  </Step>
+
+  <Step title="Cierra consistencia">
+    Implementa consulta, cancelación o notificaciones Server-to-Server según el flujo que uses.
+  </Step>
+
+  <Step title="Solicita validación final">
+    Cuando el flujo esté estable, prepara evidencias y coordina la revisión con el equipo de integraciones.
+  </Step>
+</Steps>
+
+## Checklist base
+
+<AccordionGroup>
+  <Accordion title="1. Preparación" icon="key" defaultOpen>
+    - Credenciales activas para Pre-Producción.
+    - Base URL correcta por ambiente configurada.
+    - Módulo a implementar definido: PayIn, recurrentes, devoluciones u onboarding.
+    - Métodos de pago u operaciones habilitadas confirmadas para el comercio.
+  </Accordion>
+
+  <Accordion title="2. Autenticación y seguridad" icon="shield-check">
+    - `Access Token` generado y renovado correctamente.
+    - Credenciales protegidas fuera del frontend y repositorios públicos.
+    - Cumplimiento PCI validado si enviarás datos sensibles de tarjeta en requests `POST`.
+    - Headers obligatorios enviados en todos los requests.
+    - Manejo de expiración, reintentos y errores `401` / `403` implementado.
+  </Accordion>
+
+  <Accordion title="3. Construcción técnica" icon="code">
+    - Requests enviados en JSON con `Content-Type: application/json`.
+    - Identificadores únicos definidos por operación.
+    - Montos enviados en centavos y moneda en formato esperado.
+    - Validación de campos obligatorios, longitudes y catálogos completada.
+  </Accordion>
+
+  <Accordion title="4. Flujo transaccional" icon="cart-shopping">
+    - Operación aprobada validada de extremo a extremo.
+    - Operación rechazada validada con manejo funcional.
+    - Operaciones pendientes o asíncronas probadas si están habilitadas.
+    - Consulta, cancelación o devolución revisadas si forman parte del flujo.
+  </Accordion>
+
+  <Accordion title="5. Consistencia operativa" icon="database">
+    - Endpoint S2S accesible y seguro si el flujo usa notificaciones.
+    - Estados conciliados entre tu sistema y la API.
+    - Idempotencia, duplicados y reintentos contemplados.
+    - Logs mínimos disponibles para seguimiento y soporte.
+  </Accordion>
+
+  <Accordion title="6. Producción" icon="rocket">
+    - Pruebas de Pre-Producción completadas con evidencia.
+    - Credenciales productivas revisadas y protegidas.
+    - Monitoreo mínimo definido para el go-live.
+    - Integración lista para operación real.
+  </Accordion>
+</AccordionGroup>
+
+## Puntos por módulo
+
+<Tabs>
+  <Tab title="PayIn">
+    <CardGroup cols={2}>
+      <Card title="Autorización" icon="credit-card">
+        Valida creación de cargos por método de pago y manejo de estados.
+      </Card>
+
+      <Card title="Confirmación" icon="bell">
+        Confirma el resultado final con consulta o notificación Server-to-Server.
+      </Card>
+    </CardGroup>
+
+    - Revisar [PayIn](/payin/introduccion).
+    - Implementar [API de Autorización](/payin/autorizacion).
+    - Confirmar estados con [API de Consulta](/payin/consulta).
+    - Configurar [Notificaciones](/payin/notificaciones) si aplica.
+  </Tab>
+
+  <Tab title="Recurrentes">
+    <CardGroup cols={2}>
+      <Card title="Afiliaciones" icon="user-plus">
+        Valida creación, consulta y actualización de afiliaciones.
+      </Card>
+
+      <Card title="Cobros" icon="money-bill">
+        Valida generación de cobros y reporte de resultados.
+      </Card>
+    </CardGroup>
+
+    - Revisar [Pagos Recurrentes](/pagos-recurrentes/introduccion).
+    - Validar [Afiliaciones](/pagos-recurrentes/afiliaciones).
+    - Validar [Cobros](/pagos-recurrentes/cobros).
+    - Revisar códigos de respuesta propios del módulo.
+  </Tab>
+
+  <Tab title="Devoluciones">
+    <CardGroup cols={2}>
+      <Card title="Registro" icon="arrow-up-from-line">
+        Valida registro de devoluciones totales o parciales.
+      </Card>
+
+      <Card title="Consulta" icon="magnifying-glass">
+        Confirma el estado final con consulta unitaria o masiva.
+      </Card>
+    </CardGroup>
+
+    - Revisar [Devoluciones](/devoluciones/introduccion).
+    - Implementar [API de Devoluciones](/devoluciones/api-de-devoluciones).
+    - Validar [Consulta Unitaria](/devoluciones/consulta-unitaria).
+    - Validar [Consulta Masiva](/devoluciones/consulta-masiva) si aplica.
+  </Tab>
+
+  <Tab title="Onboarding">
+    <CardGroup cols={2}>
+      <Card title="Registro individual" icon="store">
+        Valida alta y actualización de comercios individuales.
+      </Card>
+
+      <Card title="Registro masivo" icon="buildings">
+        Valida estructura de carga y respuesta por lote.
+      </Card>
+    </CardGroup>
+
+    - Revisar [Onboarding](/onboarding/introduccion).
+    - Validar [Registro Individual](/onboarding/registro-individual).
+    - Validar [Registro Masivo](/onboarding/registro-masivo).
+    - Confirmar permisos y alcance si operas como Facilitador de Pago.
+  </Tab>
+</Tabs>
+
+## Criterio mínimo de aprobación
+
+<CardGroup cols={3}>
+  <Card title="Autenticación estable" icon="shield-check">
+    Token generado, reutilizado y renovado sin exponer credenciales sensibles.
+  </Card>
+
+  <Card title="Flujo validado" icon="check">
+    Al menos un escenario exitoso y uno rechazado o fallido revisados correctamente.
+  </Card>
+
+  <Card title="Consistencia final" icon="database">
+    Estados conciliados entre la API, tu backend y la operación del comercio.
+  </Card>
+</CardGroup>
 
 ## Guías relacionadas
 
@@ -50,5 +202,13 @@ Este checklist aplica para integraciones server-to-server usando la **API de Pag
 
   <Card title="PayIn" icon="arrow-down-to-line" href="/payin/introduccion">
     Revisa el módulo de cobros y autorizaciones.
+  </Card>
+
+  <Card title="Datos de prueba" icon="flask" href="/pagos/datos-de-prueba">
+    Usa escenarios sandbox para validar tus operaciones.
+  </Card>
+
+  <Card title="Referencia PayIn" icon="book" href="/payin/referencia">
+    Consulta estados, códigos y detalles operativos del módulo PayIn.
   </Card>
 </CardGroup>

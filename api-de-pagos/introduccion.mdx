@@ -91,6 +91,10 @@ Incluye capacidades de:
   Todos los requests deben enviarse en formato **JSON** utilizando el header `Content-Type: application/json`.
 </Note>
 
+<Warning>
+  Si te integras directamente por API de Pagos y envías datos sensibles de tarjeta en requests `POST`, tu comercio debe contar con cumplimiento **PCI**. Si no cuentas con PCI, utiliza flujos con tokenización, SDK o checkout alojado.
+</Warning>
+
 ---
 
 ## Siguiente paso
@@ -101,4 +105,8 @@ Incluye capacidades de:
 
 <Card title="Checklist de integración" icon="clipboard-check" href="/api-de-pagos/checklist-de-integracion">
   Revisa las validaciones técnicas recomendadas antes de solicitar aprobación final.
+</Card>
+
+<Card title="Buenas prácticas" icon="shield-check" href="/api-de-pagos/buenas-practicas">
+  Revisa recomendaciones de seguridad, PCI, notificaciones y consistencia operativa.
 </Card>

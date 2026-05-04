@@ -1,0 +1,101 @@
+---
+title: "Últimas mejoras"
+sidebarTitle: "Últimas mejoras"
+description: "Mejoras recientes de visualización y experiencia de usuario en Pay-me Flex."
+---
+
+Pay-me Flex incorpora mejoras visuales y de experiencia para que el checkout sea más claro, moderno y fácil de usar para el comprador.
+
+<Info>
+  Estas mejoras aplican sobre la experiencia visual del componente Flex. La disponibilidad final puede depender de la versión de librería usada y de la configuración habilitada para el comercio.
+</Info>
+
+<Frame>
+  ![Mejoras en la visualización de Pay-me Flex](/images/mejorasFlex.png)
+</Frame>
+
+## Mejoras en la visualización
+
+<CardGroup cols={2}>
+  <Card title="Multidioma" icon="globe">
+    Selector de idioma `ES` / `EN` para ofrecer una experiencia más clara según el idioma del usuario.
+  </Card>
+
+  <Card title="Botón de cerrar" icon="xmark">
+    Nuevo botón de cierre visible para salir del checkout de forma rápida, clara y controlada.
+  </Card>
+
+  <Card title="Tarjeta más visual" icon="credit-card">
+    Mejora en la visualización de tarjeta, mostrando logos de marca, nombre del tarjetahabiente y fecha de vencimiento.
+  </Card>
+
+  <Card title="Bordes y estilos" icon="border-all">
+    Bordes redondeados y estilos visuales consistentes para una experiencia más moderna y limpia.
+  </Card>
+
+  <Card title="Yape UX" icon="mobile-screen">
+    Flujo integrado y mejorado para pagos con Yape, con campos y mensajes más claros para el usuario.
+  </Card>
+
+  <Card title="Número de operación" icon="hashtag">
+    Visualización del número de operación para mejorar trazabilidad y soporte durante el pago.
+  </Card>
+</CardGroup>
+
+## Detalle por mejora
+
+<AccordionGroup>
+  <Accordion title="Multidioma" icon="language" defaultOpen>
+    - Selector de idioma visible dentro del checkout.
+    - Soporte inicial para `ES` y `EN`.
+    - Ayuda a comercios con compradores que prefieren una experiencia bilingüe.
+  </Accordion>
+
+  <Accordion title="Botón de cerrar" icon="circle-xmark">
+    - Botón de cierre más visible en la interfaz.
+    - Permite salir del checkout sin ambigüedad.
+    - Mejora el control del usuario durante el proceso de pago.
+  </Accordion>
+
+  <Accordion title="Visualización de tarjeta" icon="credit-card-front">
+    - Tarjeta renderizada de forma más visual.
+    - Logos de marca visibles cuando corresponda.
+    - Campos principales organizados para facilitar la lectura.
+  </Accordion>
+
+  <Accordion title="Bordes y consistencia visual" icon="object-group">
+    - Bordes redondeados en contenedores y campos.
+    - Separación visual más clara entre métodos de pago y formulario.
+    - Apariencia más limpia y consistente entre flujos.
+  </Accordion>
+
+  <Accordion title="Yape UX" icon="mobile">
+    - Pantalla de Yape más directa.
+    - Campo de celular y código de aprobación mejor diferenciados.
+    - Mensajes de ayuda orientados a reducir errores del comprador.
+  </Accordion>
+
+  <Accordion title="Número de operación" icon="receipt">
+    - El checkout muestra el número de operación asociado al pago.
+    - Facilita trazabilidad para soporte, conciliación y revisión operativa.
+    - Ayuda al comercio y al comprador a identificar el intento de pago.
+  </Accordion>
+</AccordionGroup>
+
+## Recomendación
+
+<Note>
+  Si ya tienes una integración Flex activa, revisa estas mejoras en Pre-Producción antes de habilitarlas en Producción. Valida especialmente idioma, cierre del checkout, Yape y visualización de tarjeta en los navegadores soportados por tu comercio.
+</Note>
+
+## Guías relacionadas
+
+<CardGroup cols={2}>
+  <Card title="Inicializar el componente" icon="gear" href="/checkout-web/flex/inicializar-el-componente">
+    Configura la instancia de `FlexPaymentForms` y los métodos visibles.
+  </Card>
+
+  <Card title="Capturar callbacks" icon="bolt" href="/checkout-web/flex/capturar-funciones-callback">
+    Procesa respuestas, eventos y errores durante el flujo de pago.
+  </Card>
+</CardGroup>
