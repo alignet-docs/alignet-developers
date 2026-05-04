@@ -14,30 +14,47 @@ Pay-me Flex incorpora mejoras visuales y de experiencia para que el checkout sea
   ![Mejoras en la visualización de Pay-me Flex](/images/mejorasFlex.png)
 </Frame>
 
+## Dónde se configuran
+
+Estas mejoras se ven según la versión del componente y la configuración enviada al inicializar Flex. Si tu comercio ya tiene Flex activo, revisa esta tabla para saber qué debes añadir o validar en tu integración.
+
+| Mejora | Qué debes revisar | Parámetro o guía |
+| :-- | :-- | :-- |
+| Multidioma | Añade la configuración de idiomas si quieres mostrar el selector `ES` / `EN`. | [`i18n.mode`, `i18n.default_language`, `i18n.languages`](/checkout-web/flex/inicializar-el-componente) |
+| Botón de cerrar | Activa el botón si necesitas que el comprador pueda salir del checkout desde la interfaz. | [`settings.show_close_button`](/checkout-web/flex/inicializar-el-componente) |
+| Tarjeta más visual | Valida que el método `CARD` esté habilitado y que el payload envíe los datos de comprador requeridos. | [`display_settings.methods`](/checkout-web/flex/inicializar-el-componente) y [Construcción del payload](/checkout-web/flex/construccion-del-payload) |
+| Bordes y estilos | Define si el contenedor se muestra con borde visual o si tu layout externo ya lo maneja. | [`settings.show_border`](/checkout-web/flex/inicializar-el-componente) |
+| Yape UX | Asegura que `YAPE` esté disponible para el comercio y, si limitas métodos, inclúyelo en la lista visible. | [`display_settings.methods`](/checkout-web/flex/inicializar-el-componente) y [Datos de prueba](/pagos/datos-de-prueba) |
+| Número de operación | Activa la visualización del número de operación cuando necesites trazabilidad para soporte. | [`settings.show_operation_number`](/checkout-web/flex/inicializar-el-componente) |
+
+<Note>
+  Si no envías `display_settings.methods`, Flex mostrará los métodos habilitados para tu comercio por defecto. Si sí envías la lista, debes incluir explícitamente los métodos que quieres mostrar, por ejemplo `CARD` o `YAPE`.
+</Note>
+
 ## Mejoras en la visualización
 
 <CardGroup cols={2}>
-  <Card title="Multidioma" icon="globe">
+  <Card title="Multidioma" icon="globe" href="/checkout-web/flex/inicializar-el-componente">
     Selector de idioma `ES` / `EN` para ofrecer una experiencia más clara según el idioma del usuario.
   </Card>
 
-  <Card title="Botón de cerrar" icon="xmark">
+  <Card title="Botón de cerrar" icon="xmark" href="/checkout-web/flex/inicializar-el-componente">
     Nuevo botón de cierre visible para salir del checkout de forma rápida, clara y controlada.
   </Card>
 
-  <Card title="Tarjeta más visual" icon="credit-card">
+  <Card title="Tarjeta más visual" icon="credit-card" href="/checkout-web/flex/construccion-del-payload">
     Mejora en la visualización de tarjeta, mostrando logos de marca, nombre del tarjetahabiente y fecha de vencimiento.
   </Card>
 
-  <Card title="Bordes y estilos" icon="border-all">
+  <Card title="Bordes y estilos" icon="border-all" href="/checkout-web/flex/inicializar-el-componente">
     Bordes redondeados y estilos visuales consistentes para una experiencia más moderna y limpia.
   </Card>
 
-  <Card title="Yape UX" icon="mobile-screen">
+  <Card title="Yape UX" icon="mobile-screen" href="/pagos/datos-de-prueba">
     Flujo integrado y mejorado para pagos con Yape, con campos y mensajes más claros para el usuario.
   </Card>
 
-  <Card title="Número de operación" icon="hashtag">
+  <Card title="Número de operación" icon="hashtag" href="/checkout-web/flex/inicializar-el-componente">
     Visualización del número de operación para mejorar trazabilidad y soporte durante el pago.
   </Card>
 </CardGroup>
@@ -49,36 +66,42 @@ Pay-me Flex incorpora mejoras visuales y de experiencia para que el checkout sea
     - Selector de idioma visible dentro del checkout.
     - Soporte inicial para `ES` y `EN`.
     - Ayuda a comercios con compradores que prefieren una experiencia bilingüe.
+    - Se configura en [Inicializar el componente](/checkout-web/flex/inicializar-el-componente), dentro del objeto `i18n`.
   </Accordion>
 
   <Accordion title="Botón de cerrar" icon="circle-xmark">
     - Botón de cierre más visible en la interfaz.
     - Permite salir del checkout sin ambigüedad.
     - Mejora el control del usuario durante el proceso de pago.
+    - Se activa con `settings.show_close_button` en [Inicializar el componente](/checkout-web/flex/inicializar-el-componente).
   </Accordion>
 
   <Accordion title="Visualización de tarjeta" icon="credit-card-front">
     - Tarjeta renderizada de forma más visual.
     - Logos de marca visibles cuando corresponda.
     - Campos principales organizados para facilitar la lectura.
+    - Revisa `CARD` en `display_settings.methods` y los datos enviados en [Construcción del payload](/checkout-web/flex/construccion-del-payload).
   </Accordion>
 
   <Accordion title="Bordes y consistencia visual" icon="object-group">
     - Bordes redondeados en contenedores y campos.
     - Separación visual más clara entre métodos de pago y formulario.
     - Apariencia más limpia y consistente entre flujos.
+    - Se controla con `settings.show_border` en [Inicializar el componente](/checkout-web/flex/inicializar-el-componente).
   </Accordion>
 
   <Accordion title="Yape UX" icon="mobile">
     - Pantalla de Yape más directa.
     - Campo de celular y código de aprobación mejor diferenciados.
     - Mensajes de ayuda orientados a reducir errores del comprador.
+    - Revisa que `YAPE` esté habilitado en `display_settings.methods` y usa [Datos de prueba](/pagos/datos-de-prueba) para validar el flujo.
   </Accordion>
 
   <Accordion title="Número de operación" icon="receipt">
     - El checkout muestra el número de operación asociado al pago.
     - Facilita trazabilidad para soporte, conciliación y revisión operativa.
     - Ayuda al comercio y al comprador a identificar el intento de pago.
+    - Se activa con `settings.show_operation_number` en [Inicializar el componente](/checkout-web/flex/inicializar-el-componente).
   </Accordion>
 </AccordionGroup>
 
@@ -92,10 +115,18 @@ Pay-me Flex incorpora mejoras visuales y de experiencia para que el checkout sea
 
 <CardGroup cols={2}>
   <Card title="Inicializar el componente" icon="gear" href="/checkout-web/flex/inicializar-el-componente">
-    Configura la instancia de `FlexPaymentForms` y los métodos visibles.
+    Configura `settings`, `display_settings.methods` e `i18n` para activar o limitar estas mejoras.
+  </Card>
+
+  <Card title="Construcción del payload" icon="receipt" href="/checkout-web/flex/construccion-del-payload">
+    Revisa los datos de operación y comprador que Flex usa para renderizar el flujo correctamente.
   </Card>
 
   <Card title="Capturar callbacks" icon="bolt" href="/checkout-web/flex/capturar-funciones-callback">
     Procesa respuestas, eventos y errores durante el flujo de pago.
+  </Card>
+
+  <Card title="Datos de prueba" icon="vial" href="/pagos/datos-de-prueba">
+    Valida tarjeta, Yape y otros métodos en Pre-Producción antes de habilitar Producción.
   </Card>
 </CardGroup>
