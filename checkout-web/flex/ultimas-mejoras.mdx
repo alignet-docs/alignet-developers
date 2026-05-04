@@ -20,6 +20,7 @@ Estas mejoras se ven según la versión del componente y la configuración envia
 
 | Mejora | Qué debes revisar | Parámetro o guía |
 | :-- | :-- | :-- |
+| Logo configurable | El comercio debe compartir la URL pública del logo que desea mostrar en la parte superior izquierda del checkout. | Configuración habilitada por el equipo de integraciones |
 | Multidioma | Añade la configuración de idiomas si quieres mostrar el selector `ES` / `EN`. | [`i18n.mode`, `i18n.default_language`, `i18n.languages`](/checkout-web/flex/inicializar-el-componente) |
 | Botón de cerrar | Activa el botón si necesitas que el comprador pueda salir del checkout desde la interfaz. | [`settings.show_close_button`](/checkout-web/flex/inicializar-el-componente) |
 | Tarjeta más visual | Valida que el método `CARD` esté habilitado y que el payload envíe los datos de comprador requeridos. | [`display_settings.methods`](/checkout-web/flex/inicializar-el-componente) y [Construcción del payload](/checkout-web/flex/construccion-del-payload) |
@@ -31,9 +32,17 @@ Estas mejoras se ven según la versión del componente y la configuración envia
   Si no envías `display_settings.methods`, Flex mostrará los métodos habilitados para tu comercio por defecto. Si sí envías la lista, debes incluir explícitamente los métodos que quieres mostrar, por ejemplo `CARD` o `YAPE`.
 </Note>
 
+<Info>
+  El logo configurable no se envía dentro del objeto de inicialización. Para habilitarlo, el comercio debe compartir con el equipo de integraciones una URL pública HTTPS del logo que se mostrará en el checkout.
+</Info>
+
 ## Mejoras en la visualización
 
 <CardGroup cols={2}>
+  <Card title="Logo configurable" icon="image">
+    Personalización del logo superior izquierdo del checkout. El comercio debe enviar la URL del logo al equipo de integraciones para configurarlo.
+  </Card>
+
   <Card title="Multidioma" icon="globe" href="/checkout-web/flex/inicializar-el-componente">
     Selector de idioma `ES` / `EN` para ofrecer una experiencia más clara según el idioma del usuario.
   </Card>
@@ -62,7 +71,14 @@ Estas mejoras se ven según la versión del componente y la configuración envia
 ## Detalle por mejora
 
 <AccordionGroup>
-  <Accordion title="Multidioma" icon="language" defaultOpen>
+  <Accordion title="Logo configurable" icon="image" defaultOpen>
+    - Permite personalizar el logo que aparece en la parte superior izquierda del checkout.
+    - El comercio debe compartir la URL pública HTTPS del logo que desea mostrar.
+    - La URL debe apuntar directamente al archivo de imagen y estar disponible sin autenticación.
+    - La activación se coordina con el equipo de integraciones; no se configura desde `settings`, `display_settings` ni `i18n`.
+  </Accordion>
+
+  <Accordion title="Multidioma" icon="language">
     - Selector de idioma visible dentro del checkout.
     - Soporte inicial para `ES` y `EN`.
     - Ayuda a comercios con compradores que prefieren una experiencia bilingüe.
@@ -108,7 +124,7 @@ Estas mejoras se ven según la versión del componente y la configuración envia
 ## Recomendación
 
 <Note>
-  Si ya tienes una integración Flex activa, revisa estas mejoras en Pre-Producción antes de habilitarlas en Producción. Valida especialmente idioma, cierre del checkout, Yape y visualización de tarjeta en los navegadores soportados por tu comercio.
+  Si ya tienes una integración Flex activa, revisa estas mejoras en Pre-Producción antes de habilitarlas en Producción. Valida especialmente logo configurable, idioma, cierre del checkout, Yape y visualización de tarjeta en los navegadores soportados por tu comercio.
 </Note>
 
 ## Guías relacionadas
