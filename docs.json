@@ -908,5 +908,8 @@
     "dark": "/images/blackAlignetPay-me_23.png",
     "href": "https://docs.pay-me.com"
   },
-  "favicon": "/images/IcoDocsV2.ico"
+  "favicon": "/images/IcoDocsV2.ico",
+  "search": {
+    "prompt": "Haz una pregunta"
+  }
 }
