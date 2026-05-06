@@ -173,7 +173,7 @@ El orquestador responde el detalle de la operación y el listado de transaccione
 | `operation.transactions[].lifecycle[].date.unix_time` | Fecha en Unix time. | Integer | SI |
 | `meta` | Objeto con metadatos del flujo ejecutado. | Object | SI |
 | `meta.status` | Objeto con el resultado del flujo ejecutado. | Object | SI |
-| `meta.status.code` | Código que representa el resultado del flujo ejecutado. | String | SI |
+| `meta.status.code` | Código del resultado técnico del servicio o request. No valida si el pago fue autorizado o denegado. | String | SI |
 | `meta.status.message_ilgn` | Lista de mensajes resultantes del flujo. | Array | SI |
 | `meta.status.message_ilgn[].locale` | Localidad del mensaje. | String | SI |
 | `meta.status.message_ilgn[].value` | Mensaje resultante del flujo. | String | SI |
@@ -184,6 +184,10 @@ El orquestador responde el detalle de la operación y el listado de transaccione
 <Note>
   Si consultas una transacción puntual, recibirás la misma estructura de respuesta que una operación, pero `operation.transactions` incluirá solo la transacción solicitada.
 </Note>
+
+<Warning>
+  Para validar el resultado del pago, usa `operation.transactions[].state` y no `meta.status.code`. Un `meta.status.code` exitoso solo indica que el servicio respondió correctamente; la transacción todavía puede estar `PENDIENTE`, `DENEGADO`, `EXPIRADO` u otro estado.
+</Warning>
 
 ---
 

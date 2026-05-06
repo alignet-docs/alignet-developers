@@ -181,7 +181,7 @@
                               "properties": {
                                 "code": {
                                   "type": "string",
-                                  "description": "Codigo que representa el resultado del flujo ejecutado.",
+                                  "description": "Codigo del resultado tecnico del servicio o request. No valida si un pago fue autorizado o denegado.",
                                   "example": "00"
                                 },
                                 "message_ilgn": {
@@ -394,7 +394,7 @@
                               "properties": {
                                 "code": {
                                   "type": "string",
-                                  "description": "Codigo que representa el resultado del flujo ejecutado.",
+                                  "description": "Codigo del resultado tecnico del servicio o request. No valida si un pago fue autorizado o denegado.",
                                   "example": "00"
                                 },
                                 "message_ilgn": {
@@ -3725,6 +3725,7 @@
         "properties": {
           "code": {
             "type": "string",
+            "description": "Codigo del resultado tecnico del servicio o request. No valida si un pago fue autorizado o denegado; para eso usa el estado de la transaccion.",
             "example": "00"
           },
           "message_ilgn": {

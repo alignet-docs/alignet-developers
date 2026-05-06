@@ -29,6 +29,10 @@ El API de autorización es el punto de entrada para iniciar un cobro en PayIn. D
   Usa esta misma referencia para interpretar estados, `payment_method`, `processor_response`, `meta` y variaciones por método cuando recibas el resultado final desde Flex.
 </Note>
 
+<Warning>
+  `meta.status.code` no debe usarse para decidir si un pago fue autorizado o denegado. Ese código confirma el resultado técnico del request o del servicio. La validación de negocio debe hacerse con `transaction.state` y, cuando aplique, con [Consulta](/payin/consulta) o [Notificaciones](/payin/notificaciones).
+</Warning>
+
 ---
 
 ## Métodos disponibles

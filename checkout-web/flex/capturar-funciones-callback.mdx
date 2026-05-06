@@ -57,6 +57,10 @@ paymentForm.init(
   El campo `response.payment_method` te indica qué referencia de PayIn debes usar para interpretar el JSON de respuesta devuelto por Flex.
 </Note>
 
+<Warning>
+  No uses `response.meta.status.code` como validador de pago aprobado o denegado. Este código solo indica el resultado del procesamiento del servicio o si la respuesta fue generada correctamente. Para validar el resultado del pago, revisa `response.transaction.state` y confirma desde backend con [Consulta](/payin/consulta) o [Notificaciones](/payin/notificaciones), según el método de pago.
+</Warning>
+
 <Tabs>
   <Tab title="CARD">
     El objeto `response` sigue el contrato del [API de Autorización con Tarjeta](/payin/autorizacion-tarjeta).

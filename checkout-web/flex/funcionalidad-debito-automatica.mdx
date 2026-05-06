@@ -76,7 +76,7 @@ Este es el paso final. Se indica dentro de qué **elemento del DOM** se debe mos
 
 <CardGroup cols={3}>
   <Card title="responseCallback" icon="circle-check">
-    Se ejecuta cuando el proceso está completado (Autorizado/Denegado).
+    Se ejecuta cuando el componente entrega una respuesta del proceso.
   </Card>
   <Card title="trackingCallback" icon="chart-line">
     Se ejecuta por cada evento disparado durante el proceso.
@@ -85,6 +85,10 @@ Este es el paso final. Se indica dentro de qué **elemento del DOM** se debe mos
     Se ejecuta cuando hay un error durante el proceso.
   </Card>
 </CardGroup>
+
+<Warning>
+  No uses `meta.status.code` como validador de pago autorizado o denegado. Este código solo indica el resultado del procesamiento del servicio. Para una autorización, valida el estado de la transacción y confirma el resultado desde backend antes de cerrar la orden.
+</Warning>
 
 ### Casos de uso
 
@@ -245,7 +249,7 @@ Este es el paso final. Se indica dentro de qué **elemento del DOM** se debe mos
     | `affiliation.card.last_pan` | String | SI | Últimos 4 dígitos de la tarjeta. |
     | `affiliation.card.issuer_name` | String | NO | Nombre del emisor de la tarjeta. |
     | `affiliation.card.card_holder_name` | String | SI | Nombre del titular de la tarjeta. |
-    | `meta.status.code` | String | SI | Código de resultado del procesamiento. |
+    | `meta.status.code` | String | SI | Código de resultado técnico del procesamiento. No valida si un pago fue autorizado o denegado. |
     | `meta.status.message_ilgn[].locale` | String | SI | Idioma del mensaje de respuesta. |
     | `meta.status.message_ilgn[].value` | String | SI | Descripción del resultado. |
   </Accordion>

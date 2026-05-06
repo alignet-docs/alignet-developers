@@ -227,6 +227,10 @@ ALG-API-VERSION: 1709847567
   `state` puede devolver valores como `PENDIENTE` o `INVALIDO`. Cuando el CIP fue generado correctamente, la transacción normalmente queda en `PENDIENTE` hasta que el usuario complete el pago o expire.
 </Note>
 
+<Warning>
+  No uses `meta.status.code` como validador de autorización o denegación del pago. Ese código solo indica si el servicio procesó o respondió correctamente; el resultado del pago se valida con `transaction.state` y, como respaldo, desde backend con consulta o notificación.
+</Warning>
+
 ---
 
 ### Objeto `transaction.payment_method`

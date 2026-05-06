@@ -236,6 +236,10 @@ ALG-API-VERSION: 1709847567
   `state` puede devolver valores como `AUTORIZADO`, `DENEGADO` o `INVALIDO`, según el resultado de la autorización. En el historial `lifecycle` también pueden aparecer estados intermedios como `REGISTRADO` o `PENDIENTE`.
 </Note>
 
+<Warning>
+  No uses `meta.status.code` como validador de autorización o denegación del pago. Ese código solo indica si el servicio procesó o respondió correctamente; el resultado del pago se valida con `transaction.state` y, como respaldo, desde backend con consulta o notificación.
+</Warning>
+
 ---
 
 ### Objeto `transaction.payment_method`

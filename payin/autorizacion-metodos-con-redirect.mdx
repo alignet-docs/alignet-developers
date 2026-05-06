@@ -97,8 +97,12 @@ Esta guía reúne las consideraciones comunes para los flujos donde la autorizac
 
 | Campo | Descripción | Ejemplo | Tipo | Obligatorio |
 | :-- | :-- | :-- | :-- | :-- |
-| `code` | Código que representa el resultado del flujo ejecutado | `00` | String | SI |
+| `code` | Código del resultado técnico del servicio o request. No valida si el pago fue autorizado o denegado. | `00` | String | SI |
 | `message_ilgn` | Mensajes resultantes del flujo | Array | Object | SI |
+
+<Warning>
+  No cambies la orden a pagada usando `authorization_result.meta.status.code`. Primero valida `authorization_result.transaction.state`, la `signature` y la confirmación final desde backend.
+</Warning>
 
 ---
 
