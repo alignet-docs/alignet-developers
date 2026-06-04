@@ -1,0 +1,134 @@
+---
+title: "Dependencias"
+---
+
+El SDK **PaymePOS v1.0.0** requiere la instalación de determinadas dependencias y la habilitación de **ViewBinding** para su correcto funcionamiento.
+
+## Plugins Requeridos
+
+Agregue los siguientes plugins en el archivo de configuración de su proyecto Android:
+
+```text
+plugins {
+    id 'kotlin-android'
+    id 'kotlin-parcelize'
+}
+```
+
+## Habilitar ViewBinding
+
+El SDK requiere que la característica **ViewBinding** se encuentre habilitada.
+
+```text
+android {
+    buildFeatures {
+        viewBinding = true
+    }
+}
+```
+
+## Dependencias Requeridas
+
+Agregue las siguientes dependencias en el módulo donde será integrado el SDK:
+
+```text
+dependencies {
+    implementation("androidx.core:core-ktx:1.6.0")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("com.squareup.retrofit2:retrofit:2.3.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.3.0")
+    implementation("com.squareup.retrofit2:converter-scalars:2.5.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:3.10.0")
+    implementation("com.squareup.okhttp3:okhttp:3.10.0")
+    implementation("com.google.code.gson:gson:2.8.8")
+    implementation project(':PaymePOS')
+    implementation project(':Wiseasy')
+    implementation project(':MasterCardSonic')
+    implementation project(':VisaSensoryBranding')
+}
+```
+
+<Warning>
+  Utilice las versiones indicadas en esta documentación. El uso de versiones diferentes podría generar incompatibilidades durante la compilación o ejecución del SDK.
+</Warning>
+
+---
+
+# Inicializar el SDK
+
+Antes de utilizar cualquier funcionalidad del SDK, es necesario realizar una inicialización para obtener la configuración del dispositivo POS y del comercio asociado.
+
+La inicialización debe ejecutarse al iniciar la aplicación y antes de invocar cualquier otra funcionalidad del SDK.
+
+## Requisitos Previos
+
+\<Info\> Para que la inicialización sea exitosa, el dispositivo POS debe encontrarse previamente registrado y configurado en Pay-me. \</Info\>
+
+## Inicialización
+
+Para inicializar el SDK, invoque la función `initializeSDK` del objeto `PaymeClient`.
+
+### Parámetros
+
+| Parámetro | Tipo | Descripción |
+| :-- | :-- | :-- |
+| `context` | Context | Contexto de la aplicación o actividad actual. |
+| `environment` | PaymeEnvironment | Ambiente donde se realizará la inicialización. |
+| `listener` | PaymeInitializationListener | Callback que permite recibir el resultado de la inicialización. |
+
+### Ejemplo
+
+```text
+PaymeClient.initializeSDK(
+    this,
+    environment = PaymeEnvironment.PRODUCTION,
+    listener = object : PaymeInitializationListener {
+
+        override fun onInitSuccess() {
+            Toast.makeText(
+                this@MainActivity,
+                "PaymePOS se inició correctamente",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+
+        override fun onInitFail(
+            errorCode: String,
+            errorMessage: String
+        ) {
+            Toast.makeText(
+                this@MainActivity,
+                "PaymePOS falló al iniciar - $errorMessage",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+)
+```
+
+## Resultado de la Inicialización
+
+El resultado de la inicialización es informado mediante la interfaz `PaymeInitializationListener`.
+
+### onInitSuccess
+
+Se ejecuta cuando la inicialización finaliza correctamente.
+
+| Parámetro | Tipo | Descripción |
+| :-- | :-- | :-- |
+| N/A | N/A | No retorna parámetros. |
+
+### onInitFail
+
+Se ejecuta cuando ocurre un error durante la inicialización.
+
+| Parámetro | Tipo | Descripción |
+| :-- | :-- | :-- |
+| `errorCode` | String | Código del error producido. |
+| `errorMessage` | String | Descripción del error producido. |
+
+<Note>
+  Se recomienda esperar la ejecución de `onInitSuccess()` antes de permitir al usuario realizar operaciones de consulta, pago, extorno o impresión mediante el SDK. 
+</Note>

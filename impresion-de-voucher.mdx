@@ -1,0 +1,222 @@
+---
+title: "Impresión de voucher"
+---
+
+## Flujo de Impresión
+
+Para imprimir un voucher, la aplicación debe invocar la función `startPrint` del objeto `PaymeClient`.
+
+Esta función permite enviar al SDK una lista de elementos que serán impresos en el voucher.
+
+## Parámetros de Entrada
+
+| Parámetro | Tipo | Descripción |
+| :-- | :-- | :-- |
+| `context` | Context | Contexto desde donde se realizará la invocación del SDK. |
+| `elements` | List\<PMPrintElement\> | Lista de elementos a imprimir. |
+| `listener` | PaymePrintListener | Callback que notificará si la impresión finalizó correctamente o si se presentó un error. |
+
+<Check>
+   Los elementos serán impresos respetando el orden en el que son enviados dentro de la lista `elements`
+</Check>
+
+## Ejemplo de Invocación
+
+```text
+private fun printPaymeVoucher() {
+    val voucherElements = listOf(
+        PMPrintElement.Image(
+            content = BitmapFactory.decodeResource(
+                this.resources,
+                com.alignet.paymepossdk.R.drawable.payme_logo
+            ),
+            width = 300,
+            height = 100,
+            align = PMPrintElement.Align.CENTER
+        ),
+        PMPrintElement.Text(
+            "Payme Store",
+            align = PMPrintElement.Align.CENTER,
+            fontSize = 22,
+            isBold = true
+        ),
+        PMPrintElement.Text(
+            "Av. Casimiro Ulloa 333",
+            align = PMPrintElement.Align.CENTER
+        ),
+        PMPrintElement.Text(
+            "Lima Perú",
+            align = PMPrintElement.Align.CENTER
+        ),
+        PMPrintElement.Line(
+            style = PMPrintElement.LineStyle.BLANK
+        ),
+        PMPrintElement.Text(
+            "VENTA AUTORIZADA",
+            align = PMPrintElement.Align.CENTER,
+            fontSize = 18,
+            isBold = true,
+            isReverseText = true
+        ),
+        PMPrintElement.Line(
+            style = PMPrintElement.LineStyle.BLANK
+        ),
+        PMPrintElement.Text(
+            "S/. 100.00",
+            align = PMPrintElement.Align.CENTER,
+            fontSize = 38,
+            isBold = true
+        ),
+        PMPrintElement.Text(
+            "Pago Exitoso",
+            align = PMPrintElement.Align.CENTER,
+            fontSize = 24
+        ),
+        PMPrintElement.Line(
+            style = PMPrintElement.LineStyle.DASHED
+        ),
+        PMPrintElement.MultiText(
+            items = listOf(
+                PMPrintElement.Text("Número de Pedido", width = 220),
+                PMPrintElement.Text(
+                    "00000001",
+                    width = 164,
+                    align = PMPrintElement.Align.RIGHT,
+                    isBold = true
+                )
+            )
+        ),
+        PMPrintElement.MultiText(
+            items = listOf(
+                PMPrintElement.Text("Fecha", width = 100),
+                PMPrintElement.Text(
+                    "25/08/2025 10:00:00",
+                    width = 284,
+                    align = PMPrintElement.Align.RIGHT,
+                    isBold = true
+                )
+            )
+        ),
+        PMPrintElement.MultiText(
+            items = listOf(
+                PMPrintElement.Text("Terminal", width = 100),
+                PMPrintElement.Text(
+                    "0000001",
+                    width = 284,
+                    align = PMPrintElement.Align.RIGHT,
+                    isBold = true
+                )
+            )
+        ),
+        PMPrintElement.MultiText(
+            items = listOf(
+                PMPrintElement.Text("Cod Comercio", width = 150),
+                PMPrintElement.Text(
+                    "2604000001",
+                    width = 234,
+                    align = PMPrintElement.Align.RIGHT,
+                    isBold = true
+                )
+            )
+        ),
+        PMPrintElement.MultiText(
+            items = listOf(
+                PMPrintElement.Text("Tarjeta", width = 100),
+                PMPrintElement.Text(
+                    "**************1234",
+                    width = 284,
+                    align = PMPrintElement.Align.RIGHT,
+                    isBold = true
+                )
+            )
+        ),
+        PMPrintElement.MultiText(
+            items = listOf(
+                PMPrintElement.Text("Marca", width = 80),
+                PMPrintElement.Text(
+                    "VISA CREDIT – CONTACTLESS",
+                    width = 304,
+                    align = PMPrintElement.Align.RIGHT,
+                    isBold = true
+                )
+            )
+        ),
+        PMPrintElement.MultiText(
+            items = listOf(
+                PMPrintElement.Text("TID", width = 50),
+                PMPrintElement.Text(
+                    "0993203580049584",
+                    width = 334,
+                    align = PMPrintElement.Align.RIGHT,
+                    isBold = true
+                )
+            )
+        ),
+        PMPrintElement.MultiText(
+            items = listOf(
+                PMPrintElement.Text("Código de Autorización", width = 290),
+                PMPrintElement.Text(
+                    "T28501",
+                    width = 94,
+                    align = PMPrintElement.Align.RIGHT,
+                    isBold = true
+                )
+            )
+        ),
+        PMPrintElement.Line(
+            style = PMPrintElement.LineStyle.SOLID
+        ),
+        PMPrintElement.Text(
+            "NO REQUIERE FIRMA",
+            align = PMPrintElement.Align.CENTER
+        )
+    )
+
+    PaymeClient.startPrint(
+        this,
+        voucherElements,
+        listener = object : PaymePrintListener {
+
+            override fun onPrintSuccess() {
+                Toast.makeText(
+                    this@MainActivity,
+                    "Impresión finalizada",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+
+            override fun onPrintFail(
+                errorCode: String,
+                errorMessage: String
+            ) {
+                Toast.makeText(
+                    this@MainActivity,
+                    "$errorCode - $errorMessage",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    )
+}
+```
+
+## Resultado de la Impresión
+
+El resultado del proceso será informado mediante la interfaz `PaymePrintListener`.
+
+### onPrintSuccess
+
+Se ejecuta cuando la impresión finaliza correctamente.
+
+### onPrintFail
+
+Se ejecuta cuando ocurre un error durante la impresión.
+
+| Parámetro | Tipo | Descripción |
+| :-- | :-- | :-- |
+| `errorCode` | String | Código asociado al error producido durante la impresión. |
+| `errorMessage` | String | Descripción del error producido durante la impresión. |
+
+<Info>
+  El callback `PaymePrintListener` permite controlar el resultado de la impresión y mostrar una respuesta al usuario desde la aplicación integradora.
+</Info>

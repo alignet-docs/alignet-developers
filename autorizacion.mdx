@@ -1,0 +1,74 @@
+---
+title: "Autorización"
+---
+
+## Flujo de Autorización
+
+Para iniciar una autorización, la aplicación debe invocar la función `initAuthorization` del objeto `PaymeClient`.
+
+Esta función permite enviar los datos de la transacción al SDK para iniciar el flujo de pago.
+
+## Parámetros de Entrada
+
+| Parámetro | Tipo | Descripción |
+| :-- | :-- | :-- |
+| `from` | Activity | Activity desde donde se realizará la invocación del SDK. |
+| `method` | PMPaymentMethod? | Método de pago con el cual se realizará la autorización. Puede ser `CARD` o `QR`. Si no se envía, el SDK mostrará una pantalla para seleccionar el método de pago. |
+| `pmAuthorizationRequest` | PMAuthorizationRequest | Objeto que contiene los datos de la transacción. |
+| `delegate` | Activity | Activity encargada de implementar los métodos del delegado. |
+
+<Check>
+  Si el parámetro `method` no es enviado, el SDK permitirá que el usuario seleccione el método de pago disponible desde la pantalla correspondiente. 
+</Check>
+
+## Ejemplo de Invocación
+
+```text
+private fun invokeForAuthorization(method: PMPaymentMethod? = null) {
+    val reservedData = HashMap<String, String>()
+    reservedData["reserved1"] = "Reserved_1"
+
+    val pmAuthorizationRequest = PMAuthorizationRequest(
+        operationNumber = "00000001",
+        amount = "2000",
+        currency = "604",
+        additionalFields = reservedData
+    )
+
+    PaymeClient.initAuthorization(
+        from = this,
+        method = method,
+        pmAuthorizationRequest = pmAuthorizationRequest,
+        delegate = this
+    )
+}
+```
+
+## Recepción de la Respuesta
+
+Para recibir el resultado de la autorización, se debe implementar el método `onAuthorizationResponse`.
+
+```text
+override fun onAuthorizationResponse(response: PMAuthorizationResponse) {
+    val gson = GsonBuilder().setPrettyPrinting().create()
+    val gsonRequest = gson.toJson(this.pmAuthorizationRequest)
+    val gsonResponse = gson.toJson(response)
+
+    val intent = Intent(this, ResponseActivity::class.java).apply {
+        putExtra("ACTION", this@RequestActivity.action)
+        putExtra("REQUEST_PAYME", gsonRequest)
+        putExtra("RESPONSE_PAYME", gsonResponse)
+    }
+
+    startActivity(intent)
+    finish()
+}
+```
+
+## Respuesta de Autorización
+
+El resultado de la autorización será devuelto mediante el objeto `PMAuthorizationResponse`.
+
+<Info>
+  El método `onAuthorizationResponse` permite capturar la respuesta del SDK y procesarla dentro de la aplicación integradora.
+</Info>

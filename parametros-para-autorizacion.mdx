@@ -1,0 +1,105 @@
+---
+title: "Parámetros para Autorización"
+---
+
+Para iniciar una autorización con el SDK, se debe invocar la función `initAuthorization`.
+
+## Datos de Entrada
+
+El objeto `PMAuthorizationRequest` está compuesto por los siguientes atributos:
+
+### PMAuthorizationRequest
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `operationNumber` | String | Sí | Número de operación único en la pasarela, utilizado para realizar la transacción. |
+| `amount` | String | Sí | Monto a cobrar expresado en centavos. La pasarela aplicará automáticamente el separador decimal. |
+| `currency` | String | Sí | Código de moneda según el estándar ISO-4217. |
+| `additionalFields` | Dictionary | No | Información adicional proporcionada por el comercio. |
+| `urlNotification` | String | No | URL donde se notificará el resultado de la transacción. |
+
+<Check>
+   Los montos deben enviarse en centavos, sin separador decimal.
+</Check>
+
+### Ejemplos de monto
+
+| Monto Real | Valor a Enviar |
+| :-- | :-- |
+| 0.50 | 50 |
+| 10.00 | 1000 |
+| 150.75 | 15075 |
+
+## Datos de Salida
+
+El objeto `PMAuthorizationResponse` contiene el resultado de la autorización.
+
+### PMAuthorizationResponse
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `success` | Boolean | Sí | Indica si el proceso fue exitoso. Tendrá el valor `true` cuando la operación se procese correctamente y `false` cuando ocurra algún error. |
+| `resultCode` | String | Sí | Código de resultado del procesamiento. |
+| `resultMessage` | String | Sí | Mensaje descriptivo asociado al resultado del procesamiento. |
+| `result` | TransactionResult | No | Objeto que contiene el detalle completo de la transacción. |
+
+## TransactionResult
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `transactionID` | String | Sí | Identificador único de la transacción generado por Pay-me. |
+| `operationNumber` | String | Sí | Número de operación enviado por el comercio. |
+| `state` | String | Sí | Estado actual de la transacción. |
+| `stateReason` | String | Sí | Motivo asociado al estado de la transacción. |
+| `amount` | String | Sí | Monto autorizado. |
+| `currency` | String | Sí | Moneda utilizada en la autorización. |
+| `additionalFields` | Dictionary | No | Información adicional proporcionada por el comercio. |
+| `paymentMethod` | TransactionPaymentMethod | Sí | Información del método de pago utilizado. |
+| `processorResponse` | String | No | Cadena JSON que contiene la respuesta devuelta por la procesadora. |
+| `lifecycle` | TransactionLifecycle\[\] | Sí | Historial de estados por los que pasó la transacción durante su ciclo de vida. |
+
+## TransactionPaymentMethod
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `name` | String | Sí | Nombre del método de pago utilizado para la autorización. |
+| `methodDetail` | String | No | Cadena JSON con información adicional del método de pago utilizado. Disponible para métodos CARD y QR. |
+
+## TransactionLifecycle
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `state` | String | Sí | Estado de la transacción. |
+| `utcDateTime` | String | Sí | Fecha y hora en formato UTC en la que la transacción cambió de estado. |
+| `unixTime` | String | Sí | Fecha y hora en formato UNIX en la que la transacción cambió de estado. |
+
+\<Note\> El arreglo `lifecycle` permite consultar el historial completo de cambios de estado de una transacción, facilitando tareas de auditoría, seguimiento y soporte. \</Note\>
+
+## Ejemplo de Respuesta Exitosa
+
+```text
+{
+  "success": true,
+  "resultCode": "00",
+  "resultMessage": "Transacción aprobada",
+  "result": {
+    "transactionID": "TRX123456789",
+    "operationNumber": "OP987654321",
+    "state": "AUTHORIZED",
+    "stateReason": "Aprobada",
+    "amount": "1000",
+    "currency": "PEN",
+    "paymentMethod": {
+      "name": "CARD",
+      "methodDetail": "{\"brand\":\"VISA\",\"maskedPan\":\"411111******1111\"}"
+    },
+    "lifecycle": [
+      {
+        "state": "AUTHORIZED",
+        "utcDateTime": "2026-06-03T18:30:00Z",
+        "unixTime": "1780501800"
+      }
+    ]
+  }
+}
+```

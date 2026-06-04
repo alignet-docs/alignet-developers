@@ -1,0 +1,104 @@
+---
+title: "Parámetros para consulta y extorno"
+---
+
+Para realizar una consulta o un extorno mediante el SDK, se deben invocar las funciones `startSearch` o `startReversal`, según la operación requerida.
+
+## Datos de Entrada
+
+Estas funciones esperan los siguientes parámetros:
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `operationNumber` | String | Sí | Número de operación único generado por la pasarela y utilizado para identificar la transacción. |
+| `transactionID` | String | No | Identificador único de la transacción generado por Pay-me. |
+
+<Check>
+  Para las operaciones de consulta `startSearch`), se puede utilizar el `operationNumber` o el `transactionID` para localizar la transacción.
+</Check>
+
+## Datos de Salida
+
+La función de consulta devuelve un objeto `PMSearchResponse`.
+
+### PMSearchResponse
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `success` | Boolean | Sí | Indica si el proceso fue ejecutado correctamente. |
+| `resultCode` | String | Sí | Código de resultado de la operación. |
+| `resultMessage` | String | Sí | Mensaje descriptivo asociado al resultado. |
+| `result` | OperationResult | No | Objeto que contiene el detalle de la operación consultada. |
+
+## OperationResult
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `merchantOperationNumber` | String | Sí | Número de operación proporcionado por el comercio. |
+| `transactions` | TransactionDetail\[\] | Sí | Lista de transacciones asociadas a la operación consultada. |
+
+## TransactionDetail
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `transactionID` | String | Sí | Identificador único de la transacción generado por Pay-me. |
+| `state` | String | Sí | Estado actual de la transacción. |
+| `stateReason` | String | Sí | Motivo asociado al estado de la transacción. |
+| `amount` | String | Sí | Monto de la transacción. |
+| `currency` | String | Sí | Moneda utilizada en la transacción. |
+| `additionalFields` | Dictionary | No | Información adicional proporcionada por el comercio. |
+| `paymentMethod` | TransactionPaymentMethod | Sí | Información del método de pago utilizado. |
+| `processorResponse` | String | No | Cadena JSON con la respuesta devuelta por la procesadora. |
+| `lifecycle` | TransactionLifecycle\[\] | Sí | Historial de estados por los que pasó la transacción. |
+
+## TransactionPaymentMethod
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `name` | String | Sí | Método de pago utilizado en la transacción. |
+| `methodDetail` | String | No | Cadena JSON con información adicional del método de pago. Disponible para métodos CARD y QR. |
+
+## TransactionLifecycle
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `state` | String | Sí | Estado de la transacción. |
+| `utcDateTime` | String | Sí | Fecha y hora en formato UTC en la que la transacción cambió de estado. |
+| `unixTime` | String | Sí | Fecha y hora en formato UNIX en la que la transacción cambió de estado. |
+
+<Note>
+  El arreglo `lifecycle` permite conocer el historial completo de la transacción, incluyendo todos los cambios de estado registrados durante su procesamiento. 
+</Note>
+
+## Ejemplo de Respuesta
+
+```text
+{
+  "success": true,
+  "resultCode": "00",
+  "resultMessage": "Consulta exitosa",
+  "result": {
+    "merchantOperationNumber": "ORDER-123456",
+    "transactions": [
+      {
+        "transactionID": "TRX987654321",
+        "state": "AUTHORIZED",
+        "stateReason": "Aprobada",
+        "amount": "1000",
+        "currency": "PEN",
+        "paymentMethod": {
+          "name": "CARD",
+          "methodDetail": "{\"brand\":\"VISA\",\"maskedPan\":\"411111******1111\"}"
+        },
+        "lifecycle": [
+          {
+            "state": "AUTHORIZED",
+            "utcDateTime": "2026-06-03T18:30:00Z",
+            "unixTime": "1780501800"
+          }
+        ]
+      }
+    ]
+  }
+}
+```

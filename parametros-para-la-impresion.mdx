@@ -1,0 +1,131 @@
+---
+title: "Parámetros para la impresión"
+---
+
+Para realizar una impresión mediante el SDK, se debe invocar la función `startPrint`.
+
+## Datos de Entrada
+
+La función recibe una lista de elementos que serán enviados a la impresora.
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `elements` | List\<PMPrintElement\> | Sí | Lista de elementos que serán impresos. |
+
+<Info>
+  La impresión puede combinar distintos tipos de elementos, como texto, imágenes, líneas, códigos QR y códigos de barras, permitiendo construir comprobantes personalizados. 
+</Info>
+
+---
+
+## PMPrintElement.Text
+
+Representa un bloque de texto simple.
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `content` | String | Sí | Texto a imprimir. |
+| `align` | Align | No | Alineación del texto (`LEFT`, `CENTER`, `RIGHT`). |
+| `width` | Int | No | Ancho en unidades personalizadas. Utilice `-1` para ajuste automático. |
+| `fontSize` | Int | No | Tamaño de fuente en puntos. |
+| `isBold` | Boolean | No | Indica si el texto debe imprimirse en negrita. |
+| `isUnderline` | Boolean | No | Indica si el texto debe imprimirse subrayado. |
+| `isReverseText` | Boolean | No | Invierte los colores de fondo y texto (modo negativo). |
+| `isItalic` | Boolean | No | Indica si el texto debe imprimirse en cursiva. |
+
+## PMPrintElement.MultiText
+
+Permite imprimir múltiples textos en una misma línea.
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `items` | List\<PMPrintElement.Text\> | Sí | Lista de textos a imprimir. |
+
+## PMPrintElement.Image
+
+Permite imprimir imágenes.
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `content` | Bitmap | Sí | Imagen a imprimir. |
+| `width` | Int | No | Ancho deseado de la imagen. |
+| `height` | Int | No | Alto deseado de la imagen. |
+| `align` | Align | No | Alineación de la imagen (`LEFT`, `CENTER`, `RIGHT`). |
+
+## PMPrintElement.Line
+
+Permite imprimir líneas divisorias.
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `thickness` | Int | No | Grosor de la línea. |
+| `length` | Int | No | Longitud de la línea. |
+| `style` | LineStyle | No | Estilo de línea (`SOLID`, `DASHED`, `DOTTED`, `BLANK`). |
+
+## PMPrintElement.QR
+
+Permite imprimir códigos QR.
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `content` | String | Sí | Información que será codificada dentro del código QR. |
+| `size` | Int | No | Tamaño del código QR en píxeles. |
+
+## PMPrintElement.BarCode
+
+Permite imprimir códigos de barras.
+
+| Parámetro | Tipo | Obligatorio | Descripción |
+| :-- | :-- | :-- | :-- |
+| `type` | BarCodeType | Sí | Tipo de código de barras (`BARCODE_128`, `PDF417`, `BARCODE_39`). |
+| `content` | String | Sí | Información que será codificada en el código de barras. |
+| `size` | Int | No | Tamaño del código de barras. |
+
+## Tipos de Alineación
+
+| Valor | Descripción |
+| :-- | :-- |
+| `LEFT` | Alineación a la izquierda. |
+| `CENTER` | Alineación centrada. |
+| `RIGHT` | Alineación a la derecha. |
+
+## Tipos de Línea
+
+| Valor | Descripción |
+| :-- | :-- |
+| `SOLID` | Línea continua. |
+| `DASHED` | Línea segmentada. |
+| `DOTTED` | Línea punteada. |
+| `BLANK` | Espacio en blanco sin línea visible. |
+
+## Tipos de Código de Barras
+
+| Valor | Descripción |
+| :-- | :-- |
+| `BARCODE_128` | Código de barras Code 128. |
+| `PDF417` | Código bidimensional PDF417. |
+| `BARCODE_39` | Código de barras Code 39. |
+
+<Note>
+  Los elementos se imprimirán respetando el orden en el que son enviados dentro de la lista `elements`, permitiendo construir comprobantes completamente personalizados.
+</Note>
+
+## Ejemplo de Comprobante
+
+```text
+listOf(
+    PMPrintElement.Text(
+        content = "PAY-ME",
+        align = Align.CENTER,
+        isBold = true,
+        fontSize = 24
+    ),
+    PMPrintElement.Line(),
+    PMPrintElement.Text(
+        content = "Operación aprobada"
+    ),
+    PMPrintElement.QR(
+        content = "https://pay-me.com"
+    )
+)
+```

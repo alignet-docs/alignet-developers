@@ -1,0 +1,68 @@
+---
+title: "Inicializar el SDK"
+---
+
+Antes de utilizar cualquier funcionalidad de **Pay-me POS SDK**, es necesario realizar una inicialización para obtener la configuración del dispositivo POS y del comercio asociado.
+
+La inicialización debe ejecutarse al inicio de la aplicación y antes de invocar cualquier operación del SDK.
+
+## Consideraciones
+
+<Tip>
+  Para que la inicialización sea exitosa, el dispositivo POS debe encontrarse previamente registrado y configurado en Pay-me.
+</Tip>
+
+## Inicialización del SDK
+
+Para inicializar el SDK, invoque la función `initializeSDK` del objeto `PaymeClient`.
+
+### Ejemplo
+
+```text
+PaymeClient.initializeSDK(
+    this,
+    environment = PaymeEnvironment.PRODUCTION,
+    listener = object : PaymeInitializationListener {
+
+        override fun onInitSuccess() {
+            Toast.makeText(
+                this@MainActivity,
+                "PaymePOS se inició correctamente",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+
+        override fun onInitFail(
+            errorCode: String,
+            errorMessage: String
+        ) {
+            Toast.makeText(
+                this@MainActivity,
+                "PaymePOS falló al iniciar - $errorMessage",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+)
+```
+
+## Resultado de la Inicialización
+
+El resultado del proceso es informado mediante la interfaz `PaymeInitializationListener`.
+
+### onInitSuccess
+
+Se ejecuta cuando el SDK se inicializa correctamente y queda disponible para procesar operaciones.
+
+### onInitFail
+
+Se ejecuta cuando ocurre un error durante la inicialización.
+
+| Parámetro | Tipo | Descripción |
+| :-- | :-- | :-- |
+| `errorCode` | String | Código asociado al error producido durante la inicialización. |
+| `errorMessage` | String | Descripción del error producido durante la inicialización. |
+
+<Warning>
+   Se recomienda habilitar las funcionalidades de pago, consulta, extorno e impresión únicamente después de recibir la respuesta satisfactoria en el método `onInitSuccess()`. 
+</Warning>

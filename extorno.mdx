@@ -1,0 +1,62 @@
+---
+title: "Extorno"
+---
+
+## Flujo de Extorno
+
+Para realizar el extorno de una transacción, la aplicación debe invocar la función `startReversal` del objeto `PaymeClient`.
+
+La operación de extorno se realiza utilizando el número de operación asociado a la transacción.
+
+## Parámetros de Entrada
+
+| Parámetro | Tipo | Descripción |
+| :-- | :-- | :-- |
+| `from` | Activity | Activity desde donde se realizará la invocación del SDK. |
+| `merchantOperationNumber` | String | Número de operación o pedido que se desea extornar. |
+| `delegate` | Activity | Activity encargada de implementar los métodos del delegado. |
+
+## Ejemplo de Invocación
+
+```text
+private fun invokeForReverse() {
+    val operationNumber = "00000001"
+
+    PaymeClient.startReversal(
+        from = this,
+        merchantOperationNumber = operationNumber,
+        delegate = this
+    )
+}
+```
+
+## Recepción de la Respuesta
+
+Para recibir el resultado del extorno, se debe implementar el método `onReversalResponse`.
+
+```text
+override fun onReversalResponse(response: PMReversalResponse) {
+    val gson = GsonBuilder().setPrettyPrinting().create()
+    val gsonResponse = gson.toJson(response)
+
+    val intent = Intent(this, ResponseActivity::class.java).apply {
+        putExtra("ACTION", this@RequestActivity.action)
+        putExtra(
+            "REQUEST_PAYME",
+            "Número de pedido: ${binding.inputOperationNumber.text}"
+        )
+        putExtra("RESPONSE_PAYME", gsonResponse)
+    }
+
+    startActivity(intent)
+    finish()
+}
+```
+
+## Respuesta de Extorno
+
+El resultado del proceso será devuelto mediante el objeto `PMReversalResponse`.
+
+<Info>
+  La respuesta recibida en `onReversalResponse` permitirá conocer si el extorno fue procesado correctamente o si ocurrió algún error durante la operación.
+</Info>

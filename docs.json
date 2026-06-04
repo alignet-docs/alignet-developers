@@ -326,6 +326,40 @@
                   "paymepos/administracion-y-control",
                   "paymepos/centro-de-ayuda-y-soporte"
                 ]
+              },
+              {
+                "group": "PaymePOS SDK",
+                "icon": "tablet-android",
+                "pages": [
+                  "introduccion-sdk-para-pos",
+                  {
+                    "group": "Parametros",
+                    "icon": "align-left",
+                    "pages": [
+                      "parametros-para-autorizacion",
+                      "parametros-para-consulta-y-extorno",
+                      "parametros-para-la-impresion"
+                    ]
+                  },
+                  {
+                    "group": "Integración del SDK",
+                    "icon": "arrow-progress",
+                    "pages": [
+                      "dependencias",
+                      "inicializar-el-sdk",
+                      {
+                        "group": "Invocación al SDK",
+                        "icon": "arrow-up-left-from-circle",
+                        "pages": [
+                          "autorizacion",
+                          "consulta",
+                          "extorno",
+                          "impresion-de-voucher"
+                        ]
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
