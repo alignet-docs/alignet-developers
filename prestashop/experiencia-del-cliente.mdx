@@ -10,16 +10,18 @@ El módulo de Pay-me se integra de forma nativa con el sistema de checkout de Pr
 Puedes decidir cómo se agrupan las opciones de pago en tu formulario de finalización de compra.
 
 ### Modo Separado (Recomendado)
+
 Este modo desglosa cada método de pago (Visa, Mastercard, Yape, PagoEfectivo) como una opción individual con su respectivo icono oficial.
 
-* **Beneficio:** Mayor confianza del cliente al reconocer logos familiares desde el inicio.
-* **Flujo:**
+- **Beneficio:** Mayor confianza del cliente al reconocer logos familiares desde el inicio.
+- **Flujo:**
   1. El cliente selecciona su método preferido (ej: **Yape**).
   2. Se carga el formulario seguro de Pay-me.
   3. El cliente confirma el pago.
   4. Redirección automática a la página de éxito de la tienda.
 
 ### Modo "Junto"
+
 Agrupa todos los métodos bajo un solo selector genérico de Pay-me. Al seleccionarlo, se despliega el SDK de Pay-me con todas las opciones dentro de un mismo bloque.
 
 ---
@@ -29,23 +31,25 @@ Agrupa todos los métodos bajo un solo selector genérico de Pay-me. Al seleccio
 Tras procesar la transacción, el cliente recibe feedback visual inmediato en la página de confirmación de PrestaShop:
 
 | Resultado del Pago | Indicador Visual | Significado |
-| :--- | :--- | :--- |
-| **Exitoso** | <span style={{color: '#2ecc71'}}>**Verde**</span> | "¡Pedido Confirmado!". Transacción aprobada por el emisor. |
-| **Pendiente** | <span style={{color: '#f1c40f'}}>**Amarillo**</span> | "Pedido Pendiente". Esperando confirmación (ej: depósito PagoEfectivo). |
-| **Denegado** | <span style={{color: '#e74c3c'}}>**Rojo**</span> | "Pago Denegado". La transacción fue rechazada; se sugiere otro medio. |
+| :-- | :-- | :-- |
+| **Exitoso** | **Verde** | "¡Pedido Confirmado!". Transacción aprobada por el emisor. |
+| **Pendiente** | **Amarillo** | "Pedido Pendiente". Esperando confirmación (ej: depósito PagoEfectivo). |
+| **Denegado** | **Rojo** | "Pago Denegado". La transacción fue rechazada; se sugiere otro medio. |
 
 **La página de éxito incluye:**
-* Resumen del pedido y número de referencia.
-* Detalle de productos y montos.
-* Botón de retorno seguro a la tienda.
+
+- Resumen del pedido y número de referencia.
+- Detalle de productos y montos.
+- Botón de retorno seguro a la tienda.
 
 ---
 
 ## 3. Compatibilidad con Checkouts
 
 El módulo está optimizado para funcionar con los estándares de PrestaShop:
-* **Standard Checkout:** El flujo nativo de 5 pasos o 1 paso (OPC).
-* **Temas Personalizados:** Compatible con la mayoría de plantillas de *PrestaShop Addons* que respetan los hooks de pago oficiales.
+
+- **Standard Checkout:** El flujo nativo de 5 pasos o 1 paso (OPC).
+- **Temas Personalizados:** Compatible con la mayoría de plantillas de _PrestaShop Addons_ que respetan los hooks de pago oficiales.
 
 <Tip>
   Si utilizas un módulo de "One Page Checkout" de terceros, asegúrate de que esté configurado para refrescar los métodos de pago cuando el cliente cambie su dirección de envío.
@@ -54,18 +58,11 @@ El módulo está optimizado para funcionar con los estándares de PrestaShop:
 ---
 
 <CardGroup cols={2}>
-  <Card
-    title="Gestión de Pedidos"
-    icon="clipboard-check"
-    href="/prestashop/gestion-de-pedidos"
-  >
+  <Card title="Gestión de Pedidos" icon="clipboard-check" href="/prestashop/gestion-de-pedidos">
     Administra estados y realiza extornos desde el Back Office.
   </Card>
-  <Card
-    title="Métodos Asíncronos"
-    icon="clock"
-    href="/prestashop/metodos-asincronos"
-  >
+
+  <Card title="Métodos Asíncronos" icon="clock" href="/prestashop/metodos-asincronos">
     Entiende el flujo de QR, PagoEfectivo y Transferencias.
   </Card>
 </CardGroup>

@@ -3,14 +3,14 @@ title: "Configuración del Módulo"
 description: "Vincula tu tienda con Pay-me configurando tus credenciales API y preferencias de visualización."
 ---
 
-Para acceder a estos ajustes, dirígete a **Módulos** > **Module Manager** > **Payme** y haz clic en el botón **Configurar**.
+Para acceder a estos ajustes, dirígete a **Módulos** \> **Module Manager** \> **Payme** y haz clic en el botón **Configurar**.
 
 ## 1. Ajustes Básicos
 
 Configura la identidad de la pasarela en tu checkout:
 
 | Parámetro | Acción | Recomendación |
-| :--- | :--- | :--- |
+| :-- | :-- | :-- |
 | **Habilitar** | Activa o desactiva la pasarela globalmente. | Mantener en **Activado**. |
 | **Título** | El nombre que verá el cliente al elegir el pago. | "Pagar con Payme" |
 | **Descripción** | Texto secundario de ayuda. | "Paga con tarjeta, Yape, QR y más" |
@@ -22,7 +22,7 @@ Configura la identidad de la pasarela en tu checkout:
 
 Estos datos son el "pasaporte" de tu tienda hacia Pay-me. Solicítalos a tu ejecutivo de cuenta.
 
-<Info title="Seguridad de las Llaves">
+<Info>
   Nunca compartas el **Client Secret** con terceros ni lo publiques en repositorios abiertos de código.
 </Info>
 
@@ -37,6 +37,7 @@ Estos datos son el "pasaporte" de tu tienda hacia Pay-me. Solicítalos a tu ejec
 Personaliza cómo se comporta la pasarela y en qué ambiente opera.
 
 ### Ambiente de Ejecución
+
 <Tabs>
   <Tab title="Sandbox (Pruebas)">
     Utiliza este modo para realizar transacciones ficticias con tarjetas de prueba. Es ideal para validar que tu servidor reciba las notificaciones correctamente.
@@ -47,9 +48,11 @@ Personaliza cómo se comporta la pasarela y en qué ambiente opera.
 </Tabs>
 
 ### Modo de Visualización del Formulario
+
 Puedes elegir entre dos tipos de experiencia de usuario:
-* **Embebido:** El formulario de pago aparece integrado directamente dentro de la página de checkout de PrestaShop.
-* **Modal (Popup):** Se abre una ventana emergente segura sobre tu tienda para capturar los datos del pago.
+
+- **Embebido:** El formulario de pago aparece integrado directamente dentro de la página de checkout de PrestaShop.
+- **Modal (Popup):** Se abre una ventana emergente segura sobre tu tienda para capturar los datos del pago.
 
 ---
 
@@ -58,7 +61,7 @@ Puedes elegir entre dos tipos de experiencia de usuario:
 Para garantizar el éxito de los métodos asíncronos (QR, PagoEfectivo), debes configurar la comunicación entre servidores.
 
 | Opción | Descripción |
-| :--- | :--- |
+| :-- | :-- |
 | **URL S2S** | Es la URL de notificación. **Debes enviarla al equipo de Pay-me** para que puedan avisar a tu tienda sobre pagos confirmados. |
 | **Modo Debug** | Actívalo para generar registros técnicos detallados en caso de errores durante la integración. |
 | **Moneda** | Selecciona la moneda base de tu tienda: **PEN** (Soles) o **USD** (Dólares). |
@@ -69,10 +72,6 @@ Para garantizar el éxito de los métodos asíncronos (QR, PagoEfectivo), debes 
 
 ---
 
-<Card
-  title="Experiencia del Cliente"
-  icon="cart-circle-check"
-  href="/prestashop/experiencia-cliente"
->
+<Card title="Experiencia del Cliente" icon="cart-circle-check" href="/prestashop/experiencia-cliente">
   Configura el Modo Separado para mejorar la conversión en tu checkout.
 </Card>
