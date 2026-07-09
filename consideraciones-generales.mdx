@@ -1,0 +1,48 @@
+---
+title: "Consideraciones generales"
+---
+
+## Formato de montos
+
+Todos los montos deben enviarse sin decimales.
+
+Ejemplo:
+
+| Monto real | Currency | Valor enviado |
+| --: | --- | --: |
+| 10.00 | `604` | `1000` |
+| 389.80 | `604` | `38980` |
+| 1,250.50 | `604` | `125050` |
+
+## Monedas soportadas
+
+| Moneda | Código ISO 4217 numérico |
+| --- | --- |
+| PEN | `604` |
+| USD | `840` |
+
+## Marcas soportadas
+
+| Valor | Marca |
+| --- | --- |
+| `visa` | Visa |
+| `mscd` | Mastercard |
+
+## Identificador de operación
+
+El campo `internal_operation_number` debe ser único por comercio.
+
+Este campo permite identificar la operación desde el sistema del comercio y puede ser utilizado para consultas, conciliación y soporte.
+
+## Datos cifrados
+
+Los campos sensibles de tarjeta deben enviarse cifrados antes de invocar el servicio.
+
+| Campo | Cifrado requerido |
+| --- | --- |
+| `card.pan` | Sí |
+| `card.expiry_date` | Sí |
+| `card.security_code` | Sí |
+| `payment_method.card[].pan` | Sí |
+| `payment_method.card[].expiry_date` | Sí |
+| `payment_method.card[].card_sequence_number` | Sí, cuando aplique |

@@ -364,6 +364,30 @@
             ]
           }
         ]
+      },
+      {
+        "product": "Procesamiento",
+        "icon": "coins",
+        "groups": [
+          {
+            "group": "Guía",
+            "pages": [
+              {
+                "group": "Autorización",
+                "pages": [
+                  "ecommerce-post-authorize",
+                  "pos",
+                  "response",
+                  "consideraciones-generales"
+                ]
+              },
+              {
+                "group": "Consultas",
+                "pages": []
+              }
+            ]
+          }
+        ]
       }
     ]
   },
