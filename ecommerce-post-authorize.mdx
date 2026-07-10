@@ -11,6 +11,14 @@ El servicio de autorización Ecommerce permite procesar pagos de comercio electr
 
 Esta trama debe utilizarse cuando la transacción proviene de un canal no presencial, como checkout web, mobile checkout, link de pago o integración server-to-server.
 
+<Warning>
+  Los identificadores de adquirencia y los parámetros asignados por las marcas no deben enviarse dentro de la trama de autorización.
+
+  Estos datos se configuran previamente durante el proceso de onboarding y registro de la entidad adquirente, en el cual se registran la llave de integración y los identificadores correspondientes, como `BID`, `PCR`, `ICA`, `BIN` y otros parámetros requeridos por cada marca.
+
+  La plataforma utilizará esta configuración para identificar a la entidad y enrutar correctamente las transacciones.
+</Warning>
+
 ## Endpoint
 
 ```http
