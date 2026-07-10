@@ -377,7 +377,8 @@
                 "pages": [
                   "untitled-page",
                   "consideraciones-previas"
-                ]
+                ],
+                "icon": "credit-card-front"
               },
               {
                 "group": "Autorización",
