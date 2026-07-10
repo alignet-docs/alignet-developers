@@ -379,13 +379,15 @@
                   "pos",
                   "response",
                   "consideraciones-generales"
-                ]
+                ],
+                "icon": "credit-card-alt"
               },
               {
                 "group": "Consultas",
                 "pages": []
               }
-            ]
+            ],
+            "icon": "folder-bookmark"
           }
         ]
       }
