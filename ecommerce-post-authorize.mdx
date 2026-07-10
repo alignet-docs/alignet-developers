@@ -83,8 +83,6 @@ POST /authorize
 | `authentication.3d_secure.version` | string | No | 5-8 | Versión del protocolo 3DS. Ejemplo: `2.1.0`. |
 | `metadata` | object | No | — | Campos libres enviados por el comercio en formato key-value. Se almacenan con la transacción. |
 
----
-
 ## Valores permitidos
 
 ### `frame_type`
@@ -129,8 +127,6 @@ Ejemplo para moneda PEN:
 | 389.80 | `604` | `38980` |
 | 1,250.50 | `604` | `125050` |
 
----
-
 ## Consideraciones sobre moneda
 
 El campo `currency` debe enviarse en formato ISO 4217 numérico.
@@ -139,8 +135,6 @@ El campo `currency` debe enviarse en formato ISO 4217 numérico.
 | --- | --- |
 | PEN | `604` |
 | USD | `840` |
-
----
 
 ## Consideraciones sobre tarjeta
 
@@ -151,8 +145,6 @@ Los datos sensibles de tarjeta deben enviarse cifrados.
 | `card.pan` | Sí |
 | `card.expiry_date` | Sí |
 | `card.security_code` | Sí |
-
----
 
 ## Consideraciones sobre cuotas
 
@@ -177,8 +169,6 @@ El objeto `installments` debe enviarse únicamente cuando la operación aplique 
 | Periodo de gracia | `grace_period` debe enviarse en formato de dos dígitos. |
 | Operación sin cuotas | Si la operación no aplica a cuotas, el objeto `installments` puede omitirse. |
 
----
-
 ## Consideraciones sobre 3DS
 
 El objeto `authentication.3d_secure` debe enviarse cuando la transacción cuente con información de autenticación 3DS.
@@ -195,8 +185,6 @@ El objeto `authentication.3d_secure` debe enviarse cuando la transacción cuente
 }
 ```
 
----
-
 ## Metadata
 
 El campo `metadata` permite enviar información adicional del comercio para fines de trazabilidad, reportería o conciliación.
@@ -210,8 +198,6 @@ El campo `metadata` permite enviar información adicional del comercio para fine
   }
 }
 ```
-
----
 
 ## Validaciones principales
 
@@ -230,8 +216,6 @@ Antes de enviar una autorización Ecommerce, validar lo siguiente:
 | 3DS | Si se envía información 3DS, debe incluir datos válidos de autenticación. |
 | Metadata | Los campos enviados en `metadata` deben respetar formato key-value. |
 
----
-
 ## Ejemplo mínimo
 
 ```json
@@ -249,8 +233,6 @@ Antes de enviar una autorización Ecommerce, validar lo siguiente:
   }
 }
 ```
-
----
 
 ## Ejemplo con cuotas
 
@@ -274,8 +256,6 @@ Antes de enviar una autorización Ecommerce, validar lo siguiente:
   }
 }
 ```
-
----
 
 ## Ejemplo con 3DS
 

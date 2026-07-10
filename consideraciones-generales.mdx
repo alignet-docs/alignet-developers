@@ -27,8 +27,6 @@ La autorización puede originarse desde distintos canales según el valor enviad
 | Ecommerce | `ecommerce` | Transacción no presencial. Aplica para checkout web, mobile checkout, link de pago o integración server-to-server. |
 | POS | `pos` | Transacción presencial. Aplica para terminal POS, PinPad, Android POS o captura física de tarjeta. |
 
----
-
 ## Flujo general de autorización
 
 ```mermaid
@@ -44,8 +42,6 @@ sequenceDiagram
     Plataforma-->>Comercio: Response con resultado y trazabilidad
 ```
 
----
-
 ## Pasos del flujo
 
 | Paso | Descripción |
@@ -59,8 +55,6 @@ sequenceDiagram
 | 7 | La plataforma devuelve la respuesta de autorización. |
 | 8 | El comercio almacena los identificadores de trazabilidad. |
 
----
-
 ## Canales soportados
 
 | Canal | Uso recomendado |
@@ -68,16 +62,12 @@ sequenceDiagram
 | Ecommerce | Pagos en checkout web, mobile checkout, link de pago o integración directa desde backend. |
 | POS | Pagos presenciales con lectura de tarjeta física, chip, contactless, banda magnética o entrada manual. |
 
----
-
 ## Marcas soportadas
 
 | Valor | Marca |
 | --- | --- |
 | `visa` | Visa |
 | `mscd` | Mastercard |
-
----
 
 ## Monedas soportadas
 
@@ -87,8 +77,6 @@ El campo de moneda debe enviarse en formato ISO 4217 numérico.
 | --- | --- |
 | PEN | `604` |
 | USD | `840` |
-
----
 
 ## Formato de montos
 
@@ -109,8 +97,6 @@ Ejemplo para moneda PEN:
 | 1,250.50 | `604` | `125050` |
 | 50,000.00 | `604` | `5000000` |
 
----
-
 ## Ejemplos incorrectos de monto
 
 | Valor enviado | Motivo |
@@ -120,8 +106,6 @@ Ejemplo para moneda PEN:
 | `S/ 389.80` | No debe enviarse con símbolo de moneda. |
 | `38980.00` | No debe enviarse con decimales. |
 
----
-
 ## Ejemplos correctos de monto
 
 | Monto real | Valor correcto |
@@ -130,8 +114,6 @@ Ejemplo para moneda PEN:
 | 10.50 | `1050` |
 | 389.80 | `38980` |
 | 1,250.50 | `125050` |
-
----
 
 ## Identificador de operación
 
@@ -144,8 +126,6 @@ Debe ser único por comercio y debe mantenerse para consultas, trazabilidad, sop
 | `internal_operation_number` | Referencia o número de orden generado por el comercio. |
 | `transaction.meta.internal_operation_number` | Referencia o número de operación enviado en tramas POS. |
 
----
-
 ## Reglas para `internal_operation_number`
 
 | Regla | Descripción |
@@ -154,8 +134,6 @@ Debe ser único por comercio y debe mantenerse para consultas, trazabilidad, sop
 | Longitud | Debe cumplir la longitud definida en la guía del canal correspondiente. |
 | Trazabilidad | Debe poder relacionarse con la orden o venta del comercio. |
 | Reutilización | No debe reutilizarse para una nueva compra. |
-
----
 
 ## Idempotencia y duplicidad
 
@@ -171,8 +149,6 @@ No se recomienda reutilizar el mismo identificador de operación para más de un
 | Operación aprobada | No reenviar la misma operación. |
 | Operación rechazada | Permitir nuevo intento según la regla del comercio. |
 
----
-
 ## Datos sensibles
 
 Los datos sensibles de tarjeta deben enviarse cifrados antes de invocar el servicio de autorización.
@@ -185,8 +161,6 @@ Los datos sensibles de tarjeta deben enviarse cifrados antes de invocar el servi
 | `payment_method.card[].pan` | POS | Sí |
 | `payment_method.card[].expiry_date` | POS | Sí |
 | `payment_method.card[].card_sequence_number` | POS | Sí, cuando aplique |
-
----
 
 ## Información que no debe enviarse en campos libres
 
@@ -204,8 +178,6 @@ No se debe enviar información sensible dentro de campos libres como `metadata` 
 | Canal de venta | Sí |
 | Identificador de carrito | Sí |
 | Código de vendedor | Sí |
-
----
 
 ## Uso recomendado de `metadata`
 
@@ -230,8 +202,6 @@ El campo `metadata` permite enviar información adicional del comercio para fine
 | `codigo_vendedor` | Identificar al vendedor o asesor asociado. |
 | `identificador_carrito` | Relacionar la operación con un carrito de compra. |
 
----
-
 ## Uso recomendado de `additional_fields`
 
 En POS, el objeto `transaction.meta.additional_fields` permite enviar información complementaria de la operación.
@@ -252,8 +222,6 @@ En POS, el objeto `transaction.meta.additional_fields` permite enviar informaci�
 }
 ```
 
----
-
 ## Timeout y reintentos
 
 Si el comercio no recibe respuesta por timeout o error de comunicación, no debe asumir automáticamente que la operación fue rechazada.
@@ -267,8 +235,6 @@ En estos casos, se recomienda consultar el estado de la operación antes de envi
 | Respuesta aprobada | No reenviar la misma operación. |
 | Respuesta rechazada | Permitir nuevo intento según regla del comercio. |
 | Sin registro de operación | Generar un nuevo intento según la política del comercio. |
-
----
 
 ## Flujo recomendado ante timeout
 
@@ -326,8 +292,6 @@ Una autorización aprobada debe validar tanto la respuesta de la marca como el e
 | `processor_response.response_code` | `00` | Código ISO de aprobación. |
 | `meta.status.code` | `success_operation` | Estado interno exitoso. |
 
----
-
 ## Estados internos referenciales
 
 Los siguientes estados son referenciales y pueden variar según la configuración del servicio.
@@ -342,8 +306,6 @@ Los siguientes estados son referenciales y pueden variar según la configuració
 | `processor_error` | Ocurrió un error al procesar la operación con la marca o procesador. |
 | `timeout` | No se recibió respuesta dentro del tiempo esperado. |
 
----
-
 ## Errores comunes
 
 | Escenario | Causa probable | Acción recomendada |
@@ -356,8 +318,6 @@ Los siguientes estados son referenciales y pueden variar según la configuració
 | Datos EMV incompletos | La operación POS chip/contactless no envió `icc_related_data` | Enviar los campos EMV obligatorios cuando aplique. |
 | Moneda inválida | Se envió una moneda no soportada o con formato incorrecto | Enviar el código ISO 4217 numérico. |
 | Terminal no reconocido | El `terminal_id` no existe o no está habilitado | Validar el registro del terminal. |
-
----
 
 ## Validaciones previas recomendadas
 
@@ -376,8 +336,6 @@ Antes de enviar una autorización, se recomienda validar los siguientes puntos.
 | Datos EMV completos | No aplica | Sí, si es chip/contactless |
 | Datos 3DS válidos | Sí, si aplica | No aplica |
 
----
-
 ## Recomendaciones Ecommerce
 
 | Recomendación | Descripción |
@@ -387,8 +345,6 @@ Antes de enviar una autorización, se recomienda validar los siguientes puntos.
 | Usar metadata | Registrar datos como sucursal, canal, número de pedido o identificador de carrito. |
 | Mantener referencia única | Alinear `internal_operation_number` con la orden del comercio. |
 | No enviar datos sensibles | No incluir PAN, CVV o datos cifrados dentro de `metadata`. |
-
----
 
 ## Recomendaciones POS
 
@@ -411,8 +367,6 @@ Antes de enviar una autorización, se recomienda validar los siguientes puntos.
 | Contactless EMV | `07` | Sí | Según reglas de monto, comercio o emisor |
 | Banda magnética | `90` | No | Sí, si aplica |
 
----
-
 ## Buenas prácticas de integración
 
 | Buena práctica | Descripción |
@@ -427,8 +381,6 @@ Antes de enviar una autorización, se recomienda validar los siguientes puntos.
 | Separar flujos | Diferenciar Ecommerce y POS según el valor de `frame_type`. |
 | Validar montos | Enviar montos sin decimales y con moneda correcta. |
 | Validar terminales | Para POS, confirmar que el terminal esté registrado y habilitado. |
-
----
 
 ## Checklist de integración Ecommerce
 
@@ -447,8 +399,6 @@ Antes de enviar una autorización, se recomienda validar los siguientes puntos.
 | `authentication.3d_secure` | Debe enviarse solo si la transacción cuenta con datos 3DS. |
 | `metadata` | No debe contener datos sensibles. |
 
----
-
 ## Checklist de integración POS
 
 | Ítem | Validación |
@@ -466,8 +416,6 @@ Antes de enviar una autorización, se recomienda validar los siguientes puntos.
 | `transaction.meta.internal_operation_number` | Debe ser único por comercio. |
 | `icc_related_data` | Debe enviarse si la operación es chip o contactless EMV. |
 
----
-
 ## Recomendaciones para conciliación
 
 Para facilitar la conciliación, el comercio debe conservar la relación entre su orden interna y los identificadores devueltos por la plataforma.
@@ -481,8 +429,6 @@ Para facilitar la conciliación, el comercio debe conservar la relación entre s
 | STAN | `system_trace_audit` |
 | ID de marca | `brand_transaction_identifier` |
 | Fecha estimada de liquidación | `date_settlement` |
-
----
 
 ## Recomendaciones para soporte
 

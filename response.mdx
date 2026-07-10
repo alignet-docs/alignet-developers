@@ -53,8 +53,6 @@ Esta estructura permite identificar si la petición fue procesada, el resultado 
 }
 ```
 
----
-
 ## Descripción de campos
 
 | Campo | Tipo | Descripción |
@@ -77,8 +75,6 @@ Esta estructura permite identificar si la petición fue procesada, el resultado 
 | `transaction.meta.metrics.aggregate.end` | string | Marca de tiempo de fin del procesamiento. |
 | `transaction.meta.metrics.aggregate.duration.milliseconds` | string | Tiempo total de procesamiento en milisegundos. |
 
----
-
 ## Interpretación de respuesta exitosa
 
 Una autorización se considera aprobada cuando los principales campos de respuesta tienen los siguientes valores:
@@ -89,8 +85,6 @@ Una autorización se considera aprobada cuando los principales campos de respues
 | `processor_response.message.code` | `00` | La marca respondió con aprobación. |
 | `processor_response.response_code` | `00` | Código ISO de aprobación. |
 | `meta.status.code` | `success_operation` | Estado interno exitoso. |
-
----
 
 ## Identificadores de trazabilidad
 
@@ -104,8 +98,6 @@ Los siguientes campos pueden utilizarse para seguimiento transaccional, consulta
 | `retrieval_reference_code` | RRN utilizado para trazabilidad, consultas y conciliación. |
 | `system_trace_audit` | STAN de la transacción. |
 | `date_settlement` | Fecha estimada de liquidación. |
-
----
 
 ## Objeto `processor_response`
 
@@ -139,8 +131,6 @@ El objeto `processor_response` contiene la respuesta recibida desde el procesado
 | `response_code` | Código ISO de respuesta. |
 | `date_settlement` | Fecha estimada de liquidación en formato `MMDD`. |
 
----
-
 ## Objeto `meta.status`
 
 El objeto `meta.status` contiene el estado interno de la operación dentro del sistema.
@@ -166,8 +156,6 @@ El objeto `meta.status` contiene el estado interno de la operación dentro del s
 | `message_ilgn[].locale` | Locale del mensaje. |
 | `message_ilgn[].value` | Descripción localizada del resultado. |
 
----
-
 ## Objeto `meta.metrics`
 
 El objeto `meta.metrics` contiene información de tiempos de procesamiento de la operación.
@@ -191,8 +179,6 @@ El objeto `meta.metrics` contiene información de tiempos de procesamiento de la
 | `aggregate.start` | Marca de tiempo de inicio del procesamiento. |
 | `aggregate.end` | Marca de tiempo de fin del procesamiento. |
 | `aggregate.duration.milliseconds` | Duración total del procesamiento en milisegundos. |
-
----
 
 ## Consideraciones
 

@@ -205,8 +205,6 @@ Contiene la información de la tarjeta utilizada en la transacción POS.
 | `track1` | No | Track 1 de banda magnética. |
 | `track2` | No | Track 2 de banda magnética o chip. |
 
----
-
 ## Objeto `payment_method.terminal`
 
 Contiene la información del terminal POS utilizado para capturar la transacción.
@@ -224,8 +222,6 @@ Contiene la información del terminal POS utilizado para capturar la transacció
 | --- | --- |
 | `terminal_id` | Identificador del terminal POS. |
 | `pin_block` | PIN cifrado en bloque TDEA. Debe enviarse cuando la operación requiera PIN. |
-
----
 
 ## Objeto `context.pos`
 
@@ -255,8 +251,6 @@ Contiene información del contexto de captura POS.
 | `terminal_type` | Tipo de terminal utilizado. |
 | `terminal_entry_capability` | Capacidad de entrada del terminal. |
 
----
-
 ## Objeto `merchant.card_acceptor`
 
 Permite enviar información referencial del comercio o realizar un override de datos de aceptación.
@@ -281,8 +275,6 @@ Permite enviar información referencial del comercio o realizar un override de d
 | `address.country` | País en formato ISO alpha-2. |
 | `address.city` | Ciudad del comercio. |
 
----
-
 ## Objeto `transaction`
 
 Contiene la información transaccional de monto, moneda y referencia del comercio.
@@ -306,8 +298,6 @@ Contiene la información transaccional de monto, moneda y referencia del comerci
 | `amount` | Monto sin decimales. |
 | `meta.internal_operation_number` | Referencia o número de operación del comercio. |
 | `meta.additional_fields` | Campos libres enviados por el comercio en formato key-value. |
-
----
 
 ## Objeto `icc_related_data`
 
@@ -353,8 +343,6 @@ El objeto `icc_related_data` debe enviarse cuando la transacción sea chip o con
 | `app_transaction_counter` | ATC, Application Transaction Counter. |
 | `unpredictable_number` | Número aleatorio generado por el terminal. |
 
----
-
 ## Consideraciones sobre montos
 
 El campo `transaction.amount` debe enviarse sin punto decimal.
@@ -372,8 +360,6 @@ Ejemplo para moneda PEN:
 | 10.00 | `604` | `1000` |
 | 389.80 | `604` | `38980` |
 | 50,000.00 | `604` | `5000000` |
-
----
 
 ## Consideraciones sobre moneda
 
@@ -396,8 +382,6 @@ Los datos sensibles de tarjeta deben enviarse cifrados.
 | `payment_method.card[].expiry_date` | Sí |
 | `payment_method.card[].card_sequence_number` | Sí, cuando aplique |
 
----
-
 ## Consideraciones sobre EMV
 
 Para operaciones chip o contactless EMV, debe enviarse el objeto `icc_related_data`.
@@ -408,8 +392,6 @@ Para operaciones chip o contactless EMV, debe enviarse el objeto `icc_related_da
 | Contactless EMV | Sí |
 | Banda magnética | No |
 | Manual | No |
-
----
 
 ## Validaciones principales
 
@@ -428,8 +410,6 @@ Antes de enviar una autorización POS, validar lo siguiente:
 | PAN Entry Mode | `context.pos.pan_entry_mode` debe corresponder al modo real de captura. |
 | PIN Capability | `context.pos.pin_entry_capability` debe corresponder a la capacidad real del terminal. |
 | ICC | Si la operación es chip o contactless EMV, debe enviarse `icc_related_data`. |
-
----
 
 ## Ejemplo mínimo
 
