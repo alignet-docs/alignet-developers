@@ -381,18 +381,20 @@
                 "icon": "credit-card-front"
               },
               {
-                "group": "Autorización",
+                "group": "Guìa de Integración",
+                "icon": "book-bookmark",
                 "pages": [
-                  "ecommerce-post-authorize",
-                  "pos",
-                  "response",
-                  "consideraciones-generales"
-                ],
-                "icon": "credit-card-alt"
-              },
-              {
-                "group": "Consultas",
-                "pages": []
+                  {
+                    "group": "Autorización",
+                    "icon": "credit-card-alt",
+                    "pages": [
+                      "ecommerce-post-authorize",
+                      "pos",
+                      "response",
+                      "consideraciones-generales"
+                    ]
+                  }
+                ]
               }
             ],
             "icon": "folder-bookmark"
