@@ -373,6 +373,13 @@
             "group": "Guía",
             "pages": [
               {
+                "group": "Procesamiento Adquirente",
+                "pages": [
+                  "untitled-page",
+                  "consideraciones-previas"
+                ]
+              },
+              {
                 "group": "Autorización",
                 "pages": [
                   "ecommerce-post-authorize",
