@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "aspen",
+  "theme": "mint",
   "name": "Alignet Integration Docs",
   "colors": {
     "primary": "#0d704c",
@@ -433,9 +433,6 @@
       "linkedin": "https://www.linkedin.com/company/alignet/",
       "website": "https://www.Alignet.com"
     }
-  },
-  "fonts": {
-    "family": "Roboto"
   },
   "appearance": {
     "strict": false,
