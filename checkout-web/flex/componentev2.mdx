@@ -1,0 +1,234 @@
+---
+title: Inicializar y renderizar Flex
+description: Configura la instancia de Pay-me Flex, monta el formulario en tu DOM e implementa responsive design para web y mobile.
+---
+
+Una vez que tienes el `nonce` y `payload` válidos, crea la instancia de `FlexPaymentForms` y monta el formulario en tu aplicación.
+
+## Parámetros de inicialización
+
+| Parámetro | Requerido | Tipo | Descripción |
+| :-- | :-- | :-- | :-- |
+| `nonce` | Sí | String | Token encriptado generado en backend desde el [API Nonce](/checkout-web/flex/api-nonce). |
+| `payload` | Sí | Object | Objeto JSON con detalles de la operación y comprador. |
+| `settings` | No | Object | Configuración del comportamiento visual. |
+| `settings.display_result_screen` | No | Boolean | Mostrar pantalla de resultado al finalizar. |
+| `settings.show_close_button` | No | Boolean | Mostrar botón para cerrar el formulario. |
+| `settings.show_border` | No | Boolean | Activar borde visual del componente. |
+| `settings.show_operation_number` | No | Boolean | Mostrar número de operación durante el flujo. |
+| `display_settings` | No | Object | Configuración de métodos y visualización. |
+| `display_settings.methods` | No | Array | Métodos a mostrar: `CARD`, `YAPE`, `QR`, `BANK_TRANSFER`, `CUOTEALO`, `PAGOEFECTIVO`. Si no se envía, muestra todos los habilitados. |
+| `i18n` | No | Object | Configuración de idioma. |
+| `i18n.default_language` | No | String | Idioma por defecto: `es` o `en`. |
+| `i18n.languages` | No | Array | Idiomas disponibles: solo `es` y `en` soportados. |
+
+## Crear la instancia
+
+```javascript
+const paymentForm = new FlexPaymentForms({
+  nonce,
+  payload,
+  settings: {
+    display_result_screen: true,
+    show_close_button: true,
+    show_border: false,
+    show_operation_number: true
+  },
+  display_settings: {
+    methods: ["QR", "BANK_TRANSFER", "CARD", "YAPE"]
+  },
+  i18n: {
+    default_language: "es",
+    languages: ["es", "en"]
+  }
+});
+```
+
+**Nota:** Si no especificas `display_settings.methods`, Flex mostrará todos los métodos habilitados para tu comercio.
+
+## Montar el formulario
+
+```javascript
+paymentForm.init(
+  document.querySelector("#flex-container"),
+  responseCallback,      // Procesa respuesta exitosa
+  trackingCallback,      // Registra eventos
+  onErrorCallback        // Maneja errores
+);
+```
+
+El contenedor debe existir en tu HTML:
+
+```html
+<div id="flex-container"></div>
+```
+
+---
+
+# Responsive Design
+
+Flex mantiene dimensiones internas fijas (415px × 656px) que se adaptan al viewport mediante escalado. No modifiques estilos internos directamente; deja que Flex controle su propio CSS.
+
+## Setup HTML y CSS
+
+**1. Estructura HTML:**
+
+```html
+<div id="payment-modal" class="flex-modal" role="dialog" aria-hidden="true">
+  <div class="flex-modal__content">
+    <div id="flex-container"></div>
+  </div>
+</div>
+```
+
+**2. Estilos base:**
+
+```css
+:root {
+  --flex-scale: 1;
+  --flex-width: 415px;
+  --flex-height: 656px;
+}
+
+.flex-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  padding: 15px 20px;
+  background: rgba(0, 18, 37, 0.48);
+  overflow: hidden;
+}
+
+.flex-modal.is-open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-modal__content {
+  width: var(--flex-width);
+  height: var(--flex-height);
+  max-width: calc(100vw - 40px);
+  max-height: calc(100dvh - 30px);
+  transform: scale(var(--flex-scale));
+  transform-origin: top left;
+}
+
+#flex-container {
+  width: 100%;
+  height: 100%;
+}
+```
+
+**3. Lógica responsive (JavaScript):**
+
+```javascript
+const FLEX_CONFIG = {
+  naturalWidth: 415,
+  naturalHeight: 656,
+  paddingX: 40,   // 20px a cada lado
+  paddingY: 30    // 15px arriba y abajo
+};
+
+function calculateFlexScale() {
+  const viewport = window.visualViewport || window;
+  const availableWidth = viewport.width - FLEX_CONFIG.paddingX;
+  const availableHeight = viewport.height - FLEX_CONFIG.paddingY;
+  
+  return Math.max(
+    0.25,
+    Math.min(
+      1,
+      availableWidth / FLEX_CONFIG.naturalWidth,
+      availableHeight / FLEX_CONFIG.naturalHeight
+    )
+  );
+}
+
+function applyFlexScale() {
+  const scale = calculateFlexScale();
+  document.documentElement.style.setProperty("--flex-scale", scale);
+}
+
+// Aplicar escala inicial y en cada cambio
+applyFlexScale();
+window.addEventListener("resize", applyFlexScale);
+window.visualViewport?.addEventListener("resize", applyFlexScale);
+
+// Mostrar modal
+document.querySelector("#payment-modal").classList.add("is-open");
+document.querySelector("#payment-modal").setAttribute("aria-hidden", "false");
+
+// Inicializar Flex
+paymentForm.init(
+  document.querySelector("#flex-container"),
+  responseCallback,
+  trackingCallback,
+  onErrorCallback
+);
+```
+
+**4. Limpiar al cerrar:**
+
+```javascript
+function closePaymentModal() {
+  window.removeEventListener("resize", applyFlexScale);
+  window.visualViewport?.removeEventListener("resize", applyFlexScale);
+  
+  document.querySelector("#payment-modal").classList.remove("is-open");
+  document.querySelector("#payment-modal").setAttribute("aria-hidden", "true");
+}
+```
+
+---
+
+## Validación recomendada
+
+Antes de pasar a producción, prueba estos escenarios críticos:
+
+### ✅ Desktop (viewport amplio)
+- [ ] Formulario en escala 1 (sin reducción)
+- [ ] Centrado horizontalmente
+- [ ] Sin scroll horizontal
+- [ ] Márgenes respetados
+
+### ✅ Mobile Vertical (portrait)
+- [ ] Formulario cabe completamente sin cortes
+- [ ] Scroll vertical funciona si es necesario
+- [ ] Campos de entrada accesibles
+- [ ] Botones clickeables
+
+### ✅ Mobile Horizontal (landscape)
+- [ ] Se adapta sin scroll horizontal
+- [ ] Sin contenido cortado
+- [ ] Sigue centrado
+
+### ✅ Cambio de Orientación
+- [ ] Escala se recalcula automáticamente
+- [ ] No requiere reiniciar Flex
+- [ ] Transición suave (sin parpadeos)
+
+### ✅ Teclado Virtual (Mobile)
+- [ ] Campo activo visible
+- [ ] No oculta botones críticos
+- [ ] Se puede desplazar si es necesario
+
+---
+
+## Troubleshooting
+
+| Problema | Causa | Solución |
+| :-- | :-- | :-- |
+| Formulario cortado | Viewport muy pequeño | Verifica `FLEX_CONFIG.paddingX/Y` |
+| Descentrado | `transform-origin` incorrecto | Asegura `transform-origin: top left` |
+| Scroll horizontal | Estilos forzados en elementos internos | No modifiques `width`, `padding` de Flex |
+| No responde a rotación | `visualViewport` no observado | Agrega listener a `visualViewport` |
+| Texto muy pequeño | Escala por debajo de 0.5 | Aumenta `paddingX/Y` o usa `minScale: 0.5` |
+
+---
+
+## Siguiente paso
+
+- **[Capturar funciones callback](/checkout-web/flex/capturar-funciones-callback)** – Define `responseCallback`, `trackingCallback` y `onErrorCallback`
+- **[Construcción del payload](/checkout-web/flex/construccion-del-payload)** – Referencia de parámetros del objeto de operación
