@@ -1,0 +1,101 @@
+---
+title: "Definiciones pendientes"
+description: "Elementos aún no definidos que formarán parte de la referencia técnica de Transit."
+icon: "list-check"
+---
+
+La guía funcional v0.13 no define todavía todos los detalles de integración del **Sistema de Control de Carril de CELSAT (SCC)**. Deben incorporarse progresivamente antes del hito que los necesite.
+
+<Warning>
+  No completes estos puntos con supuestos. Una decisión funcional o un ejemplo no debe convertirse en un contrato técnico hasta que Alignet y CELSAT lo confirmen.
+</Warning>
+
+## Arquitectura técnica confirmada
+
+La referencia de arquitectura establece:
+
+- comunicación local por LAN mediante HTTP/REST o TCP Socket;
+- aplicación Agente ECR local instalada en el terminal P5L PIN Pad;
+- puertos de referencia `8080` y `9090` para el Agente ECR;
+- PaymePOS SDK distribuido como `.aar` de Alignet;
+- Wiseasy SDK distribuido como `.aar` para acceder al hardware;
+- comunicación externa del PaymePOS SDK con el backend Alignet Transit mediante HTTPS con TLS 1.3.
+
+## Definiciones pendientes
+
+Pendiente antes del desarrollo ECR:
+
+- selección definitiva entre HTTP/REST y TCP Socket;
+- asignación definitiva del puerto `8080` o `9090`;
+- rol de conexión y ciclo de vida del socket, si se selecciona TCP Socket;
+- recursos, verbos y contratos, si se selecciona HTTP/REST;
+- versión de los `.aar` de PaymePOS SDK y Wiseasy SDK;
+- dependencias y requisitos de ejecución;
+- interfaz entre el Agente ECR y el PaymePOS SDK;
+- métodos y callbacks disponibles en el PaymePOS SDK;
+- modelos de entrada y salida;
+- representación técnica de estados y resultados;
+- mecanismo de consulta y recuperación;
+- reglas técnicas de cancelación;
+- diferencias operativas y de mensajería entre chip EMV y EMV Contactless/NFC, si aplican;
+- parámetros de conexión local.
+
+## API y autenticación
+
+Pendiente antes de la integración QA:
+
+- endpoints y hosts definitivos;
+- métodos u operaciones expuestas;
+- schemas de request y response;
+- catálogo técnico de errores;
+- mecanismo de autenticación;
+- ubicación técnica de `client_id`, `client_secret` y `merchant_code` (MID / idComercio);
+- vigencia y renovación de credenciales;
+- credenciales de QA, que se entregarán por un canal seguro.
+
+## Parámetros operativos
+
+Pendiente antes de UAT o del piloto, según corresponda:
+
+- política funcional y valores de timeout;
+- catálogo externo de `reasonCode`;
+- punto hasta el cual se permite cancelar;
+- objetivos de tiempos basados en pruebas;
+- política ante indisponibilidad WAN;
+- comportamiento offline, si llegara a habilitarse.
+
+## Seguridad de red
+
+Pendiente antes de UAT:
+
+- controles de acceso;
+- certificados o credenciales aplicables;
+- reglas de firewall;
+- requisitos de proxy, VLAN o allowlists;
+- almacenamiento y rotación de secretos.
+
+## Catálogos y datos de CELSAT
+
+Pendiente de información del integrador:
+
+- maestro definitivo de puntos de peaje, casetas y carriles;
+- categorías vehiculares y sentidos;
+- topología de red;
+- volúmenes y concurrencia;
+- comportamiento de barrera ante fallas;
+- formato del comprobante.
+
+## Hitos previstos
+
+| Tema | Hito requerido |
+| --- | --- |
+| Interfaz CELSAT / Sistema de Carril ↔ Agente ECR local | Antes del desarrollo ECR. |
+| Integración Agente ECR ↔ PaymePOS SDK ↔ Wiseasy SDK | Antes del desarrollo ECR. |
+| API y autenticación | Antes de la integración QA. |
+| Política de timeout | Antes del desarrollo. |
+| Valores operativos y objetivos de tiempo | Antes de UAT o piloto. |
+| Seguridad de red | Antes de UAT. |
+
+<Info>
+  La referencia técnica complementará esta guía. No debe alterar la separación entre la decisión operativa `PASS` / `NO_PASS` y el lifecycle financiero de Alignet.
+</Info>

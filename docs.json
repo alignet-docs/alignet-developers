@@ -18,6 +18,7 @@
             "groups": [
               {
                 "group": "Primeros pasos",
+                "public": true,
                 "icon": "shoe-prints",
                 "pages": [
                   "index",
@@ -29,6 +30,7 @@
               },
               {
                 "group": "Integración",
+                "public": true,
                 "icon": "wrench",
                 "pages": [
                   {
@@ -251,6 +253,7 @@
               },
               {
                 "group": "Pagos",
+                "public": true,
                 "icon": "credit-card",
                 "pages": [
                   {
@@ -273,6 +276,7 @@
               },
               {
                 "group": "Gestión y Operaciones",
+                "public": true,
                 "icon": "clipboard-user",
                 "pages": [
                   {
@@ -305,7 +309,13 @@
           },
           {
             "tab": "API Docs",
-            "openapi": "openapi.json"
+            "groups": [
+              {
+                "group": "Referencia API",
+                "public": true,
+                "openapi": "openapi.json"
+              }
+            ]
           }
         ]
       },
@@ -315,6 +325,7 @@
         "pages": [
           {
             "group": "Guía",
+            "public": true,
             "icon": "folder-bookmark",
             "pages": [
               {
@@ -371,6 +382,7 @@
         "groups": [
           {
             "group": "Guía",
+            "public": true,
             "pages": [
               {
                 "group": "Procesamiento Adquirente",
@@ -398,6 +410,44 @@
               }
             ],
             "icon": "folder-bookmark"
+          },
+          {
+            "group": "En procesamiento",
+            "icon": "lock",
+            "pages": [
+              {
+                "group": "Alignet Transit",
+                "icon": "road",
+                "pages": [
+                  "procesamiento-fisico/alignet-transit/introduccion",
+                  {
+                    "group": "Conceptos comunes",
+                    "icon": "diagram-project",
+                    "pages": [
+                      "procesamiento-fisico/alignet-transit/arquitectura-y-trazabilidad",
+                      "procesamiento-fisico/alignet-transit/contrato-funcional",
+                      "procesamiento-fisico/alignet-transit/operacion-y-recuperacion"
+                    ]
+                  },
+                  {
+                    "group": "Integradores",
+                    "icon": "people-arrows",
+                    "pages": [
+                      {
+                        "group": "CELSAT",
+                        "icon": "road-barrier",
+                        "pages": [
+                          "procesamiento-fisico/alignet-transit/integradores/celsat/interfaz-scc-p5l",
+                          "procesamiento-fisico/alignet-transit/integradores/celsat/qa-uat",
+                          "procesamiento-fisico/alignet-transit/integradores/celsat/informacion-requerida",
+                          "procesamiento-fisico/alignet-transit/integradores/celsat/definiciones-pendientes"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
           }
         ]
       }
