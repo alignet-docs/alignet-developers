@@ -1,5 +1,21 @@
 # Implementación de documentación Alignet Transit
 
+## Actualización con backlog v0.14: 17 de agosto de 2026
+
+Se contrastó la documentación publicada con `CELSAT_ALIGNET_TRANSIT_IMPLEMENTATION_BACKLOG_v0_14.md` y el documento de responsabilidades de Alignet Transit para peajes.
+
+La actualización incorpora:
+
+- ownership explícito entre Alignet, CELSAT y terceros;
+- fases F0 a F4 con condiciones verificables de avance;
+- condición de salida de Fase 0 antes del desarrollo comprometido del contrato ECR;
+- responsabilidades separadas para preparar y aprobar QA/UAT;
+- corrección del flujo para que `PASS` / `NO_PASS` no se derive automáticamente del lifecycle financiero;
+- regla explícita que mantiene `transactionId` separado de `operationNumber`;
+- advertencias sobre timeout, operación offline, pseudocódigo técnico y objetivos de latencia no medidos.
+
+El estado informado por las fuentes continúa siendo documental: no existe evidencia revisada de implementación, PoC validado en P5L físico, ambiente QA operativo o UAT ejecutada.
+
 ## AS-IS
 
 ### Estructura encontrada
@@ -45,7 +61,7 @@ PaymePOS SDK documenta un SDK Android embebido. Su contrato usa `PaymeClient`, o
 
 ### Matriz PaymePOS SDK vs. Transit / P5L PIN Pad
 
-| Tema | PaymePOS SDK actual | Transit / P5L PIN Pad según guía v0.13 | Acción implementada |
+| Tema | PaymePOS SDK actual | Transit / P5L PIN Pad según backlog v0.14 | Acción implementada |
 | --- | --- | --- | --- |
 | Introducción | SDK Android para POS compatibles; tarjeta y QR. | CELSAT envía la solicitud por LAN al Agente ECR local del P5L PIN Pad; el agente invoca el PaymePOS SDK, que utiliza el Wiseasy SDK y se comunica con el backend Alignet Transit. | Nueva introducción Transit; contrato específico pendiente. |
 | Parámetros | `PMAuthorizationRequest` con `operationNumber`, `amount`, `currency` y campos del SDK. | Incluye además `tollPointId`, `laneId`, `eventDateTime`, `vehicleCategory` y `laneDirection`. | Contrato funcional documentado; compatibilidad del modelo `PM*` pendiente. |
@@ -74,7 +90,7 @@ Se extendió el producto existente **Procesamiento** sin mover ni reescribir **P
 ```text
 Procesamiento
 ├── Guía (público)
-└── En procesamiento (protegido)
+└── Integraciones (protegido)
     └── Alignet Transit
         ├── Introducción
         ├── Conceptos comunes
@@ -83,10 +99,11 @@ Procesamiento
         │   └── Operación y recuperación
         └── Integradores
             └── CELSAT
-                ├── Integración con el Agente ECR local
-                ├── QA y UAT
-                ├── Información requerida a CELSAT
-                └── Definiciones pendientes
+                ├── Integración del SCC con el P5L
+                ├── Responsabilidades y preparación
+                ├── Configuración y coordinación técnica
+                ├── Pruebas de integración y UAT
+                └── Información para la habilitación
 ```
 
 Los conceptos reutilizables de Transit viven fuera de `integradores/celsat`. Las coordinaciones, equipos, maestros y requisitos propios del primer integrador viven dentro de esa carpeta. Esta separación permite añadir otros integradores, concesionarias, terminales, documentación ECR, referencia API, certificación, piloto y producción sin convertir CELSAT en la raíz del producto.
@@ -103,13 +120,14 @@ El recorrido responde de forma progresiva a:
 6. cómo recuperar resultados inciertos;
 7. cómo preparar QA/UAT;
 8. qué debe proporcionar CELSAT;
-9. qué detalles técnicos siguen pendientes.
+9. quién es responsable de cada parte;
+10. qué parámetros se configuran y coordinan por ambiente.
 
 ### Separación público/protegido
 
 - Los grupos existentes de Pagos Virtuales, Pagos Fisicos y Procesamiento fueron marcados con `public: true` en el nivel de grupo adecuado.
 - API Docs se envolvió en el grupo público **Referencia API**, conservando la generación desde `openapi.json`.
-- **En procesamiento** no incluye `public: true`. Cuando se habilite autenticación parcial, sus páginas requerirán autenticación incluso mediante URL directa.
+- **Integraciones** no incluye `public: true`. Cuando se habilite autenticación parcial, sus páginas requerirán autenticación incluso mediante URL directa.
 - Ninguna página de PaymePOS SDK fue movida o modificada.
 
 ## Archivos creados
@@ -119,14 +137,18 @@ El recorrido responde de forma progresiva a:
 - `procesamiento-fisico/alignet-transit/contrato-funcional.mdx`
 - `procesamiento-fisico/alignet-transit/operacion-y-recuperacion.mdx`
 - `procesamiento-fisico/alignet-transit/integradores/celsat/interfaz-scc-p5l.mdx`
+- `procesamiento-fisico/alignet-transit/integradores/celsat/responsabilidades-y-preparacion.mdx`
+- `procesamiento-fisico/alignet-transit/integradores/celsat/configuracion-y-coordinacion.mdx`
 - `procesamiento-fisico/alignet-transit/integradores/celsat/qa-uat.mdx`
 - `procesamiento-fisico/alignet-transit/integradores/celsat/informacion-requerida.mdx`
-- `procesamiento-fisico/alignet-transit/integradores/celsat/definiciones-pendientes.mdx`
 - `IMPLEMENTACION_DOCUMENTACION_TRANSIT.md`
 
 ## Archivos modificados
 
 - `docs.json`: se añadieron indicadores públicos a la navegación existente, se mantuvo pública la referencia OpenAPI y se agregó la navegación protegida de Transit/CELSAT.
+- Las páginas de Alignet Transit se reescribieron como referencia técnica vigente orientada al equipo técnico de CELSAT.
+- Los valores variables se presentan como configuración por ambiente y las definiciones compartidas como coordinación técnica.
+- El archivo de clarificaciones técnicas se mantiene fuera de la navegación destinada a CELSAT.
 - `index.mdx`: se reemplazó el enlace inexistente `/soporte` por el correo de soporte de integración ya configurado en la barra de navegación. El cambio corrige el único enlace roto detectado por el CLI de Mintlify.
 
 No se modificó el contenido técnico de ninguna página pública existente.
@@ -139,7 +161,7 @@ Cambios exactos:
 2. La tab API Docs ahora contiene el grupo `Referencia API`, con `public: true` y `openapi: "openapi.json"`.
 3. Se añadió `public: true` al grupo `Guía` de Pagos Fisicos. Esto conserva como públicas las páginas PaymePOS y PaymePOS SDK.
 4. Se añadió `public: true` al grupo `Guía` de Procesamiento.
-5. Se añadió como hermano el grupo `En procesamiento`, sin propiedad `public`, con la jerarquía Alignet Transit → conceptos comunes / integradores → CELSAT.
+5. Se añadió como hermano el grupo `Integraciones`, sin propiedad `public`, con la jerarquía Alignet Transit → conceptos comunes / integradores → CELSAT.
 
 La contraseña o el proveedor de autenticación no se almacena en `docs.json`.
 
@@ -173,7 +195,7 @@ No se añadieron enlaces de implementación hacia métodos concretos de PaymePOS
 - Transit usa `PASS` / `NO_PASS` como decisión operativa de barrera.
 - CELSAT, no PaymePOS SDK, genera el comprobante en este alcance.
 - Los métodos, callbacks y modelos del SDK POS aplicable a Transit siguen sin definición.
-- Las diferencias técnicas entre chip EMV y EMV Contactless/NFC, si existen, deben quedar definidas en la referencia técnica.
+- Las diferencias técnicas entre chip EMV, EMV Contactless/NFC y QR interoperable se registran en la especificación de interfaz correspondiente.
 
 ## Seguridad
 
@@ -186,7 +208,7 @@ No se añadieron enlaces de implementación hacia métodos concretos de PaymePOS
 
 ### Contenido protegido
 
-- Todo el grupo **En procesamiento**.
+- Todo el grupo **Integraciones**.
 - Todas las páginas de Alignet Transit y CELSAT creadas en esta implementación.
 
 ### Configuración pendiente en Mintlify Dashboard
@@ -230,7 +252,7 @@ La guía v0.13 todavía no define:
 
 ## Próximos pasos
 
-1. Cerrar y publicar la referencia técnica de la interfaz CELSAT–Agente ECR y de la integración Agente ECR–PaymePOS SDK–Wiseasy SDK.
+1. Cerrar y publicar la referencia técnica de la interfaz entre CELSAT y el Agente ECR, además de la integración entre el Agente ECR, PaymePOS SDK y Wiseasy SDK.
 2. Publicar endpoints, schemas, autenticación y catálogo técnico de errores.
 3. Recibir maestros, catálogos, topología y reglas operativas de CELSAT.
 4. Parametrizar QA y entregar credenciales por un canal seguro.

@@ -412,8 +412,8 @@
             "icon": "folder-bookmark"
           },
           {
-            "group": "En procesamiento",
-            "icon": "lock",
+            "group": "Integraciones",
+            "icon": "people-arrows",
             "pages": [
               {
                 "group": "Alignet Transit",
@@ -438,9 +438,10 @@
                         "icon": "road-barrier",
                         "pages": [
                           "procesamiento-fisico/alignet-transit/integradores/celsat/interfaz-scc-p5l",
+                          "procesamiento-fisico/alignet-transit/integradores/celsat/responsabilidades-y-preparacion",
+                          "procesamiento-fisico/alignet-transit/integradores/celsat/configuracion-y-coordinacion",
                           "procesamiento-fisico/alignet-transit/integradores/celsat/qa-uat",
-                          "procesamiento-fisico/alignet-transit/integradores/celsat/informacion-requerida",
-                          "procesamiento-fisico/alignet-transit/integradores/celsat/definiciones-pendientes"
+                          "procesamiento-fisico/alignet-transit/integradores/celsat/informacion-requerida"
                         ]
                       }
                     ]

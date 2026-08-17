@@ -1,81 +1,102 @@
 ---
 title: "Contrato funcional"
-description: "Datos de entrada y resultado operativo de la integración Alignet Transit."
+description: "Información de solicitud, respuesta y estados de la integración Alignet Transit."
 icon: "file-contract"
 ---
 
-El contrato funcional establece la información que CELSAT envía al Agente ECR local instalado en el **terminal P5L PIN Pad**. El agente entrega la operación al PaymePOS SDK provisto por Alignet e integrado dentro del POS. No constituye todavía una referencia técnica de los mensajes o del SDK.
+Esta página describe el contenido funcional intercambiado entre el SCC de CELSAT y el Componente Local de Integración. La especificación versionada de la interfaz formaliza el transporte, la serialización, los schemas, las longitudes y el catálogo de códigos.
 
-Los datos operativos se originan en el **Sistema de Control de Carril de CELSAT (SCC)**. En esta página se utiliza “sistema de control de carril” para las referencias posteriores.
+## Solicitud de pago
 
-<Warning>
-  No implementes nombres de métodos, callbacks, mensajes, endpoints, modelos o mecanismos de autenticación a partir de esta página. Esos detalles permanecen pendientes en la referencia técnica del SDK POS.
-</Warning>
+| Dato funcional | Referencia | Regla | Ejemplo funcional |
+| --- | --- | --- | --- |
+| Referencia CELSAT | `operationNumber` | Identifica una única operación lógica dentro del comercio. | `20100008` |
+| Punto de peaje | `tollPointId` | Código estable procedente del maestro acordado. | `PN005` |
+| Carril | `laneId` | Código estable asociado al punto de peaje. | `L03` |
+| Monto | `amount` | Entero en unidades menores. | `850` para S/ 8.50 |
+| Moneda | `currency` | Código numérico `604` para PEN. | `604` |
+| Fecha del evento | `eventDateTime` | ISO 8601 con zona horaria. | `2026-08-17T14:26:00-05:00` |
+| Categoría vehicular | `vehicleCategory` | Valor del catálogo coordinado. | `<CATEGORIA>` |
+| Sentido del carril | `laneDirection` | Valor del catálogo coordinado. | `<SENTIDO>` |
 
-## Datos enviados por CELSAT
-
-| Campo | Obligatorio | Formato funcional | Descripción | Ejemplo funcional |
-| --- | --- | --- | --- | --- |
-| `operationNumber` | Sí | String | Número de Pedido generado por CELSAT / Sistema de Carril. | `20100008` |
-| `tollPointId` | Sí | String | Código estable del punto de peaje. | `PN005` |
-| `laneId` | Sí | String | Código del carril. | `L03` |
-| `amount` | Sí | Integer, unidades menores | Tarifa calculada por CELSAT. | `850` |
-| `currency` | Sí | Integer, valor fijo | Moneda procesada: soles peruanos. | `604` |
-| `eventDateTime` | Sí | ISO 8601 con zona horaria | Fecha y hora del evento en CELSAT / Sistema de Carril. | `2026-08-14T14:26:00-05:00` |
-| `vehicleCategory` | Sí | Catálogo acordado | Categoría utilizada para calcular la tarifa. | `C1` |
-| `laneDirection` | Sí | Catálogo acordado | Sentido del carril para trazabilidad. | `N` |
+```json
+{
+  "operationNumber": "<REFERENCIA_CELSAT>",
+  "tollPointId": "<CODIGO_PEAJE>",
+  "laneId": "<CODIGO_CARRIL>",
+  "amount": 850,
+  "currency": 604,
+  "eventDateTime": "2026-08-17T14:26:00-05:00",
+  "vehicleCategory": "<CATEGORIA>",
+  "laneDirection": "<SENTIDO>"
+}
+```
 
 <Info>
-  Para este alcance, `currency` debe contener el entero `604`. Otros valores quedan fuera del alcance y serán rechazados.
+  El ejemplo representa el contenido funcional. Los nombres, tipos, obligatoriedad condicional y envoltura corresponden a la versión de interfaz acordada.
 </Info>
 
-CELSAT aporta la referencia, la ubicación operativa, la tarifa y la información del evento. El `merchant_code`, también denominado **MID** o **idComercio** en este proyecto, identifica al comercio según la futura referencia técnica. MCC, `TID`, marca, datos de la credencial de pago y campos de red provienen de la parametrización de Alignet o del procesamiento del terminal.
+## Validaciones del SCC
 
-## Credenciales funcionales previstas
+Antes del envío, CELSAT debe verificar que:
 
-| Credencial | Origen | Uso funcional |
+- la referencia esté presente y no haya sido utilizada para otra operación lógica;
+- peaje y carril pertenezcan al maestro habilitado;
+- el monto sea un entero positivo en unidades menores;
+- `currency` sea `604`;
+- la fecha incluya zona horaria;
+- categoría y sentido pertenezcan a los catálogos configurados;
+- la misma referencia no se reutilice con datos diferentes.
+
+## Respuesta funcional
+
+| Dato | Disponibilidad | Uso de CELSAT |
 | --- | --- | --- |
-| `client_id` | Alignet | Identificar al cliente de integración de CELSAT. |
-| `client_secret` | Alignet | Autenticar de forma confidencial al servicio de CELSAT. |
-| `merchant_code` (MID / idComercio) | Alignet | Identificar el código de comercio y delimitar el ámbito transaccional. Los tres nombres corresponden al mismo identificador en esta integración. |
+| `operationNumber` | En toda respuesta correlacionable. | Relacionar la respuesta con el evento del carril. |
+| `transactionId` | Cuando Alignet haya asignado el identificador. | Soporte, seguimiento y conciliación. |
+| `requestStatus` | En toda respuesta. | Distinguir recepción, validación, proceso, cancelación o finalización. |
+| `result` | Cuando exista una decisión operativa. | Aplicar `PASS` o `NO_PASS` conforme a la política del carril. |
+| `reasonCode` | Cuando el estado o resultado requiera una razón. | Diagnóstico y tratamiento funcional. |
+| `amount` y `currency` | Cuando la solicitud haya sido reconocida. | Validar la operación correlacionada. |
+| `brand` | Cuando se encuentre disponible y habilitado. | Comprobante y registro operativo. |
+| `lastFourDigits` | Cuando se encuentre disponible y permitido. | Comprobante con dato enmascarado. |
 
-<Warning>
-  Las credenciales se entregarán por un canal seguro y no deben incluirse en el repositorio, comprobantes, logs funcionales ni mensajes de soporte. El mecanismo técnico, endpoint, vigencia y renovación todavía no están definidos.
-</Warning>
-
-## Resultado operativo
-
-El sistema de control de carril debe distinguir tres conceptos:
+## Dimensiones de estado
 
 <CardGroup cols={3}>
   <Card title="Estado de solicitud" icon="signal">
-    Indica si la solicitud fue recibida, rechazada, continúa en proceso o fue cancelada.
+    Indica recepción, rechazo de validación, proceso, cancelación o finalización.
   </Card>
   <Card title="Decisión de carril" icon="road-barrier">
-    Usa `PASS` o `NO_PASS` cuando existe una decisión operativa para controlar la barrera.
+    Usa `PASS` o `NO_PASS` cuando existe una decisión operativa válida.
   </Card>
-  <Card title="Lifecycle financiero" icon="money-check-dollar">
-    Corresponde al procesamiento interno posterior y no se reduce a `PASS` o `NO_PASS`.
+  <Card title="Estado financiero" icon="money-check-dollar">
+    Corresponde al ciclo transaccional administrado por Alignet.
   </Card>
 </CardGroup>
 
-| Campo funcional | Disponibilidad | Descripción | Uso |
-| --- | --- | --- | --- |
-| `operationNumber` | En toda respuesta correlacionable | Eco de la referencia de CELSAT. | Correlación. |
-| `transactionId` | Cuando la operación se registra en Alignet | Identificador de Alignet. | Soporte y conciliación. |
-| `requestStatus` | Siempre | Estado de recepción o evolución de la solicitud. | Distinguir aceptación, rechazo, proceso o cancelación. |
-| `result` | Cuando exista una decisión de barrera | `PASS` o `NO_PASS`. | Control de barrera. |
-| `reasonCode` | Cuando el estado o resultado lo requiera | Motivo funcional asociado. | Diagnóstico. |
-| `amount` / `currency` | Cuando la solicitud haya sido reconocida | Eco del monto y la moneda. | Validación. |
-| `brand` | Cuando esté disponible | Marca detectada durante la interacción con el medio de pago. | Comprobante y reporting. |
-| `lastFourDigits` | Cuando esté disponible y permitido | Últimos cuatro dígitos enmascarados. | Comprobante y reporting. |
+Reglas de interpretación:
 
-<Info>
-  El SDK POS devolverá el resultado al sistema de carril. Los nombres y valores técnicos definitivos de `requestStatus`, `result` y `reasonCode` se publicarán en la referencia técnica.
-</Info>
+- una solicitud aceptada no equivale a `PASS`;
+- un estado en proceso no autoriza a abrir la barrera;
+- `PASS` no se deriva directamente de un código financiero aislado;
+- un timeout o una respuesta ausente no equivalen a `NO_PASS`;
+- un valor desconocido se registra sin asumir su semántica y activa el flujo de recuperación;
+- `operationNumber` y `transactionId` son identificadores diferentes.
+
+## Credenciales y parámetros de ambiente
+
+| Parámetro | Finalidad | Gestión |
+| --- | --- | --- |
+| `client_id` | Identificar al cliente de integración. | Alignet lo proporciona mediante un canal seguro. |
+| `client_secret` | Autenticar el acceso correspondiente. | Se protege y rota según la política del ambiente. |
+| `merchant_code` / MID / `idComercio` | Delimitar el comercio y el ámbito transaccional. | Alignet lo configura para el ambiente. |
+| `TID` | Identificar el terminal. | Alignet lo asocia con el P5L y la ubicación operativa. |
+
+No incluyas credenciales en código fuente, repositorios, logs funcionales, comprobantes ni mensajes de soporte.
 
 ## Comprobante
 
-CELSAT genera e imprime el comprobante. Alignet devolverá los datos de trazabilidad disponibles: `operationNumber`, `transactionId`, estado de solicitud, `PASS` o `NO_PASS` cuando exista, `reasonCode` cuando corresponda, monto, moneda, marca y últimos cuatro dígitos cuando estén disponibles y permitidos.
+CELSAT genera e imprime el comprobante. La respuesta puede proporcionar `operationNumber`, `transactionId`, estado, decisión operativa, razón, monto, moneda, marca y últimos cuatro dígitos cuando estos datos se encuentren disponibles y su uso esté permitido.
 
-La impresión mediante PaymePOS SDK no se reutiliza para este flujo porque la guía Transit asigna la generación del comprobante a CELSAT.
+El formato y los campos mostrados se coordinan entre ambas partes y deben respetar las reglas de seguridad aplicables.

@@ -1,95 +1,130 @@
 ---
 title: "Operación y recuperación"
-description: "Flujo nominal, idempotencia, consulta, cancelación y recuperación de Alignet Transit."
+description: "Secuencia, idempotencia, errores, timeouts, cancelación y recuperación."
 icon: "rotate"
 ---
 
-## Flujo nominal
-
-El **Sistema de Control de Carril de CELSAT (SCC)** se comunica por LAN con la aplicación Agente ECR local instalada en el **terminal P5L PIN Pad**. El Agente ECR entrega la operación al PaymePOS SDK integrado dentro del POS. El PaymePOS SDK presenta el monto mediante el Wiseasy SDK, gestiona la interacción con el medio de pago y se comunica con el backend Alignet Transit.
+## Secuencia de referencia
 
 ```mermaid
 sequenceDiagram
-    participant SCC as CELSAT / Sistema de Carril
-    participant ECR as Agente ECR local / P5L PIN Pad
-    participant SDK as PaymePOS SDK
-    participant HW as Wiseasy SDK / hardware
-    participant ALI as Backend Alignet Transit
+    participant SCC as SCC CELSAT
+    participant LOCAL as Componente Local / P5L
+    participant PAY as PaymePOS + Wiseasy
+    participant TRANSIT as Alignet Transit
+    participant TMC as TMC CELSAT
 
-    SCC->>ECR: Consultar disponibilidad por LAN
-    ECR-->>SCC: Estado operativo
-    SCC->>SCC: Calcular tarifa y crear operationNumber
-    SCC->>ECR: Iniciar pago por HTTP/REST o TCP Socket
-    ECR->>SDK: Entregar datos de la operación
-    SDK->>HW: Mostrar monto y habilitar chip o contactless
-    HW-->>SDK: Resultado de la interacción
-    SDK->>ALI: Enviar operación por HTTPS TLS 1.3
-    ALI-->>SDK: Resultado y referencias
-    SDK-->>ECR: Resultado operativo con referencia
-    ECR-->>SCC: PASS / NO_PASS con referencia
-    SCC->>SCC: Aplicar política de barrera y registrar evento
+    SCC->>LOCAL: Consultar disponibilidad
+    LOCAL-->>SCC: Estado del terminal
+    SCC->>SCC: Calcular tarifa y asignar referencia
+    SCC->>LOCAL: Solicitud de pago correlacionada
+    LOCAL-->>SCC: Aceptación o rechazo de solicitud
+    LOCAL->>PAY: Iniciar interacción de pago
+    PAY->>TRANSIT: Procesar transacción por canal seguro
+    TRANSIT-->>PAY: Resultado y transactionId
+    PAY-->>LOCAL: Resultado correlacionado
+    LOCAL-->>SCC: Estado y decisión operativa
+    SCC->>TMC: Registrar referencias y resultado
+    SCC->>SCC: Aplicar política de barrera
 ```
 
-El diagrama representa el flujo funcional basado en la arquitectura de referencia. La selección entre HTTP/REST o TCP Socket, el puerto local aplicable y los contratos de mensajes deben confirmarse en la referencia técnica.
+El resultado puede entregarse mediante consulta, notificación o una conexión persistente. El mecanismo aplicable se registra en la especificación de interfaz acordada.
 
-## Reglas de integridad
-
-| Capacidad | Regla | Comportamiento esperado |
-| --- | --- | --- |
-| Idempotencia | Reenviar una misma operación no debe producir un segundo efecto financiero. | Recuperar la operación existente. |
-| Payload inconsistente | La misma clave con datos distintos no debe aceptarse como una nueva operación. | Devolver conflicto o error de validación. |
-| Consulta de estado | CELSAT / Sistema de Carril debe poder resolver una operación cuyo resultado no recibió. | Consultar por `operationNumber` o `transactionId`, según defina la referencia técnica. |
-| Recuperación | Antes de retransmitir o reemplazar una misma solicitud lógica, CELSAT / Sistema de Carril consulta la referencia previa. | Evitar doble cobro. |
-| Cancelación | Cerrar una solicitud antes de que la interacción haya superado el punto permitido. | Cancelación aceptada o resultado ya existente. |
-
-<Warning>
-  La ausencia de `result`, un timeout o una pérdida de comunicación no equivalen a `NO_PASS`.
-</Warning>
-
-## Recuperar un resultado incierto
+## Secuencia del lado CELSAT
 
 <Steps>
-  <Step title="Conservar la referencia">
-    Mantén `operationNumber` y, si ya fue recibido, `transactionId`.
+  <Step title="Validar disponibilidad">
+    Consulta el estado del terminal antes de iniciar una operación.
   </Step>
-  <Step title="Restablecer la comunicación">
-    Espera a que el canal local o externo necesario vuelva a estar disponible.
+  <Step title="Persistir la referencia">
+    Genera y almacena `operationNumber` junto con los datos del evento antes del envío.
   </Step>
-  <Step title="Consultar antes de reintentar">
-    Recupera el último estado conocido de la referencia previa.
+  <Step title="Enviar la solicitud">
+    Remite el monto, moneda, ubicación, categoría, sentido y fecha mediante la interfaz local.
   </Step>
-  <Step title="Aplicar el resultado recuperado">
-    Usa `PASS` o `NO_PASS` únicamente cuando la consulta devuelva una decisión operativa.
+  <Step title="Registrar la aceptación">
+    Distingue la aceptación del mensaje del resultado final del pago.
   </Step>
-  <Step title="Aplicar la política acordada">
-    Si el resultado continúa incierto, sigue la política de barrera definida conjuntamente. No infieras `NO_PASS`.
+  <Step title="Seguir la operación">
+    Espera o consulta usando siempre la misma referencia.
+  </Step>
+  <Step title="Resolver el evento">
+    Registra el resultado, aplica la política de barrera y genera el comprobante cuando corresponda.
   </Step>
 </Steps>
 
-## Flujos de excepción
+## Idempotencia
 
-<AccordionGroup>
-  <Accordion title="Pérdida de comunicación local" icon="link-slash">
-    Al recuperar la conexión, el sistema de control de carril consulta la operación previa antes de reintentar. El objetivo es evitar duplicidad.
-  </Accordion>
-  <Accordion title="Vehículo abandona antes de presentar el medio de pago" icon="car-side">
-    El sistema de carril solicita cerrar o cancelar la operación si todavía es posible. El punto técnico hasta el cual procede la cancelación queda pendiente.
-  </Accordion>
-  <Accordion title="Resultado no recibido" icon="clock">
-    El sistema de carril conserva `operationNumber`, consulta el último estado conocido y no interpreta el timeout como `NO_PASS`.
-  </Accordion>
-  <Accordion title="P5L PIN Pad no disponible" icon="terminal">
-    El sistema de carril detecta la indisponibilidad antes de iniciar el pago y aplica su política operativa.
-  </Accordion>
-  <Accordion title="Indisponibilidad WAN" icon="wifi-exclamation">
-    La comunicación local permanece conceptualmente separada de la salida externa. El comportamiento se regirá por una política operativa que todavía debe acordarse.
-  </Accordion>
-</AccordionGroup>
+| Escenario | Comportamiento esperado |
+| --- | --- |
+| Misma referencia y mismos datos | Recuperar la operación existente sin producir un segundo efecto financiero. |
+| Misma referencia con datos distintos | Rechazar la solicitud como conflicto o inconsistencia. |
+| Respuesta no recibida | Consultar la referencia original antes de retransmitir. |
+| Reinicio del SCC | Recuperar referencias abiertas desde almacenamiento persistente y consultar su estado. |
+| Reconexión LAN | Resolver el último estado antes de decidir otro envío. |
 
-## Capas de software dentro del P5L PIN Pad
+CELSAT debe conservar una huella de los datos relevantes asociados a `operationNumber` para detectar una reutilización inconsistente.
 
-El P5L PIN Pad ejecuta una aplicación Agente ECR local que recibe las solicitudes de CELSAT. Dentro de esta aplicación, el PaymePOS SDK de Alignet contiene la lógica de pago y utiliza el Wiseasy SDK para acceder al hardware del POS. El PaymePOS SDK también gestiona la comunicación externa con el backend Alignet Transit.
+## Timeouts y resultado incierto
 
-<Warning>
-  La versión de los `.aar`, la selección del protocolo local, el puerto, los métodos y los modelos aplicables a Transit se confirmarán en la referencia técnica. No asumas que todos los ejemplos del PaymePOS SDK público constituyen el contrato definitivo de esta integración.
-</Warning>
+Los timeouts son parámetros configurables por ambiente. Se coordinan considerando la red, el mecanismo de respuesta y el tiempo operativo del carril.
+
+```mermaid
+flowchart TD
+    A[Solicitud enviada] --> B{¿Respuesta recibida?}
+    B -->|Sí| C[Procesar estado correlacionado]
+    B -->|No| D[Conservar referencia<br/>Resultado incierto]
+    D --> E[Restablecer comunicación]
+    E --> F[Consultar operación original]
+    F --> G{¿Existe decisión válida?}
+    G -->|Sí| H[Aplicar PASS o NO_PASS]
+    G -->|No| I[Aplicar política operativa acordada]
+```
+
+Ante un timeout, el SCC debe:
+
+1. conservar `operationNumber` y `transactionId`, si fue recibido;
+2. registrar la operación como no resuelta, sin convertirla en `NO_PASS`;
+3. restablecer la comunicación;
+4. consultar el estado de la referencia original;
+5. aplicar una decisión únicamente cuando sea válida;
+6. ejecutar reintentos conforme a las reglas de idempotencia acordadas;
+7. escalar el caso si continúa sin resolución.
+
+## Cancelación
+
+El SCC puede solicitar una cancelación cuando el estado lo permita. La respuesta funcional indica:
+
+- cancelación aceptada;
+- cancelación no aplicable por el estado alcanzado; o
+- resultado ya disponible.
+
+El punto operativo de no retorno y los códigos asociados se registran en la especificación de interfaz. Una respuesta de cancelación incierta debe resolverse mediante consulta.
+
+## Manejo de errores
+
+| Categoría | Tratamiento en el SCC |
+| --- | --- |
+| Validación | Corregir los datos y seguir la regla definida para la referencia. |
+| Terminal ocupado o no disponible | No iniciar el pago y aplicar la política del carril. |
+| Duplicado consistente | Recuperar la operación existente. |
+| Duplicado inconsistente | Registrar el conflicto y no tratarlo como una operación nueva. |
+| Pérdida de comunicación | Conservar la referencia y ejecutar consulta y recuperación. |
+| Timeout | No inferir `NO_PASS`; consultar el estado. |
+| Código desconocido | Registrar el valor original y tratar el resultado como no resuelto. |
+| Error de seguridad | Detener el envío y escalar por el canal técnico acordado. |
+
+## Logging de CELSAT
+
+Registra, cuando se encuentren disponibles:
+
+- `operationNumber` y `transactionId`;
+- peaje, carril, categoría y sentido;
+- monto y moneda;
+- fecha del evento, envío y recepción;
+- estado, resultado y razón;
+- intentos de consulta o recuperación;
+- eventos de conexión, timeout y reinicio;
+- versión del contrato y terminal asociado.
+
+No registres credenciales, PAN completo, datos EMV sensibles ni material criptográfico.

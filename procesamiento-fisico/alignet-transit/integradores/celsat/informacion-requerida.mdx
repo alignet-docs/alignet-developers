@@ -1,55 +1,91 @@
 ---
-title: "Información requerida a CELSAT"
-description: "Datos operativos y de red necesarios para completar la integración y las pruebas."
-icon: "clipboard-question"
+title: "Información para la habilitación"
+description: "Información operativa y técnica que CELSAT proporciona para configurar la integración."
+icon: "clipboard-list"
 ---
 
-Alignet necesita información del **Sistema de Control de Carril de CELSAT (SCC)** o de la concesionaria para completar la parametrización, cerrar la referencia técnica y preparar las pruebas.
+Alignet utiliza la siguiente información de CELSAT para parametrizar terminales, preparar conectividad y validar la integración. Los valores se consolidan en las fichas de configuración del ambiente.
 
-| Información | Finalidad | Formato esperado |
+## Arquitectura del SCC
+
+- plataforma tecnológica, sistema operativo y runtime;
+- topología por plaza y carril;
+- modelo de despliegue, redundancia y reinicio;
+- componente que consumirá la interfaz local;
+- integración actual con periféricos y TMC;
+- capacidad de almacenamiento persistente de operaciones abiertas.
+
+## Red y conectividad
+
+- topología LAN de los puntos participantes;
+- rangos IP, VLAN, gateway y DNS;
+- uso de DHCP o direccionamiento fijo;
+- restricciones de puertos y servicios en escucha;
+- firewall, proxy, inspección TLS y allowlists;
+- requisitos de autenticación dentro de la LAN;
+- fuente de sincronización horaria;
+- restricciones para acceso remoto en ambientes de prueba.
+
+## Inventario operativo
+
+| Información | Contenido esperado | Finalidad |
 | --- | --- | --- |
-| Maestro de los 19 peajes y sus 21 casetas | Configurar `tollPointId`, `laneId` y la asociación con terminales. | Código estable, nombre y relación peaje-caseta/carril. |
-| Alcance de unicidad de `operationNumber` | Aplicar idempotencia. | Confirmar que sea único globalmente dentro del código de comercio. |
-| Topología de red de los puntos de prueba | Preparar conectividad LAN/WAN. | Rangos IP, VLAN, DHCP o IP fija, gateway, firewall o proxy si aplica. |
-| Categorías vehiculares | Validar los datos de inicio. | Código y descripción utilizados por CELSAT / Sistema de Carril. |
-| Volumen y concurrencia esperados | Dimensionar las pruebas. | TPS o picos y número de carriles simultáneos. |
-| Comportamiento de barrera ante fallas locales | Alinear los escenarios operativos. | Reglas vigentes de CELSAT / Sistema de Carril. |
-| Formato del comprobante | Implementar la impresión a cargo de CELSAT. | Diseño de CELSAT con los datos de trazabilidad devueltos por Alignet. |
+| Puntos de peaje | Código estable y nombre. | Parametrización de `tollPointId`. |
+| Casetas o carriles | Código, peaje asociado y sentido. | Parametrización de `laneId`. |
+| Terminales | Relación prevista entre P5L y carril. | Asociación con TID y serial. |
+| Categorías | Código y descripción. | Validación de `vehicleCategory`. |
+| Sentidos | Código y descripción. | Validación de `laneDirection`. |
+| Volumen | Promedio, pico y carriles simultáneos. | Pruebas de capacidad y concurrencia. |
 
-## Checklist de coordinación
+## Operaciones y estados
 
-<Steps>
-  <Step title="Consolidar maestros">
-    Entrega la relación definitiva de peajes, casetas y carriles con códigos estables.
-  </Step>
-  <Step title="Confirmar referencias">
-    Documenta cómo genera el sistema de control de carril `operationNumber` y confirma su alcance de unicidad.
-  </Step>
-  <Step title="Describir la red">
-    Proporciona la topología de laboratorio y de los puntos que participarán en el piloto.
-  </Step>
-  <Step title="Entregar catálogos">
-    Comparte categorías vehiculares y sentidos utilizados por el sistema de carril.
-  </Step>
-  <Step title="Definir la operación ante fallas">
-    Describe cómo debe comportarse la barrera ante indisponibilidad local, resultado incierto o indisponibilidad del terminal P5L PIN Pad.
-  </Step>
-  <Step title="Acordar evidencias">
-    Define el comprobante esperado y los logs o registros necesarios para QA/UAT.
-  </Step>
-</Steps>
+- formato, longitud, caracteres y ámbito de unicidad de `operationNumber`;
+- datos disponibles al momento de iniciar el pago;
+- representación del monto en unidades menores;
+- estados que utiliza el SCC para dispositivos del carril;
+- comportamiento de barrera ante `PASS`, `NO_PASS`, indisponibilidad y resultado incierto;
+- timeouts actuales de conexión y respuesta;
+- reglas de reintento del SCC;
+- comportamiento ante pérdida de comunicación;
+- recuperación después de reinicio del SCC o P5L;
+- eventos que originan una solicitud de cancelación;
+- tratamiento de códigos desconocidos.
 
-<Note>
-  Esta página no asigna valores a los datos pendientes. Los catálogos, códigos, capacidades y reglas deben provenir de CELSAT o acordarse entre ambas partes.
-</Note>
+## Trazabilidad y comprobante
 
-## Dependencias para continuar
+- datos registrados en el TMC;
+- logs disponibles para investigación conjunta;
+- política de retención y acceso;
+- formato del comprobante;
+- datos requeridos en el ticket;
+- restricciones de seguridad aplicables a logs y comprobantes.
+
+## Ambiente de pruebas
+
+- instancia o simulador disponible del SCC;
+- topología y accesos del laboratorio;
+- peajes, carriles, categorías y tarifas representativas;
+- escenarios de excepción requeridos;
+- evidencias y criterios de aceptación de CELSAT;
+- contactos técnicos para SCC, red, seguridad, operación y QA.
+
+## Formatos recomendados de entrega
 
 <CardGroup cols={2}>
-  <Card title="QA y UAT" icon="flask-vial" href="/procesamiento-fisico/alignet-transit/integradores/celsat/qa-uat">
-    Revisa el ambiente, los equipos, los casos mínimos y los criterios de salida.
+  <Card title="Maestros" icon="table">
+    Archivo estructurado con código, descripción y relaciones entre entidades.
   </Card>
-  <Card title="Definiciones pendientes" icon="list-check" href="/procesamiento-fisico/alignet-transit/integradores/celsat/definiciones-pendientes">
-    Consulta el detalle que debe incorporarse a la referencia técnica.
+  <Card title="Topología" icon="network-wired">
+    Diagrama de red acompañado de una tabla de direccionamiento y reglas.
+  </Card>
+  <Card title="Política operativa" icon="road-barrier">
+    Matriz de escenario, estado recibido, acción de barrera y escalamiento.
+  </Card>
+  <Card title="Pruebas" icon="flask-vial">
+    Casos, datos, resultado esperado y evidencia requerida.
   </Card>
 </CardGroup>
+
+<Note>
+  Las credenciales, certificados y datos sensibles deben utilizar el canal seguro acordado y no adjuntarse a documentos de circulación general.
+</Note>

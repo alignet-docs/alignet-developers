@@ -1,71 +1,115 @@
 ---
-title: "Integración con el Agente ECR local"
-description: "Interfaz entre el sistema de carril y las capas de software instaladas en el terminal P5L PIN Pad."
+title: "Integración del SCC con el P5L"
+description: "Guía técnica para adaptar el SCC de CELSAT a la interfaz local del terminal."
 icon: "ethernet"
 ---
 
-Esta página describe la integración entre el **Sistema de Control de Carril de CELSAT (SCC)** y la aplicación Agente ECR local instalada en el **terminal P5L PIN Pad**. El Agente ECR recibe la solicitud por LAN, utiliza el PaymePOS SDK de Alignet y accede al hardware mediante el Wiseasy SDK.
+El SCC de CELSAT se comunica mediante la LAN del carril con el **Componente Local de Integración** disponible en el terminal P5L. Esta es la única interfaz que CELSAT debe consumir para iniciar, seguir y recuperar operaciones de pago.
 
-<Warning>
-  La arquitectura de referencia contempla HTTP/REST o TCP Socket y los puertos `8080` o `9090`. La selección definitiva del protocolo, el puerto y el contrato de mensajes todavía debe confirmarse.
-</Warning>
+## Capacidades de la interfaz
 
-## Responsabilidad del sistema de control de carril
+| Capacidad | Acción del SCC | Resultado esperado |
+| --- | --- | --- |
+| Consultar disponibilidad | Verificar el P5L antes de iniciar. | Estado disponible, ocupado o no disponible según el catálogo acordado. |
+| Iniciar pago | Enviar referencia, monto, moneda y datos del carril. | Aceptación o rechazo de validación correlacionado. |
+| Consultar operación | Solicitar el último estado mediante la referencia acordada. | Estado reproducible y resultado, si está disponible. |
+| Recibir o recuperar resultado | Consumir el resultado por el mecanismo configurado. | Decisión operativa y referencias asociadas. |
+| Solicitar cancelación | Cerrar una operación que se encuentre en un estado cancelable. | Cancelación, estado ya alcanzado o resultado existente. |
+| Recuperar incertidumbre | Conservar la referencia después de timeout o desconexión. | Resolución sin crear una segunda operación lógica. |
 
-El sistema de control de carril debe:
+Los nombres de comandos, rutas, mensajes y constantes corresponden a la especificación versionada de la interfaz.
 
-- detectar el vehículo y determinar `vehicleCategory`;
-- calcular `amount`;
-- generar un `operationNumber` único globalmente dentro del código de comercio;
-- identificar `tollPointId`, `laneId` y `laneDirection`;
-- informar `eventDateTime` con zona horaria;
-- solicitar y seguir la operación;
-- controlar la barrera con la decisión `PASS` o `NO_PASS`;
-- conservar las referencias para consulta, recuperación y trazabilidad;
-- generar el comprobante con los datos disponibles.
+## Qué debe adaptar CELSAT
 
-## Capacidades de la interfaz local
+```mermaid
+flowchart LR
+    EVENTO[Evento del carril] --> DATOS[Construir solicitud]
+    DATOS --> LAN[Cliente de interfaz local]
+    LAN --> ESTADOS[Interpretar estados]
+    ESTADOS --> RECUP[Consulta y recuperación]
+    RECUP --> BARRERA[Política de barrera]
+    BARRERA --> TMC[Logging, TMC y comprobante]
+```
 
-| ID | Capacidad | Descripción | Criterio funcional |
-| --- | --- | --- | --- |
-| ECR-01 | Estado del terminal | CELSAT / Sistema de Carril consulta al Agente ECR si el P5L PIN Pad está disponible. | `READY` / `NOT_READY` o equivalente. |
-| ECR-02 | Inicio de pago | CELSAT / Sistema de Carril remite los datos al Agente ECR por HTTP/REST o TCP Socket. | Aceptación o rechazo de la solicitud. |
-| ECR-03 | Espera del medio de pago | El Agente ECR invoca el PaymePOS SDK, que muestra el monto mediante el Wiseasy SDK y habilita chip o contactless. | Estado de espera visible. |
-| ECR-04 | Resultado | El PaymePOS SDK se comunica con el backend Alignet Transit y entrega el resultado al Agente ECR. | Decisión `PASS` o `NO_PASS` correlacionada. |
-| ECR-05 | Consulta | CELSAT / Sistema de Carril solicita al Agente ECR recuperar el último estado conocido. | Respuesta reproducible. |
-| ECR-06 | Cancelación | CELSAT / Sistema de Carril solicita la cancelación al Agente ECR cuando proceda. | `CANCELLED` o equivalente. |
-| ECR-07 | Timeout | La interfaz no bloquea el carril indefinidamente ni interpreta un timeout como `NO_PASS`. | Estado incierto, consulta y política acordada. |
+El trabajo técnico del SCC incluye:
 
-Los valores mostrados como `READY`, `NOT_READY` y `CANCELLED` son referencias funcionales tomadas de la guía. No son valores de protocolo definitivos.
+- cliente del protocolo local acordado;
+- gestión de conexión y disponibilidad;
+- construcción y validación de solicitudes;
+- persistencia de `operationNumber` antes del envío;
+- interpretación de estados, resultados y razones;
+- correlación con `transactionId`;
+- consulta, timeout, recuperación y cancelación;
+- idempotencia y control de duplicados;
+- integración con la lógica de barrera;
+- registro en TMC y generación del comprobante;
+- configuración separada por ambiente.
 
-## Secuencia técnica del sistema de carril
+## Secuencia del cliente SCC
 
 <Steps>
-  <Step title="Validar el terminal">
-    Consulta al Agente ECR local la disponibilidad del P5L PIN Pad antes de iniciar una operación.
+  <Step title="Consultar disponibilidad">
+    No inicies una operación si el terminal informa que se encuentra ocupado o no disponible.
   </Step>
-  <Step title="Preparar los datos">
-    Calcula la tarifa, crea `operationNumber` y completa los identificadores del carril.
+  <Step title="Crear la referencia">
+    Asigna una referencia única a la operación lógica y persístela con los datos del evento.
   </Step>
-  <Step title="Iniciar el pago">
-    Envía los datos de la operación al Agente ECR local por la interfaz LAN acordada. El agente entrega la operación al PaymePOS SDK.
+  <Step title="Enviar el pago">
+    Construye la solicitud con monto, moneda, peaje, carril, categoría, sentido y fecha.
   </Step>
-  <Step title="Esperar la interacción">
-    El PaymePOS SDK utiliza el Wiseasy SDK para presentar el monto y esperar que el usuario inserte la tarjeta con chip o acerque una tarjeta, un teléfono o un wearable contactless.
+  <Step title="Separar aceptación de resultado">
+    Registra si la solicitud fue aceptada, pero continúa el seguimiento hasta obtener una decisión válida.
   </Step>
-  <Step title="Resolver el resultado">
-    Procesa `PASS` o `NO_PASS` cuando esté disponible. Ante incertidumbre, consulta antes de reintentar.
+  <Step title="Gestionar incertidumbre">
+    Ante timeout o desconexión, consulta la referencia original antes de cualquier retransmisión.
   </Step>
   <Step title="Cerrar el evento">
-    Aplica la política de barrera, registra las referencias y genera la evidencia requerida.
+    Registra ambas referencias, aplica la política de barrera y genera la evidencia correspondiente.
   </Step>
 </Steps>
 
-## Comportamientos que no deben asumirse
+## Comportamiento ante estados especiales
 
-- Un timeout no es `NO_PASS`.
-- La conectividad LAN no garantiza disponibilidad hacia Alignet.
-- La arquitectura no confirma operación offline.
-- La versión y el contrato técnico de los `.aar` aplicables a Transit deben confirmarse en la referencia técnica.
-- No existe todavía un catálogo técnico de `reasonCode`.
-- La posibilidad de cancelar depende del punto de avance que definirá la referencia técnica.
+<AccordionGroup>
+  <Accordion title="Terminal no disponible" icon="terminal">
+    El SCC no inicia el pago y aplica la política operativa definida para el carril.
+  </Accordion>
+  <Accordion title="Solicitud rechazada" icon="circle-xmark">
+    El SCC registra la razón y corrige los datos antes de otra solicitud. No reutiliza la referencia con un contenido distinto fuera de la regla acordada.
+  </Accordion>
+  <Accordion title="Resultado no recibido" icon="clock">
+    El SCC conserva la referencia, consulta la operación y no interpreta la ausencia de respuesta como `NO_PASS`.
+  </Accordion>
+  <Accordion title="Código desconocido" icon="circle-question">
+    El SCC conserva el valor original, evita asumir su significado y ejecuta el flujo de recuperación o escalamiento.
+  </Accordion>
+  <Accordion title="Pérdida de comunicación" icon="link-slash">
+    Después de restablecer el enlace, el SCC consulta la operación abierta antes de repetir el envío.
+  </Accordion>
+  <Accordion title="Reinicio del SCC" icon="power-off">
+    El SCC recupera las referencias abiertas desde almacenamiento persistente y consulta su último estado.
+  </Accordion>
+</AccordionGroup>
+
+## Requisitos no funcionales del SCC
+
+- almacenamiento persistente de operaciones abiertas;
+- sincronización horaria y zona configurada;
+- conexión LAN estable con monitoreo de disponibilidad;
+- protección de credenciales y configuración;
+- logs correlacionados sin datos sensibles;
+- tolerancia a respuestas duplicadas;
+- capacidad de ignorar campos adicionales compatibles con la versión del contrato;
+- manejo seguro de códigos no reconocidos;
+- aislamiento de operaciones por carril y terminal.
+
+## Siguiente paso
+
+<CardGroup cols={2}>
+  <Card title="Responsabilidades y preparación" icon="people-arrows" href="/procesamiento-fisico/alignet-transit/integradores/celsat/responsabilidades-y-preparacion">
+    Revisa qué entrega cada parte y qué debe preparar CELSAT.
+  </Card>
+  <Card title="Configuración y coordinación" icon="sliders" href="/procesamiento-fisico/alignet-transit/integradores/celsat/configuracion-y-coordinacion">
+    Identifica los valores de ambiente y artefactos compartidos.
+  </Card>
+</CardGroup>
