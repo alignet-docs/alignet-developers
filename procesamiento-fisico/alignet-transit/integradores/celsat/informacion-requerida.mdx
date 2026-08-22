@@ -1,77 +1,73 @@
 ---
 title: "Información para la habilitación"
-description: "Información operativa y técnica que CELSAT proporciona para configurar la integración."
+description: "Información que CELSAT y Alignet coordinan para preparar el ambiente y las pruebas."
 icon: "clipboard-list"
 ---
 
-Alignet utiliza la siguiente información de CELSAT para parametrizar terminales y validar la integración. Los valores se consolidan en las fichas de configuración del ambiente.
+La habilitación requiere información acotada del SCC, del ambiente de pruebas y de la operación del carril. Los detalles internos de la plataforma de pagos no forman parte de esta coordinación.
 
-## Arquitectura del SCC
+## Información de CELSAT
+
+### SCC y despliegue
 
 - plataforma tecnológica, sistema operativo y runtime;
-- topología por plaza y carril;
-- modelo de despliegue, redundancia y reinicio;
-- componente que consumirá la interfaz local;
-- integración actual con periféricos y TMC;
-- capacidad de almacenamiento persistente de operaciones abiertas.
+- componente que realizará las llamadas HTTP;
+- relación entre las instancias del SCC y los carriles de prueba;
+- estrategia de persistencia de operaciones abiertas;
+- procedimiento de recuperación después de reinicio.
 
-## Conectividad con el POS
+### Operaciones
 
-Alignet gestiona la habilitación de la conexión Wi-Fi con el POS. Para las pruebas, CELSAT solo debe confirmar qué SCC se comunicará con cada terminal participante.
+- formato y longitud utilizados para `operationNumber`;
+- regla que garantiza unicidad por venta;
+- importes y referencias de prueba;
+- comportamiento del carril para cada estado financiero;
+- formato del comprobante y datos no sensibles que requiere CELSAT.
 
-## Inventario operativo
+### Pruebas y soporte
 
-| Información | Contenido esperado | Finalidad |
-| --- | --- | --- |
-| Terminales | Inventario de equipos P5L que participarán en las pruebas. | Preparación y soporte de los dispositivos. |
-| Datos adicionales | Nombres y valores que CELSAT decida enviar dentro de `additionalFields`. | Preparación de casos de prueba representativos. |
-| Volumen | Promedio, pico y carriles simultáneos. | Pruebas de capacidad y concurrencia. |
-
-## Operaciones y estados
-
-- formato, longitud, caracteres y ámbito de unicidad de `operationNumber`;
-- datos disponibles al momento de iniciar el pago;
-- representación del monto en unidades menores;
-- estados que utiliza el SCC para dispositivos del carril;
-- comportamiento de barrera ante `PASS`, `NO_PASS`, indisponibilidad y resultado incierto;
-- timeouts actuales de conexión y respuesta;
-- reglas de reintento del SCC;
-- comportamiento ante pérdida de comunicación;
-- recuperación después de reinicio del SCC o P5L;
-- eventos que originan una solicitud de cancelación;
-- tratamiento de códigos desconocidos.
-
-## Trazabilidad y comprobante
-
-- datos registrados en el TMC;
-- logs disponibles para investigación conjunta;
-- política de retención y acceso;
-- formato del comprobante;
-- datos requeridos en el ticket;
-- restricciones de seguridad aplicables a logs y comprobantes.
-
-## Ambiente de pruebas
-
-- instancia o simulador disponible del SCC;
-- topología y accesos del laboratorio;
-- peajes, carriles, categorías y tarifas representativas;
+- SCC de pruebas o simulador disponible;
+- terminales y carriles que participarán;
 - escenarios de excepción requeridos;
-- evidencias y criterios de aceptación de CELSAT;
-- contactos técnicos para SCC, red, seguridad, operación y QA.
+- evidencia técnica disponible del lado CELSAT;
+- contactos de desarrollo, QA y operación.
 
-## Formatos recomendados de entrega
+## Información de Alignet
+
+Antes de las pruebas, Alignet confirma:
+
+- terminal P5L asignado;
+- URL base del Componente Local;
+- mecanismo de autenticación aplicable;
+- parámetros iniciales de timeout y consulta;
+- versión de la especificación desplegada;
+- contactos y procedimiento de soporte.
+
+Los valores del ambiente se encuentran sujetos a validación final y pueden ajustarse durante las pruebas sin modificar el contrato principal.
+
+## Datos de prueba mínimos
+
+| Dato | Uso |
+| --- | --- |
+| `operationNumber` controlados | Correlación, consulta e idempotencia. |
+| Montos en unidades menores | Aprobación, denegación y validación. |
+| Moneda `604` | Operaciones en soles. |
+| Casos de timeout y reconexión | Validación del flujo de recuperación. |
+| Casos de error local | Validación de códigos del P5L y SDK. |
+
+## Entregables recomendados
 
 <CardGroup cols={2}>
-  <Card title="Maestros" icon="table">
-    Archivo estructurado con código, descripción y relaciones entre entidades.
+  <Card title="Matriz de estados" icon="table-list">
+    Relación entre cada `state` y la acción operativa del SCC.
   </Card>
-  <Card title="Terminales" icon="tablet-screen-button">
-    Relación de los terminales P5L y los SCC que participarán en las pruebas.
+  <Card title="Ficha del ambiente" icon="sliders">
+    URL, mecanismo de autenticación, timeouts y terminal asignado.
   </Card>
-  <Card title="Política operativa" icon="road-barrier">
-    Matriz de escenario, estado recibido, acción de barrera y escalamiento.
+  <Card title="Casos de prueba" icon="flask-vial">
+    Solicitud, respuesta esperada y evidencia requerida.
   </Card>
-  <Card title="Pruebas" icon="flask-vial">
-    Casos, datos, resultado esperado y evidencia requerida.
+  <Card title="Procedimiento de recuperación" icon="rotate">
+    Tratamiento de timeout, pérdida de comunicación y reinicio.
   </Card>
 </CardGroup>

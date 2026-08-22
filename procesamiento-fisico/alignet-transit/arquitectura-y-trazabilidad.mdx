@@ -1,94 +1,94 @@
 ---
 title: "Arquitectura y trazabilidad"
-description: "Actores, límites de comunicación, responsabilidades e identificadores de la integración."
+description: "Componentes, límites de integración e identificadores de la solución Alignet Transit."
 icon: "diagram-project"
 ---
 
 ## Arquitectura por carril
 
 ```mermaid
-flowchart TB
-    SCC[CELSAT<br/>Sistema de Control de Carril]
+flowchart LR
+    SCC[SCC CELSAT]
 
     subgraph P5L[Terminal P5L PIN Pad]
         LOCAL[Componente Local de Integración]
         PAYME[PaymePOS SDK]
-        WISEASY[Wiseasy SDK]
-        HW[Hardware de pago<br/>EMV, NFC y pinpad]
+        DEVICE[SDK del dispositivo]
+        HARDWARE[Hardware de pago]
 
         LOCAL --> PAYME
-        PAYME --> WISEASY
-        WISEASY --> HW
+        PAYME --> DEVICE
+        DEVICE --> HARDWARE
     end
 
-    TRANSIT[Alignet Transit / Pay-me]
-    TMC[TMC / Registro operativo CELSAT]
+    PLATFORM[Plataforma de pagos Alignet]
+    PROCESSOR[Procesador y redes de pago]
 
-    SCC <-->|Wi-Fi con el POS| LOCAL
-    PAYME <-->|HTTPS con TLS 1.3| TRANSIT
-    SCC --> TMC
+    SCC <-->|HTTP/JSON sobre red LAN| LOCAL
+    PAYME <-->|Canal administrado por Alignet| PLATFORM
+    PLATFORM <-->|Procesamiento| PROCESSOR
 ```
 
-## Actores y responsabilidades
+La red LAN conecta el SCC con el Componente Local de Integración del P5L. Los valores de direccionamiento y habilitación del ambiente se entregan fuera del contrato funcional y están sujetos a validación final.
 
-| Actor o componente | Responsabilidad funcional | Información administrada |
+## Componentes y responsabilidades
+
+| Componente | Responsabilidad | Visibilidad para CELSAT |
 | --- | --- | --- |
-| CELSAT / SCC | Clasificar el vehículo, calcular la tarifa, asignar la referencia, solicitar el pago, interpretar el resultado y controlar la barrera. | Datos operativos del carril. |
-| Componente Local de Integración | Exponer la interfaz local, validar solicitudes, coordinar el flujo de pago y devolver respuestas correlacionadas. | Estado de la interfaz y correlación local. |
-| PaymePOS SDK | Gestionar el flujo de pago y la comunicación con Alignet Transit. | Datos funcionales de la operación. |
-| Wiseasy SDK y P5L | Presentar el monto y operar lector EMV, NFC, pinpad y capacidades criptográficas. | Interacción con el medio de pago. |
-| Alignet Transit / Pay-me | Procesar la operación, asignar `transactionId` y mantener la trazabilidad transaccional. | Datos de procesamiento y adquirencia. |
-| TMC de CELSAT | Conservar el evento y las referencias necesarias para operación y conciliación. | Registro operativo de CELSAT. |
+| SCC CELSAT | Calcular el importe, generar `operationNumber`, enviar solicitudes, interpretar respuestas y aplicar la política del carril. | Componente implementado y operado por CELSAT. |
+| Componente Local de Integración | Exponer los endpoints HTTP, validar la solicitud, invocar PaymePOS SDK y normalizar la respuesta. | Única interfaz técnica consumida por el SCC. |
+| PaymePOS SDK | Coordinar el flujo transaccional y la interacción con la plataforma de pagos. | Encapsulado dentro del P5L. |
+| SDK del dispositivo | Controlar las capacidades del P5L y la interacción con el medio de pago. | Encapsulado dentro del P5L. |
+| Plataforma de pagos Alignet | Procesar la autorización, asignar `transactionID` y devolver el resultado financiero. | Accedida indirectamente mediante el Componente Local. |
+| Procesador y redes de pago | Autorizar o denegar la operación de acuerdo con las reglas del medio de pago. | Sin integración directa con CELSAT. |
 
-## Límites de comunicación
+## Frontera de integración
 
-| Enlace | Propósito | Configuración |
-| --- | --- | --- |
-| SCC ↔ Componente Local | Disponibilidad, inicio, seguimiento, consulta, cancelación y resultado. | Conexión Wi-Fi con el POS habilitada por Alignet. |
-| Componente Local ↔ PaymePOS SDK | Entrega de la operación a la capa de pago. | Administrado por Alignet dentro del terminal. |
-| PaymePOS SDK ↔ Wiseasy SDK | Acceso al hardware del P5L. | Administrado por Alignet y Wiseasy. |
-| PaymePOS SDK ↔ Alignet Transit | Procesamiento y trazabilidad. | Canal seguro administrado por Alignet. |
-| SCC ↔ TMC | Registro del evento y conciliación. | Administrado por CELSAT. |
+CELSAT consume únicamente:
 
-<Note>
-  Si la conexión con el POS no está disponible, el SCC debe conservar la referencia y aplicar el flujo de recuperación acordado.
-</Note>
+```http
+POST /api/v1/payments
+GET /api/v1/payments/{operationNumber}
+```
+
+Ambas operaciones usan JSON. La URL base y el mecanismo de autenticación se confirman durante la habilitación final del ambiente.
+
+El SCC no debe depender de:
+
+- modelos, métodos o callbacks internos de PaymePOS SDK;
+- mensajes ISO 8583;
+- estructuras internas del procesador;
+- datos EMV o información sensible de tarjeta;
+- detalles de comunicación entre el P5L y la plataforma de pagos.
 
 ## Identificadores
 
-| Identificador | Origen | Uso | Regla |
+| Identificador | Origen | Disponibilidad | Uso |
 | --- | --- | --- | --- |
-| `operationNumber` | CELSAT | Referencia de la operación del carril. | Identifica una única operación lógica dentro del ámbito del comercio. Formato y longitud coordinados con CELSAT. |
-| `transactionId` | Alignet | Identificador transaccional. | Se conserva separado y correlacionado con `operationNumber`. |
+| `operationNumber` | CELSAT | Se genera antes de la solicitud y se conserva durante todo el ciclo. | Idempotencia, consulta y correlación con el evento del carril. |
+| `transactionID` | Alignet | Se retorna cuando existe una transacción generada en backend. | Trazabilidad, soporte, búsqueda, conciliación y flujos posteriores. |
 
 ```mermaid
 flowchart LR
-    OP[operationNumber<br/>CELSAT] --> REG[Operación correlacionada]
-    TX[transactionId<br/>Alignet] --> REG
-    REG --> TMC[Registro CELSAT]
-    REG --> ALI[Registro Alignet]
+    OP[operationNumber<br/>CELSAT] --> RECORD[Operación correlacionada]
+    TX[transactionID<br/>Alignet] --> RECORD
+    RECORD --> SCCLOG[Registro CELSAT]
+    RECORD --> ALILOG[Registro Alignet]
 ```
 
-`transactionId` no debe copiar ni reutilizar el valor de `operationNumber`. El SCC conserva ambos identificadores cuando se encuentren disponibles.
+`operationNumber` y `transactionID` son identificadores distintos. El SCC debe conservar ambos cuando `transactionID` se encuentre disponible.
 
 ## Trazabilidad mínima
 
-CELSAT debe registrar:
+Por cada operación, CELSAT debe registrar, cuando existan:
 
-- `operationNumber` y `transactionId`;
-- monto y moneda;
-- datos adicionales definidos por CELSAT, cuando los envíe;
-- fecha del evento con zona horaria;
-- fechas de envío y recepción;
-- estado de solicitud, resultado y razón;
-- eventos de timeout, reconexión y recuperación;
-- versión de la interfaz y terminal asociado.
+- `operationNumber` y `transactionID`;
+- `amount` y `currency`;
+- `success`, `resultCode` y `resultMessage`;
+- `state` y `stateReason`;
+- `authorizationCode` y `responseCode`;
+- información no sensible de `paymentMethod`;
+- fecha y hora de envío y recepción;
+- eventos de timeout, consulta, reconexión y recuperación.
 
-Los registros deben permitir reconstruir la secuencia sin incluir PAN completo, datos EMV sensibles ni material criptográfico.
-
-## Consideraciones de conectividad
-
-- La comunicación con el P5L utiliza la conexión Wi-Fi habilitada para el POS.
-- Alignet gestiona la configuración necesaria para esta conexión.
-- SCC y P5L deben mantener sus relojes sincronizados.
-- Cada operación debe permanecer asociada al terminal que la procesó.
+No registres PAN completo, CVV, PIN, PIN Block, Track 1, Track 2 ni datos EMV sensibles.

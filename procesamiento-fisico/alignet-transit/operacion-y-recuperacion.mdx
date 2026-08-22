@@ -1,130 +1,183 @@
 ---
 title: "Operación y recuperación"
-description: "Secuencia, idempotencia, errores, timeouts, cancelación y recuperación."
+description: "Secuencia de autorización, consulta, idempotencia y recuperación ante resultados inciertos."
 icon: "rotate"
 ---
 
-## Secuencia de referencia
+## Secuencia de autorización
 
 ```mermaid
 sequenceDiagram
     participant SCC as SCC CELSAT
     participant LOCAL as Componente Local / P5L
-    participant PAY as PaymePOS + Wiseasy
-    participant TRANSIT as Alignet Transit
-    participant TMC as TMC CELSAT
+    participant PAYME as PaymePOS SDK
+    participant DEVICE as SDK del dispositivo
+    participant PLATFORM as Plataforma Alignet
 
-    SCC->>LOCAL: Consultar disponibilidad
-    LOCAL-->>SCC: Estado del terminal
-    SCC->>SCC: Calcular tarifa y asignar referencia
-    SCC->>LOCAL: Solicitud de pago correlacionada
-    LOCAL-->>SCC: Aceptación o rechazo de solicitud
-    LOCAL->>PAY: Iniciar interacción de pago
-    PAY->>TRANSIT: Procesar transacción por canal seguro
-    TRANSIT-->>PAY: Resultado y transactionId
-    PAY-->>LOCAL: Resultado correlacionado
-    LOCAL-->>SCC: Estado y decisión operativa
-    SCC->>TMC: Registrar referencias y resultado
-    SCC->>SCC: Aplicar política de barrera
+    SCC->>SCC: Generar y persistir operationNumber
+    SCC->>LOCAL: POST /api/v1/payments
+    LOCAL->>PAYME: Iniciar autorización
+    PAYME->>DEVICE: Habilitar interacción de pago
+    PAYME->>PLATFORM: Procesar transacción
+    PLATFORM-->>PAYME: Resultado financiero
+    PAYME-->>LOCAL: Resultado del SDK
+    LOCAL-->>SCC: Respuesta normalizada
+    SCC->>SCC: Evaluar result.state
 ```
 
-El resultado puede entregarse mediante consulta, notificación o una conexión persistente. El mecanismo aplicable se registra en la especificación de interfaz acordada.
+El SCC inicia siempre la operación. Una vez recibida la solicitud válida, el P5L coordina la interacción de pago y devuelve una única respuesta normalizada al SCC.
 
-## Secuencia del lado CELSAT
+## Preparación del cliente
 
-<Steps>
-  <Step title="Validar disponibilidad">
-    Consulta el estado del terminal antes de iniciar una operación.
-  </Step>
-  <Step title="Persistir la referencia">
-    Genera y almacena `operationNumber` junto con los datos del evento antes del envío.
-  </Step>
-  <Step title="Enviar la solicitud">
-    Remite el monto, moneda, ubicación, categoría, sentido y fecha mediante la interfaz local.
-  </Step>
-  <Step title="Registrar la aceptación">
-    Distingue la aceptación del mensaje del resultado final del pago.
-  </Step>
-  <Step title="Seguir la operación">
-    Espera o consulta usando siempre la misma referencia.
-  </Step>
-  <Step title="Resolver el evento">
-    Registra el resultado, aplica la política de barrera y genera el comprobante cuando corresponda.
-  </Step>
-</Steps>
+Antes del primer envío, CELSAT debe contar con:
 
-## Idempotencia
+- acceso por red LAN al Componente Local del P5L;
+- URL base del ambiente;
+- mecanismo de autenticación confirmado para el ambiente;
+- timeouts de conexión y lectura;
+- manejo persistente de operaciones abiertas;
+- lógica para interpretar el contrato de respuesta.
 
-| Escenario | Comportamiento esperado |
-| --- | --- |
-| Misma referencia y mismos datos | Recuperar la operación existente sin producir un segundo efecto financiero. |
-| Misma referencia con datos distintos | Rechazar la solicitud como conflicto o inconsistencia. |
-| Respuesta no recibida | Consultar la referencia original antes de retransmitir. |
-| Reinicio del SCC | Recuperar referencias abiertas desde almacenamiento persistente y consultar su estado. |
-| Restablecimiento de la conexión | Resolver el último estado antes de decidir otro envío. |
+La URL base, el mecanismo de autenticación y los timeouts están sujetos a validación final durante la habilitación del ambiente.
 
-CELSAT debe conservar una huella de los datos relevantes asociados a `operationNumber` para detectar una reutilización inconsistente.
+## Inicialización y disponibilidad del P5L
 
-## Timeouts y resultado incierto
+Alignet prepara el Componente Local, PaymePOS SDK y el SDK del dispositivo antes de habilitar el P5L para las pruebas. El SCC no invoca métodos internos de inicialización.
 
-Los timeouts son parámetros configurables por ambiente. Se coordinan considerando la red, el mecanismo de respuesta y el tiempo operativo del carril.
+Si el dispositivo no se encuentra preparado, la respuesta puede incluir:
+
+| Código | Condición | Acción del SCC |
+| --- | --- | --- |
+| `P01` | Dispositivo no registrado | Detener el intento y solicitar revisión del terminal. |
+| `P02` | Configuración requerida ausente | Detener el intento y solicitar revisión de configuración. |
+| `P04` | SDK no inicializado | Detener el intento y solicitar inicialización del P5L. |
+
+La especificación de autorización no define un endpoint de inicialización o disponibilidad para el SCC. La preparación del terminal corresponde a Alignet.
+
+## Procesamiento de la respuesta
+
+El SCC debe evaluar la respuesta en este orden:
+
+1. comprobar si `result` contiene una transacción;
+2. evaluar `result.state` cuando `result` exista;
+3. usar `resultCode` para clasificar el resultado general o local;
+4. conservar `resultMessage` y `stateReason` para diagnóstico;
+5. registrar `transactionID` cuando haya sido asignado.
+
+El pago solo se considera aprobado cuando:
+
+```text
+result.state = AUTORIZADO
+```
+
+## Consulta de estado
+
+Cuando el resultado no sea conocido, consulta la operación mediante el mismo `operationNumber`:
+
+```http
+GET /api/v1/payments/{operationNumber}
+```
+
+Ejemplo:
+
+```http
+GET /api/v1/payments/OP-20260821-000001
+```
+
+La consulta devuelve la estructura normalizada de respuesta. Si el estado continúa como `PENDIENTE`, conserva la operación abierta y aplica la frecuencia de consulta definida para el ambiente.
+
+## Timeout y pérdida de comunicación
 
 ```mermaid
 flowchart TD
-    A[Solicitud enviada] --> B{¿Respuesta recibida?}
-    B -->|Sí| C[Procesar estado correlacionado]
-    B -->|No| D[Conservar referencia<br/>Resultado incierto]
-    D --> E[Restablecer comunicación]
-    E --> F[Consultar operación original]
-    F --> G{¿Existe decisión válida?}
-    G -->|Sí| H[Aplicar PASS o NO_PASS]
-    G -->|No| I[Aplicar política operativa acordada]
+    START[POST enviado] --> RESPONSE{¿Respuesta recibida?}
+    RESPONSE -->|Sí| RESULT{¿result existe?}
+    RESULT -->|Sí| STATE[Evaluar result.state]
+    RESULT -->|No| CODE[Evaluar resultCode]
+    RESPONSE -->|No| UNKNOWN[Conservar operationNumber]
+    UNKNOWN --> RESTORE[Restablecer comunicación]
+    RESTORE --> QUERY[GET por operationNumber]
+    QUERY --> STATE
 ```
 
-Ante un timeout, el SCC debe:
+Ante timeout o pérdida de comunicación, el SCC debe:
 
-1. conservar `operationNumber` y `transactionId`, si fue recibido;
-2. registrar la operación como no resuelta, sin convertirla en `NO_PASS`;
-3. restablecer la comunicación;
-4. consultar el estado de la referencia original;
-5. aplicar una decisión únicamente cuando sea válida;
-6. ejecutar reintentos conforme a las reglas de idempotencia acordadas;
-7. escalar el caso si continúa sin resolución.
+1. conservar el `operationNumber` original;
+2. registrar la operación como pendiente de resolución;
+3. no asumir aprobación ni rechazo;
+4. restablecer la comunicación con el P5L;
+5. consultar la operación original;
+6. aplicar una decisión únicamente cuando la respuesta permita conocer el estado real.
 
-## Cancelación
+## Regla crítica de reintento
 
-El SCC puede solicitar una cancelación cuando el estado lo permita. La respuesta funcional indica:
+<Warning>
+  No generes otro `operationNumber` inmediatamente después de un timeout. Esto puede originar un segundo cobro.
+</Warning>
 
-- cancelación aceptada;
-- cancelación no aplicable por el estado alcanzado; o
-- resultado ya disponible.
+```text
+Incorrecto
+OP001 → POST → timeout → crear OP002 → POST
 
-El punto operativo de no retorno y los códigos asociados se registran en la especificación de interfaz. Una respuesta de cancelación incierta debe resolverse mediante consulta.
+Correcto
+OP001 → POST → timeout → GET /api/v1/payments/OP001
+```
 
-## Manejo de errores
+La estrategia y frecuencia de reintento técnico son parámetros sujetos a ajuste durante las pruebas de integración. No implementes reintentos automáticos ilimitados.
 
-| Categoría | Tratamiento en el SCC |
+## Idempotencia
+
+| Escenario | Comportamiento del SCC |
 | --- | --- |
-| Validación | Corregir los datos y seguir la regla definida para la referencia. |
-| Terminal ocupado o no disponible | No iniciar el pago y aplicar la política del carril. |
-| Duplicado consistente | Recuperar la operación existente. |
-| Duplicado inconsistente | Registrar el conflicto y no tratarlo como una operación nueva. |
-| Pérdida de comunicación | Conservar la referencia y ejecutar consulta y recuperación. |
-| Timeout | No inferir `NO_PASS`; consultar el estado. |
-| Código desconocido | Registrar el valor original y tratar el resultado como no resuelto. |
-| Error de seguridad | Detener el envío y escalar por el canal técnico acordado. |
+| Nueva venta | Generar y persistir un nuevo `operationNumber`. |
+| Timeout del `POST` | Consultar con el mismo `operationNumber`. |
+| Pérdida y recuperación de la LAN | Consultar las operaciones abiertas antes de realizar nuevos envíos. |
+| Reinicio del SCC | Recuperar las referencias persistidas y consultar su estado. |
+| Referencia ya utilizada para otra venta | No enviar la solicitud. |
 
-## Logging de CELSAT
+La regla base es:
 
-Registra, cuando se encuentren disponibles:
+```text
+1 venta = 1 operationNumber
+```
 
-- `operationNumber` y `transactionId`;
-- monto y moneda;
-- datos adicionales definidos por CELSAT, cuando los envíe;
-- fecha del evento, envío y recepción;
-- estado, resultado y razón;
-- intentos de consulta o recuperación;
-- eventos de conexión, timeout y reinicio;
-- versión del contrato y terminal asociado.
+## Cancelaciones y extornos
 
-No registres PAN completo, datos EMV sensibles ni material criptográfico.
+Los códigos `14` y `15` indican que el usuario abandonó o canceló la interacción local. No representan una denegación del emisor.
+
+Los códigos `P20` y `P21` pertenecen a un flujo de extorno. La especificación final de autorización no define un endpoint de cancelación o extorno para el SCC. Cualquier interfaz adicional se documentará cuando sea confirmada durante la habilitación final del ambiente.
+
+## Tratamiento de errores
+
+| Condición | Tratamiento recomendado |
+| --- | --- |
+| `result.state = AUTORIZADO` | Confirmar el pago. |
+| `result.state = DENEGADO` | Informar el rechazo. |
+| `result.state = PENDIENTE` | Consultar el estado. |
+| `resultCode = 06` | Corregir la solicitud antes de un nuevo intento válido. |
+| `resultCode = 08` | Detener la operación y solicitar revisión de configuración. |
+| `resultCode = 14` o `15` | Registrar la cancelación local. |
+| `resultCode = P01` a `P07` | Registrar el error, mostrar un mensaje controlado y solicitar soporte cuando corresponda. |
+| Timeout o respuesta ausente | Conservar la referencia y consultar. |
+| Código desconocido | Registrar el valor original y escalar sin asumir su significado. |
+
+## Información recomendada para almacenar
+
+Por cada operación, conserva:
+
+```text
+operationNumber
+transactionID
+amount
+currency
+success
+resultCode
+resultMessage
+state
+stateReason
+authorizationCode
+responseCode
+fecha y hora
+```
+
+No almacenes PAN completo, CVV, PIN, PIN Block, tracks ni datos EMV sensibles.

@@ -426,6 +426,7 @@
                     "pages": [
                       "procesamiento-fisico/alignet-transit/arquitectura-y-trazabilidad",
                       "procesamiento-fisico/alignet-transit/parametros-de-envio",
+                      "procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos",
                       "procesamiento-fisico/alignet-transit/operacion-y-recuperacion"
                     ]
                   },

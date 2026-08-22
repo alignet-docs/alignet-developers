@@ -1,106 +1,87 @@
 ---
-title: "Parámetros de envío"
-description: "Parámetros requeridos y datos adicionales para solicitar un pago en Alignet Transit."
+title: "Solicitud de autorización"
+description: "Endpoint, headers y campos requeridos para iniciar un pago desde el SCC de CELSAT."
 icon: "file-export"
 ---
 
-El SCC de CELSAT envía la solicitud de pago al Componente Local de Integración instalado en el terminal P5L. Para iniciar una autorización, la trama requiere únicamente `operationNumber`, `amount` y `currency`.
+El SCC inicia la autorización mediante el Componente Local de Integración instalado en el P5L.
 
-## Campos obligatorios
+```http
+POST /api/v1/payments
+```
 
-| Campo | Tipo | Obligatorio | Descripción | Ejemplo |
+La URL base está sujeta a validación final durante la habilitación del ambiente.
+
+## Headers
+
+```http
+Content-Type: application/json
+Accept: application/json
+```
+
+## Campos de la solicitud
+
+| Campo | Tipo | Requerido | Descripción | Ejemplo |
 | --- | --- | --- | --- | --- |
-| `operationNumber` | String | Sí | Número único de operación generado por CELSAT. Permite correlacionar la solicitud durante todo su ciclo. | `20100008` |
-| `amount` | String | Sí | Monto expresado en unidades menores, sin separador decimal. | `850` equivale a S/ 8.50 |
+| `operationNumber` | String | Sí | Identificador único de la operación generado por CELSAT. | `OP-20260821-000001` |
+| `amount` | String | Sí | Cadena numérica que representa el monto en unidades menores, sin separador decimal. | `"1500"` equivale a S/ 15.00 |
 | `currency` | String | Sí | Código numérico ISO 4217 de la moneda. | `604` para PEN |
 
-### Trama mínima
+La solicitud de autorización no requiere otros campos.
+
+## Ejemplo
 
 ```json
 {
-  "operationNumber": "20100008",
-  "amount": "850",
+  "operationNumber": "OP-20260821-000001",
+  "amount": "1500",
   "currency": "604"
 }
 ```
 
-<Info>
-  `amount` y `currency` se envían como cadenas. Por ejemplo, S/ 8.50 se representa con `amount: "850"` y `currency: "604"`.
-</Info>
+<Note>
+  `amount` es un `String` cuyo contenido debe ser un número entero positivo. No incluyas símbolo de moneda, separador decimal ni separador de miles.
+</Note>
 
-## Datos adicionales
+## Reglas de `operationNumber`
 
-La trama admite el atributo opcional `additionalFields` para incorporar información complementaria. Este atributo contiene pares clave/valor y no agrega nuevos campos obligatorios a la autorización.
+El SCC debe:
 
-CELSAT define los nombres y valores incluidos en `additionalFields` de acuerdo con la información que decida asociar a cada operación. Alignet no establece campos adicionales obligatorios.
-
-### Trama con datos adicionales
-
-```json
-{
-  "operationNumber": "20100008",
-  "amount": "850",
-  "currency": "604",
-  "additionalFields": {
-    "<campo_definido_por_CELSAT>": "<valor>"
-  }
-}
-```
-
-## Estructura de la solicitud
+- generar un valor único para cada venta;
+- persistirlo antes de enviar la solicitud;
+- conservarlo hasta conocer el resultado final;
+- no reutilizarlo para otra venta;
+- mantener el mismo valor ante timeout o pérdida de comunicación;
+- utilizarlo para consultar la operación cuando el resultado sea incierto.
 
 ```text
-operationNumber    Obligatorio
-amount             Obligatorio
-currency           Obligatorio
-additionalFields   Opcional
+1 venta = 1 operationNumber
 ```
 
-Antes del envío, CELSAT debe verificar que:
+## Representación del monto
 
-- `operationNumber` esté presente y no se reutilice para una operación lógica diferente;
-- `amount` sea una cadena que represente un entero positivo en unidades menores;
-- `currency` sea la cadena `"604"` para operaciones en soles;
-- todas las claves y valores de `additionalFields`, cuando se incluyan, sean cadenas.
+`amount` expresa el total que el P5L debe procesar en unidades menores de la moneda.
 
-## Datos de respuesta
+| Importe | `amount` |
+| --- | ---: |
+| S/ 8.50 | `"850"` |
+| S/ 15.00 | `"1500"` |
+| S/ 125.40 | `"12540"` |
 
-| Dato | Disponibilidad | Uso de CELSAT |
-| --- | --- | --- |
-| `operationNumber` | En toda respuesta correlacionable. | Relacionar la respuesta con el evento del carril. |
-| `transactionId` | Cuando Alignet haya asignado el identificador. | Soporte, seguimiento y conciliación. |
-| `requestStatus` | En toda respuesta. | Distinguir recepción, validación, proceso, cancelación o finalización. |
-| `result` | Cuando exista una decisión operativa. | Aplicar `PASS` o `NO_PASS` conforme a la política del carril. |
-| `reasonCode` | Cuando el estado o resultado requiera una razón. | Diagnóstico y tratamiento funcional. |
-| `amount` y `currency` | Cuando la solicitud haya sido reconocida. | Validar la operación correlacionada. |
-| `brand` | Cuando se encuentre disponible y habilitado. | Comprobante y registro operativo. |
-| `lastFourDigits` | Cuando se encuentre disponible y permitido. | Comprobante con dato enmascarado. |
+El cálculo del importe corresponde al SCC. El P5L procesa el valor recibido y no requiere que CELSAT conozca las estructuras internas de PaymePOS SDK.
 
-## Interpretación de estados
+## Validaciones antes del envío
 
-<CardGroup cols={3}>
-  <Card title="Estado de solicitud" icon="signal">
-    Indica recepción, rechazo de validación, proceso, cancelación o finalización.
-  </Card>
-  <Card title="Decisión de carril" icon="road-barrier">
-    Usa `PASS` o `NO_PASS` cuando existe una decisión operativa válida.
-  </Card>
-  <Card title="Estado financiero" icon="money-check-dollar">
-    Corresponde al ciclo transaccional administrado por Alignet.
-  </Card>
-</CardGroup>
+Antes de realizar el `POST`, verifica que:
 
-Reglas de interpretación:
+- `operationNumber` sea una cadena no vacía y corresponda a una única venta;
+- `amount` sea una cadena numérica que represente un entero positivo en unidades menores;
+- `currency` sea `"604"` para operaciones en soles;
+- la solicitud use `Content-Type: application/json`;
+- la referencia ya se encuentre almacenada para una posible recuperación.
 
-- una solicitud aceptada no equivale a `PASS`;
-- un estado en proceso no autoriza a abrir la barrera;
-- `PASS` no se deriva directamente de un código financiero aislado;
-- un timeout o una respuesta ausente no equivalen a `NO_PASS`;
-- un valor desconocido se registra sin asumir su semántica y activa el flujo de recuperación;
-- `operationNumber` y `transactionId` son identificadores diferentes.
+## Siguiente paso
 
-## Comprobante
-
-CELSAT genera e imprime el comprobante. La respuesta puede proporcionar `operationNumber`, `transactionId`, estado, decisión operativa, razón, monto, moneda, marca y últimos cuatro dígitos cuando estos datos se encuentren disponibles y su uso esté permitido.
-
-El formato y los campos mostrados se coordinan entre ambas partes y deben respetar las reglas de seguridad aplicables.
+<Card title="Respuesta, estados y códigos" icon="code" href="/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos">
+  Implementa la interpretación de `success`, `resultCode`, `resultMessage` y `result.state`.
+</Card>

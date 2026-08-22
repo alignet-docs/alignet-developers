@@ -1,0 +1,179 @@
+---
+title: "Respuesta, estados y códigos"
+description: "Estructura de respuesta, estados financieros y códigos retornados al SCC."
+icon: "code"
+---
+
+El Componente Local de Integración entrega al SCC una respuesta normalizada. La misma estructura se utiliza para la autorización y para la consulta de estado cuando existe información de la operación.
+
+## Estructura general
+
+```json
+{
+  "success": true,
+  "resultCode": "00",
+  "resultMessage": "Se procesó correctamente la petición",
+  "result": {
+    "transactionID": "6f55a89d-bba1-4db7-bbc7-004011e0978d",
+    "operationNumber": "OP-20260821-000001",
+    "state": "AUTORIZADO",
+    "stateReason": "Approved",
+    "amount": "1500",
+    "currency": "604",
+    "paymentMethod": {
+      "name": "CARD",
+      "maskedPan": "411111******1111",
+      "brand": "VISA"
+    },
+    "processor": {
+      "authorizationCode": "123456",
+      "responseCode": "00"
+    }
+  }
+}
+```
+
+## Campos principales
+
+| Campo | Tipo | Descripción |
+| --- | --- | --- |
+| `success` | Boolean | Indica si el PinPad y el SDK pudieron procesar la solicitud y producir un resultado. |
+| `resultCode` | String | Código general retornado por el backend o por el procesamiento local. |
+| `resultMessage` | String | Mensaje legible asociado al código general. |
+| `result` | Object / null | Datos de la transacción cuando existen. |
+
+<Warning>
+  `success = true` no significa que el pago fue aprobado. La aprobación se determina exclusivamente cuando `result.state = "AUTORIZADO"`.
+</Warning>
+
+## Datos de `result`
+
+Cuando `result` no es `null`, pueden recibirse los siguientes campos:
+
+| Campo | Tipo | Descripción |
+| --- | --- | --- |
+| `transactionID` | String | Identificador único generado por Alignet. |
+| `operationNumber` | String | Identificador enviado por CELSAT. |
+| `state` | String | Estado financiero de la transacción. |
+| `stateReason` | String | Razón o descripción retornada por el procesador o emisor. |
+| `amount` | String | Monto procesado en unidades menores. |
+| `currency` | String | Código numérico ISO 4217. |
+| `additionalFields` | Object / null | Información adicional asociada a la operación, cuando exista. |
+| `paymentMethod` | Object / null | Información no sensible del medio de pago. |
+| `processor` | Object / null | Información normalizada del procesador. |
+| `lifecycle` | Array | Historial de estados de la operación, cuando se encuentre disponible. |
+
+<Note>
+  Tanto la solicitud como la respuesta representan `amount` como `String` numérico en unidades menores.
+</Note>
+
+## Estados financieros
+
+| Estado | Final | Tratamiento del SCC |
+| --- | --- | --- |
+| `AUTORIZADO` | Sí | Confirmar el pago y aplicar la política de carril correspondiente. |
+| `DENEGADO` | Sí | Informar el rechazo y no habilitar el paso por aprobación. |
+| `PENDIENTE` | No | Conservar la referencia y consultar el estado. |
+| `INVALIDO` | Sí | Registrar el error y aplicar el tratamiento operativo definido. |
+| `CANCELADO` | Sí | Registrar la cancelación de la operación. |
+| `EXPIRADO` | Sí | Registrar la expiración y cerrar el intento conforme a la política operativa. |
+| `EXTORNADO` | Sí | Marcar la operación como extornada. |
+
+## Lógica de decisión
+
+```text
+¿result existe?
+├─ Sí → evaluar result.state
+│  ├─ AUTORIZADO → confirmar pago
+│  ├─ DENEGADO → informar rechazo
+│  ├─ PENDIENTE → consultar estado
+│  ├─ CANCELADO → registrar cancelación
+│  ├─ EXTORNADO → confirmar extorno
+│  └─ otro estado → registrar y aplicar tratamiento operativo
+└─ No → evaluar resultCode como respuesta local o error sin transacción
+```
+
+No utilices `success` como equivalente a aprobación.
+
+## Códigos del procesador
+
+| Código | Nombre | Mensaje | Significado |
+| --- | --- | --- | --- |
+| `00` | `SUCCESS` | Se procesó correctamente la petición | Transacción aprobada. |
+| `01` | `DENIED` | Petición rechazada por el Procesador | El procesador o emisor rechazó la operación. |
+| `03` | `INTERNAL_ERROR` | Ocurrió un error | Error interno del backend. |
+| `04` | `NO_PROCESSED` | No se pudo procesar la petición | El backend no pudo completar la operación. |
+| `06` | `BAD_REQUEST` | Algunos datos no fueron enviados correctamente | Error de validación de la solicitud. |
+| `08` | `MERCHANT_BAD_CONFIG` | Comercio requiere configuración | Configuración del comercio incompleta o inválida. |
+
+## Códigos locales del P5L y SDK
+
+| Código | Nombre | Mensaje | Significado |
+| --- | --- | --- | --- |
+| `14` | `ABANDONED` | Operación cancelada | El usuario canceló antes de presentar la tarjeta. |
+| `15` | `ABANDONED_ONE_INTENT` | Operación cancelada con al menos 1 intento | El usuario canceló después de uno o más intentos. |
+| `P01` | `DEVICE_NOT_REGISTERED` | Dispositivo no registrado | El serial del P5L no está registrado. |
+| `P02` | `DEVICE_BAD_CONFIG` | Dispositivo requiere configuración | Falta configuración requerida. |
+| `P03` | `DEVICE_INTERNAL_ERROR` | Ocurrió un error | Error interno del SDK. |
+| `P04` | `DEVICE_NO_INITIALIZED` | Dispositivo requiere ser inicializado | El SDK todavía no fue inicializado. |
+| `P05` | `DEVICE_LOW_BATTERY` | Dispositivo con batería baja | El nivel de batería es insuficiente. |
+| `P06` | `DEVICE_NO_PRINTER` | Impresora no detectada | No se encontró la impresora. |
+| `P07` | `DEVICE_NO_PAPER` | Impresora requiere papel | La impresora no tiene papel. |
+| `P20` | `REVERSAL_CARD_MISMATCH` | La tarjeta no corresponde a esta transacción | La tarjeta utilizada para el extorno no corresponde. |
+| `P21` | `REVERSAL_INVALID_STATE` | La transacción no se puede extornar | La operación no existe o no admite extorno. |
+
+Los códigos `P20` y `P21` pertenecen al flujo de extorno y no al flujo normal de autorización. La interfaz aplicable al extorno está pendiente de confirmación en el ambiente de integración.
+
+## Ejemplos de interpretación
+
+### Pago denegado
+
+```json
+{
+  "success": true,
+  "resultCode": "01",
+  "resultMessage": "Petición rechazada por el Procesador",
+  "result": {
+    "transactionID": "021d85af-f5bc-44cb-9d90-c104572bd30e",
+    "operationNumber": "OP-20260821-000002",
+    "state": "DENEGADO",
+    "stateReason": "Do not honor",
+    "amount": "1500",
+    "currency": "604",
+    "processor": {
+      "responseCode": "05"
+    }
+  }
+}
+```
+
+El flujo produjo una respuesta válida, pero el pago fue denegado.
+
+### Cancelación local antes de presentar la tarjeta
+
+```json
+{
+  "success": false,
+  "resultCode": "14",
+  "resultMessage": "Operación cancelada",
+  "result": null
+}
+```
+
+No se generó una transacción en backend. El código `14` no representa una denegación del emisor.
+
+## Información no sensible del medio de pago
+
+Cuando esté disponible, `paymentMethod` puede incluir:
+
+```json
+{
+  "name": "CARD",
+  "maskedPan": "411111******1111",
+  "brand": "VISA"
+}
+```
+
+CELSAT nunca recibe PAN completo, CVV, PIN, PIN Block, Track 1, Track 2 ni datos EMV sensibles.
+
+El objeto `processor`, cuando exista, contiene información normalizada como `authorizationCode` y `responseCode`. El SCC no debe depender de estructuras internas del procesador.

@@ -1,106 +1,96 @@
 ---
 title: "Responsabilidades y preparación"
-description: "Ownership de la integración y preparación técnica requerida del lado CELSAT."
+description: "Responsabilidades técnicas de CELSAT y Alignet para implementar y habilitar la integración."
 icon: "people-arrows"
 ---
 
 ## Matriz de responsabilidades
 
-| Área | CELSAT | Alignet | Coordinación compartida |
+| Área | CELSAT | Alignet | Coordinación |
 | --- | --- | --- | --- |
-| SCC, tarifa y barrera | Adaptar el SCC, calcular la tarifa y aplicar la política del carril. | Proporcionar estados y decisiones consumibles por el SCC. | Semántica operativa de `PASS`, `NO_PASS` y resultado incierto. |
-| Interfaz local | Implementar el cliente y gestionar mensajes y recuperación. | Proporcionar el Componente Local, la conectividad Wi-Fi con el POS y la especificación versionada. | Timeouts y pruebas de contrato. |
-| Pago en el P5L | Consumir el resultado únicamente mediante la interfaz local. | Administrar PaymePOS SDK, Wiseasy SDK y hardware. | Validación de comportamiento de extremo a extremo. |
-| Datos operativos | Proporcionar peaje, carril, categoría, sentido, fecha y monto. | Validar y correlacionar la solicitud. | Catálogos, formatos y reglas de validación. |
-| Identificadores | Generar y persistir `operationNumber`. | Asignar `transactionId`. | Correlación y criterios de idempotencia. |
-| Conectividad | Disponer del SCC que consumirá la interfaz. | Gestionar la conexión Wi-Fi con el POS. | Verificar disponibilidad durante las pruebas. |
-| Trazabilidad | Registrar el evento, respuesta, barrera y comprobante. | Mantener evidencia transaccional y soporte técnico. | Campos, retención y procedimiento de diagnóstico. |
-| Pruebas | Preparar SCC, datos y evidencia del carril. | Preparar ambiente Transit, P5L y evidencia de procesamiento. | Ejecución, análisis y aceptación conjunta. |
+| SCC y lógica del carril | Calcular el importe, generar la referencia, invocar la interfaz y aplicar la política operativa. | Entregar una respuesta normalizada y documentada. | Validar el comportamiento de extremo a extremo. |
+| Interfaz LAN | Implementar el cliente HTTP/JSON y gestionar la recuperación. | Proporcionar el Componente Local y los parámetros del ambiente. | Verificar conectividad y timeouts. |
+| Componente Local | Consumir únicamente la interfaz documentada. | Instalar, configurar y operar el agente dentro del P5L. | Ejecutar pruebas de contrato. |
+| PaymePOS SDK | No requiere integración directa. | Administrar inicialización, invocación y ciclo transaccional. | Validar códigos locales y comportamiento del terminal. |
+| SDK y hardware del P5L | No requiere integración directa. | Administrar la interacción con el medio de pago y el dispositivo. | Validar escenarios físicos de prueba. |
+| Plataforma de pagos | No requiere integración directa. | Procesar la autorización, asignar `transactionID` y normalizar la respuesta. | Correlacionar evidencias cuando sea necesario. |
+| Idempotencia | Generar, persistir y no reutilizar `operationNumber`. | Permitir la recuperación mediante la referencia recibida. | Probar timeouts y duplicidad. |
+| Trazabilidad | Registrar solicitud, respuesta y decisión del carril. | Mantener trazabilidad transaccional para soporte. | Definir evidencia y retención. |
 
-## Preparación técnica de CELSAT
+## Preparación de CELSAT
 
-### SCC
+### Cliente de integración
 
-- Identificar el runtime, topología y modelo de despliegue por carril.
-- Incorporar el cliente de la interfaz local.
-- Persistir operaciones abiertas y sus datos de correlación.
-- Interpretar estados, resultados y códigos de razón.
-- Gestionar consulta, timeout, reintento, cancelación y recuperación.
-- Integrar la respuesta con barrera, TMC y comprobante.
+- Implementar `POST /api/v1/payments`.
+- Implementar `GET /api/v1/payments/{operationNumber}`.
+- Enviar y recibir JSON.
+- Manejar `result` como objeto o `null`.
+- Interpretar todos los estados y códigos documentados.
+- Persistir las operaciones antes del envío.
+- Recuperar operaciones abiertas después de una desconexión o reinicio.
 
-### Datos operativos
+### Lógica operativa
 
-- Consolidar el maestro de puntos de peaje, casetas o carriles.
-- Establecer códigos estables para peaje y carril.
-- Proporcionar categorías vehiculares y sentidos.
-- Confirmar la representación del monto en unidades menores.
-- Confirmar el formato, longitud y unicidad de la referencia del SCC.
-- Registrar la fecha del evento con zona horaria.
+- Calcular el importe total antes de solicitar el pago.
+- Representar el total como entero en unidades menores.
+- Confirmar el pago únicamente con `state = AUTORIZADO`.
+- Mantener la operación abierta cuando `state = PENDIENTE`.
+- Definir el comportamiento del carril para denegación, cancelación, expiración y error.
+- No confundir una cancelación local con una denegación del emisor.
 
-### Infraestructura
+### Trazabilidad
 
-- Coordinar con Alignet la habilitación de la conexión Wi-Fi con el POS.
-- Mantener sincronización horaria.
-- Preparar monitoreo y procedimientos de reinicio o reemplazo.
+- Registrar `operationNumber` y `transactionID`.
+- Conservar códigos, mensajes, estado y razón.
+- Registrar fecha y hora de envío, respuesta, consulta y recuperación.
+- Excluir información sensible de tarjeta.
 
-### Operación y soporte
+### Pruebas
 
-- Definir el comportamiento de barrera para cada resultado funcional.
-- Establecer el tratamiento de timeout, terminal no disponible y desconexión.
-- Definir ventanas de mantenimiento y escalamiento.
-- Preparar logs correlacionados y política de retención.
-- Designar contactos para SCC, infraestructura, seguridad, operación y QA.
+- Disponer de un SCC de pruebas o simulador.
+- Preparar referencias y montos controlados.
+- Ejecutar escenarios de aprobación, denegación, cancelación, error y timeout.
+- Conservar evidencia correlacionada por operación.
 
 ## Entregas de Alignet
 
 Alignet proporciona:
 
-- Componente Local de Integración para el P5L;
-- especificación versionada de la interfaz entre el SCC y el terminal;
-- procesamiento mediante PaymePOS SDK y Alignet Transit;
-- estados, resultados y referencias correlacionadas;
-- capacidades de consulta, recuperación y cancelación;
-- parámetros correspondientes al ambiente;
-- terminales P5L asociados para las pruebas acordadas;
-- trazabilidad y soporte para la validación conjunta.
+- Componente Local de Integración instalado en el P5L;
+- endpoints y contrato JSON documentados;
+- PaymePOS SDK y SDK del dispositivo integrados en el terminal;
+- procesamiento con la plataforma de pagos;
+- respuesta normalizada con estados y códigos;
+- ambiente y terminales P5L para las pruebas acordadas;
+- parámetros de conexión sujetos a validación final;
+- soporte y trazabilidad para la validación conjunta.
 
-## Artefactos compartidos
-
-| Artefacto | Contenido |
-| --- | --- |
-| Especificación de interfaz | Transporte, mensajes, schemas, estados, errores y versionado. |
-| Ficha de habilitación | Identificación del POS y disponibilidad de la conexión Wi-Fi. |
-| Ficha de parametrización | Terminales y datos adicionales que CELSAT decida asociar a la operación. |
-| Política operativa | Timeout, recuperación, cancelación, contingencia y uso de `PASS`/`NO_PASS`. |
-| Plan de pruebas | Escenarios, datos, evidencias y criterios de aceptación. |
-| Procedimiento de soporte | Canales, severidades, diagnóstico y escalamiento. |
-
-## Checklist para iniciar la integración
+## Checklist de inicio
 
 <Check>
-  CELSAT identificó el componente del SCC que consumirá la interfaz local.
+  CELSAT identificó el proceso del SCC que consumirá la interfaz HTTP.
 </Check>
 
 <Check>
-  Cada operación puede conservar una referencia única y persistente.
+  El SCC puede generar y persistir un `operationNumber` único por venta.
 </Check>
 
 <Check>
-  Los maestros y catálogos operativos tienen códigos estables.
+  El SCC representa `amount` como una cadena numérica en unidades menores.
 </Check>
 
 <Check>
-  La conexión Wi-Fi con el POS fue habilitada y verificada con Alignet.
+  La integración diferencia `success`, `resultCode` y `result.state`.
 </Check>
 
 <Check>
-  El SCC puede manejar aceptación, proceso, resultado, cancelación y estado incierto.
+  El SCC puede consultar una operación después de timeout o reinicio.
 </Check>
 
 <Check>
-  La política de barrera diferencia `PASS`, `NO_PASS`, indisponibilidad y resultado no resuelto.
+  La conectividad LAN y los parámetros del ambiente se validarán con el P5L asignado.
 </Check>
 
 <Check>
-  CELSAT dispone de un ambiente o simulador para las pruebas conjuntas.
+  CELSAT dispone de datos y escenarios para las pruebas conjuntas.
 </Check>

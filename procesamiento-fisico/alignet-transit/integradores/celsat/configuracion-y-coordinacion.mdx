@@ -1,86 +1,68 @@
 ---
 title: "Configuración y coordinación técnica"
-description: "Parámetros variables, artefactos compartidos y habilitación por ambiente."
+description: "Separación entre el contrato estable y los parámetros que se confirman por ambiente."
 icon: "sliders"
 ---
 
-La arquitectura y las reglas funcionales de Transit se mantienen entre ambientes. Los valores operativos y de parametrización se registran para adaptar la integración al flujo de CELSAT. Alignet gestiona la conexión Wi-Fi con el POS.
+La integración mantiene un contrato funcional estable y desacopla los valores que pueden ajustarse durante la habilitación del ambiente.
 
-## Clasificación de la información
+## Elementos estables
 
-| Tipo | Ejemplos | Tratamiento |
-| --- | --- | --- |
-| Contrato estable | Actores, responsabilidades, flujo, idempotencia y correlación. | Forma parte de la referencia técnica. |
-| Configuración de ambiente | Terminal y timeout. | Se suministra o registra durante la habilitación. |
-| Coordinación técnica | Transporte local, schemas, códigos, cancelación y contingencia. | Se formaliza entre CELSAT y Alignet en el artefacto correspondiente. |
+Los siguientes elementos forman parte de la especificación de integración:
 
-## Interfaz local
+| Elemento | Definición |
+| --- | --- |
+| Arquitectura | SCC → LAN → Componente Local en P5L → PaymePOS SDK → SDK del dispositivo → plataforma de pagos. |
+| Autorización | `POST /api/v1/payments`. |
+| Consulta | `GET /api/v1/payments/{operationNumber}`. |
+| Formato | JSON con `Content-Type` y `Accept` en `application/json`. |
+| Solicitud | `operationNumber`, `amount` y `currency`. |
+| Respuesta | `success`, `resultCode`, `resultMessage` y `result`. |
+| Aprobación | `result.state = "AUTORIZADO"`. |
+| Correlación | `operationNumber` de CELSAT y `transactionID` de Alignet. |
+| Recuperación | Consultar la referencia original después de timeout o pérdida de comunicación. |
 
-Los siguientes aspectos se registran para cada ambiente:
+## Parámetros sujetos a validación final
 
-- mecanismo de entrega o consulta del resultado;
-- timeout de conexión, solicitud y recuperación;
-- política de reintentos;
-- versión del contrato.
+| Parámetro | Tratamiento |
+| --- | --- |
+| URL base del ambiente | Por confirmar durante la habilitación final. |
+| Mecanismo de autenticación | Pendiente de confirmación en ambiente de integración. |
+| Timeout de conexión y lectura | Parámetro sujeto a ajuste durante las pruebas de integración. |
+| Frecuencia y límite de consulta | Parámetro sujeto a ajuste durante las pruebas de integración. |
+| Direccionamiento del P5L en la LAN | Por confirmar para cada terminal y ambiente. |
+| Asociación SCC–P5L | Se valida durante la preparación del carril o laboratorio. |
+| Política de soporte y escalamiento | Se entrega como parte de la habilitación operativa. |
 
-<Note>
-  Alignet coordina la habilitación de la conexión Wi-Fi con el POS sin cambiar el comportamiento funcional descrito en esta documentación.
-</Note>
-
-## Conectividad con el POS
-
-Alignet gestiona la conexión Wi-Fi necesaria para que el SCC se comunique con el POS y para que el terminal procese la operación. CELSAT participa en la verificación funcional de la conexión durante las pruebas.
-
-## Parametrización operativa
-
-| Parámetro | Origen | Uso |
-| --- | --- | --- |
-| Serial del P5L | Alignet | Registro y soporte del dispositivo. |
-| Datos adicionales de la operación | CELSAT | Información que CELSAT decida enviar dentro de `additionalFields`. |
-| Zona horaria | CELSAT y Alignet | Correlación de eventos. |
-
-## Estados y comportamiento operativo
-
-CELSAT y Alignet registran en la especificación:
-
-- valores técnicos de disponibilidad, aceptación, proceso y finalización;
-- códigos de `PASS`, `NO_PASS` y resultado no resuelto;
-- catálogo versionado de razones y errores;
-- estados recuperables y no recuperables;
-- reglas de idempotencia y conflicto;
-- valores de timeout y frecuencia de consulta;
-- punto operativo hasta el cual procede una cancelación;
-- comportamiento ante indisponibilidad de la conexión con el POS;
-- tratamiento de respuestas desconocidas.
+<Info>
+  Los ajustes de estos parámetros no modifican los endpoints, los mensajes, los estados ni las responsabilidades principales de la solución.
+</Info>
 
 ## Ambientes
 
-| Ambiente | Finalidad | Principio de configuración |
+| Ambiente | Finalidad | Condición de uso |
 | --- | --- | --- |
-| Integración / QA | Pruebas de contrato, conectividad y escenarios funcionales. | Terminales y datos de prueba segregados de producción. |
-| UAT | Validación conjunta del flujo de carril. | Datos representativos, evidencia correlacionada y criterios de aceptación. |
-| Producción | Operación de los carriles habilitados. | Parámetros productivos entregados por canal seguro y control de cambios. |
+| Integración | Validar conectividad, contrato y comportamiento técnico. | Utiliza terminales y datos controlados. |
+| UAT | Validar el flujo completo del carril con CELSAT. | Requiere evidencia y criterios de aceptación conjuntos. |
+| Producción | Procesar operaciones de los carriles habilitados. | Se habilita después de completar las validaciones acordadas. |
 
-## Artefactos de coordinación
+## Artefactos de habilitación
 
 <Steps>
   <Step title="Especificación de interfaz">
-    Registra transporte, schemas, campos, validaciones, estados, errores, versionado y mecanismo de resultado.
+    Contiene endpoints, mensajes, tipos, estados y códigos confirmados.
   </Step>
-  <Step title="Ficha de habilitación">
-    Identifica el POS y confirma la disponibilidad de su conexión Wi-Fi.
-  </Step>
-  <Step title="Ficha de parametrización">
-    Registra el terminal y los datos adicionales que CELSAT decida asociar a la operación.
-  </Step>
-  <Step title="Política operativa">
-    Define timeouts, recuperación, cancelación, contingencia y decisión de barrera.
+  <Step title="Ficha del ambiente">
+    Registra URL base, mecanismo de autenticación, timeouts y terminales asignados.
   </Step>
   <Step title="Plan de pruebas">
-    Establece escenarios, datos, evidencias y criterios de aceptación.
+    Define escenarios, datos, evidencias y criterios de aceptación.
+  </Step>
+  <Step title="Procedimiento de soporte">
+    Define contactos, severidades, información de diagnóstico y escalamiento.
   </Step>
 </Steps>
 
 ## Control de cambios
 
-Cada artefacto debe identificar versión, ambiente, fecha de vigencia y responsables de aprobación. Un cambio incompatible en mensajes, estados o validaciones requiere una nueva versión del contrato y una ventana de coordinación entre ambas partes.
+Cada ajuste debe identificar versión, ambiente y fecha de vigencia. Un cambio en endpoints, campos, tipos, estados o semántica requiere actualizar la especificación versionada. Un ajuste de URL, timeout o asignación de terminal se gestiona en la ficha del ambiente.

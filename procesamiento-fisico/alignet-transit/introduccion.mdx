@@ -1,115 +1,104 @@
 ---
 title: "Introducción a Alignet Transit"
-description: "Referencia técnica vigente para la integración del SCC de CELSAT con Alignet Transit."
+description: "Referencia técnica para integrar el SCC de CELSAT con el terminal P5L y la plataforma de pagos Alignet."
 icon: "road"
 ---
 
-Alignet Transit permite que el **Sistema de Control de Carril de CELSAT (SCC)** solicite pagos mediante un **terminal P5L PIN Pad** y reciba una decisión operativa correlacionada para gestionar el carril.
+Alignet Transit permite que el **Sistema de Control de Carril de CELSAT (SCC)** inicie una autorización de pago en un **terminal P5L PIN Pad** y reciba una respuesta normalizada para resolver la operación del carril.
 
-Esta documentación está dirigida a los equipos de arquitectura, desarrollo, infraestructura, seguridad, QA y operación técnica de CELSAT. Describe qué debe preparar CELSAT, qué administra Alignet y qué parámetros se coordinan durante la habilitación de cada ambiente.
+Esta documentación está dirigida a los equipos de arquitectura, desarrollo, QA y operación técnica de CELSAT. El SCC solo se integra con el Componente Local de Integración instalado en el P5L. Las estructuras internas de PaymePOS SDK, el SDK del dispositivo, el procesamiento adquirente y los datos sensibles de tarjeta permanecen encapsulados por Alignet.
 
-## Alcance funcional
+## Alcance de la integración
 
 La integración contempla:
 
-- pagos en soles peruanos, con código numérico de moneda `604`;
-- pagos mediante chip EMV, EMV Contactless/NFC y QR interoperable;
-- consulta de disponibilidad del terminal;
-- inicio, aceptación, seguimiento y resultado de la solicitud;
-- decisión operativa `PASS` o `NO_PASS`;
-- idempotencia y detección de solicitudes inconsistentes;
-- consulta, cancelación y recuperación de operaciones;
-- manejo de timeouts y pérdida de comunicación;
-- correlación entre la referencia de CELSAT y la transacción de Alignet;
-- comprobante generado por CELSAT con los datos habilitados;
-- pruebas conjuntas en un ambiente segregado de producción.
+- autorización de pagos iniciada por el SCC;
+- solicitud HTTP `POST /api/v1/payments` en formato JSON;
+- respuesta normalizada con código general y estado financiero;
+- consulta HTTP `GET /api/v1/payments/{operationNumber}` para recuperar el estado;
+- correlación mediante `operationNumber` y `transactionID`;
+- idempotencia y prevención de cobros duplicados;
+- tratamiento de errores locales, respuestas del procesador y cancelaciones del usuario;
+- recuperación después de timeout, pérdida de comunicación o reinicio del SCC;
+- registro de información no sensible para trazabilidad, soporte y comprobante.
 
-<Info>
-  La integración no asume autorización offline. Alignet gestiona la conectividad Wi-Fi necesaria para que el POS procese la operación.
-</Info>
-
-## Modelo de integración
+## Arquitectura de la solución
 
 ```mermaid
-flowchart TB
-    SCC[CELSAT<br/>Sistema de Control de Carril]
+flowchart LR
+    SCC[SCC CELSAT]
 
     subgraph P5L[Terminal P5L PIN Pad]
         LOCAL[Componente Local de Integración]
         PAYME[PaymePOS SDK]
-        WISEASY[Wiseasy SDK / hardware]
+        DEVICE[SDK y hardware del dispositivo]
+
         LOCAL --> PAYME
-        PAYME --> WISEASY
+        PAYME --> DEVICE
     end
 
-    TRANSIT[Alignet Transit / Pay-me]
+    PLATFORM[Plataforma de pagos Alignet]
+    NETWORK[Procesador y redes de pago]
 
-    SCC <-->|Wi-Fi con el POS| LOCAL
-    PAYME <-->|Canal seguro gestionado por Alignet| TRANSIT
+    SCC <-->|Red LAN| LOCAL
+    PAYME <-->|Canal administrado por Alignet| PLATFORM
+    PLATFORM <-->|Procesamiento| NETWORK
 ```
 
-CELSAT se integra con una única frontera funcional: el **Componente Local de Integración** disponible en el P5L. Este componente también puede denominarse Agente ECR o Servicio Local de Integración en los documentos de coordinación.
+El Componente Local de Integración constituye la única frontera técnica consumida por CELSAT. El SCC no invoca directamente PaymePOS SDK, el SDK del dispositivo ni la plataforma de pagos.
 
-CELSAT no necesita invocar directamente PaymePOS SDK, Wiseasy SDK ni los servicios internos de Alignet Transit.
-
-## Flujo general
+## Flujo principal
 
 <Steps>
-  <Step title="Consultar el terminal">
-    El SCC verifica que el P5L pueda recibir una operación.
-  </Step>
   <Step title="Preparar la operación">
-    CELSAT determina la categoría, calcula la tarifa y asigna una referencia única a la operación lógica.
+    El SCC calcula el importe, genera un `operationNumber` único y lo persiste antes de enviar la solicitud.
   </Step>
-  <Step title="Solicitar el pago">
-    El SCC envía `operationNumber`, `amount`, `currency` y, cuando corresponda, `additionalFields` mediante la interfaz acordada.
+  <Step title="Solicitar la autorización">
+    El SCC envía `operationNumber`, `amount` y `currency` al endpoint local de autorización.
   </Step>
-  <Step title="Procesar la transacción">
-    El Componente Local coordina PaymePOS SDK y Wiseasy SDK. PaymePOS se comunica con Alignet Transit por un canal seguro.
+  <Step title="Procesar el pago">
+    El Componente Local coordina PaymePOS SDK y el SDK del dispositivo. Alignet procesa la transacción en la plataforma de pagos.
   </Step>
-  <Step title="Recibir o recuperar el resultado">
-    El SCC recibe el estado correlacionado o lo consulta usando la referencia original.
+  <Step title="Interpretar la respuesta">
+    El SCC evalúa `result`, `resultCode` y, principalmente, `result.state`. El campo `success` no determina por sí solo la aprobación.
   </Step>
-  <Step title="Resolver el evento del carril">
-    CELSAT registra las referencias, aplica la política de barrera y genera el comprobante cuando corresponda.
+  <Step title="Recuperar una operación incierta">
+    Ante timeout o pérdida de comunicación, el SCC conserva `operationNumber` y consulta la operación original antes de intentar otro cobro.
+  </Step>
+  <Step title="Cerrar el evento del carril">
+    CELSAT registra la respuesta, aplica su política operativa y genera el comprobante cuando corresponda.
   </Step>
 </Steps>
 
-## Principios que debe aplicar el SCC
+## Principios de implementación
 
-- Mantener una referencia estable durante todo el ciclo de la operación.
-- Persistir la referencia antes de enviar la solicitud.
-- Distinguir aceptación de solicitud, decisión de carril y estado financiero.
-- Consultar el estado original antes de repetir una operación incierta.
-- No interpretar un timeout o código desconocido como `NO_PASS`.
-- No generar una nueva operación para resolver una respuesta ausente.
-- Registrar trazabilidad suficiente sin almacenar datos sensibles de tarjeta.
+- Una venta mantiene un único `operationNumber`.
+- `amount` se envía como una cadena numérica que representa un entero en unidades menores.
+- La aprobación se determina con `result.state = "AUTORIZADO"`.
+- `success = true` solo indica que el flujo produjo una respuesta procesable.
+- Un timeout no equivale a pago rechazado.
+- El SCC consulta antes de generar una nueva operación después de un resultado incierto.
+- CELSAT no recibe ni almacena PAN completo, CVV, PIN, PIN Block, tracks ni datos EMV sensibles.
 
 ## Cómo usar esta documentación
 
 <CardGroup cols={2}>
   <Card title="Arquitectura y trazabilidad" icon="diagram-project" href="/procesamiento-fisico/alignet-transit/arquitectura-y-trazabilidad">
-    Actores, comunicaciones, responsabilidades e identificadores.
+    Componentes, límites de responsabilidad e identificadores.
   </Card>
-  <Card title="Parámetros de envío" icon="file-export" href="/procesamiento-fisico/alignet-transit/parametros-de-envio">
-    Campos obligatorios, datos adicionales y ejemplos de la trama de pago.
+  <Card title="Solicitud de autorización" icon="file-export" href="/procesamiento-fisico/alignet-transit/parametros-de-envio">
+    Endpoint, headers, campos de entrada y reglas de validación.
+  </Card>
+  <Card title="Respuesta, estados y códigos" icon="code" href="/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos">
+    Contrato de respuesta, interpretación financiera y catálogo de resultados.
   </Card>
   <Card title="Operación y recuperación" icon="rotate" href="/procesamiento-fisico/alignet-transit/operacion-y-recuperacion">
-    Secuencia, idempotencia, errores, timeouts, cancelación y logging.
+    Secuencia, idempotencia, timeout, consulta y reconexión.
   </Card>
-  <Card title="Integración CELSAT" icon="ethernet" href="/procesamiento-fisico/alignet-transit/integradores/celsat/interfaz-scc-p5l">
-    Capacidades de la interfaz local y trabajo técnico del SCC.
+  <Card title="Integración del SCC con el P5L" icon="ethernet" href="/procesamiento-fisico/alignet-transit/integradores/celsat/interfaz-scc-p5l">
+    Comportamiento que debe implementar el cliente de CELSAT.
   </Card>
   <Card title="Responsabilidades y preparación" icon="people-arrows" href="/procesamiento-fisico/alignet-transit/integradores/celsat/responsabilidades-y-preparacion">
-    Entregas de cada parte y checklist técnico para CELSAT.
-  </Card>
-  <Card title="Configuración y coordinación" icon="sliders" href="/procesamiento-fisico/alignet-transit/integradores/celsat/configuracion-y-coordinacion">
-    Parámetros variables, artefactos compartidos y habilitación por ambiente.
+    Responsabilidades de CELSAT y Alignet para iniciar la integración.
   </Card>
 </CardGroup>
-
-## Contrato y configuración
-
-La arquitectura, las responsabilidades y las reglas de integridad son permanentes. La conectividad Wi-Fi con el POS se habilita para cada ambiente bajo gestión de Alignet. Los schemas, códigos y parámetros particulares se registran en la especificación versionada de la interfaz.
-
-La interacción específica para QR interoperable, incluyendo presentación, confirmación y datos de respuesta aplicables, se formaliza en la especificación de interfaz, manteniendo las mismas reglas de correlación, trazabilidad y recuperación descritas en esta documentación.
