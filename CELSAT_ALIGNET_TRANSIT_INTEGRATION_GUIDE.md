@@ -1,6 +1,6 @@
 # Alignet Transit: guía de integración CELSAT
 
-**Versión:** 1.0
+**Versión:** 1.1
 
 **Audiencia:** Arquitectura, desarrollo, QA y operación técnica de CELSAT
 
@@ -77,8 +77,9 @@ Accept: application/json
 | `operationNumber` | String | Sí | Identificador único de la operación generado por CELSAT. |
 | `amount` | String | Sí | Cadena numérica que representa el monto en unidades menores. |
 | `currency` | String | Sí | Código numérico ISO 4217. Para PEN utiliza `604`. |
+| `additionalFields` | Object | No | Información complementaria asociada a la operación. |
 
-La solicitud no requiere otros campos.
+Los tres primeros campos son requeridos. `additionalFields` es opcional y no reemplaza ninguno de ellos.
 
 ```json
 {
@@ -89,6 +90,31 @@ La solicitud no requiere otros campos.
 ```
 
 `amount` se envía como una cadena numérica sin separadores. S/ 15.00 se representa como `"1500"`.
+
+### Información adicional para CELSAT
+
+Cuando se incluya `additionalFields`, debe contener las tres claves acordadas.
+
+| Campo | Tipo JSON | Requerido dentro del objeto | Formato | Uso |
+| --- | --- | --- | --- | --- |
+| `montoPeaje` | String | Sí | Decimal(12,2): hasta 10 dígitos enteros y 2 decimales | Importe correspondiente al peaje. |
+| `montoDetraccion` | String | Sí | Decimal(12,2): hasta 10 dígitos enteros y 2 decimales | Importe correspondiente a la detracción. Usa `"0.00"` cuando no aplique. |
+| `IdTurnoVia` | String | Sí | Máximo 50 caracteres | Agrupación y conciliación por turno o vía. |
+
+```json
+{
+  "operationNumber": "OP-20260822-000001",
+  "amount": "1500",
+  "currency": "604",
+  "additionalFields": {
+    "montoPeaje": "10.00",
+    "montoDetraccion": "5.00",
+    "IdTurnoVia": "TV-20260822-001"
+  }
+}
+```
+
+Los nombres de las claves distinguen mayúsculas de minúsculas. `amount` utiliza unidades menores, mientras `montoPeaje` y `montoDetraccion` se expresan con dos posiciones decimales. Cuando se envía esta información, la respuesta la conserva dentro de `result.additionalFields`.
 
 ## 6. Reglas de `operationNumber`
 
@@ -111,11 +137,16 @@ La solicitud no requiere otros campos.
   "resultMessage": "Se procesó correctamente la petición",
   "result": {
     "transactionID": "6f55a89d-bba1-4db7-bbc7-004011e0978d",
-    "operationNumber": "OP-20260821-000001",
+    "operationNumber": "OP-20260822-000001",
     "state": "AUTORIZADO",
     "stateReason": "Approved",
     "amount": "1500",
     "currency": "604",
+    "additionalFields": {
+      "montoPeaje": "10.00",
+      "montoDetraccion": "5.00",
+      "IdTurnoVia": "TV-20260822-001"
+    },
     "paymentMethod": {
       "name": "CARD",
       "maskedPan": "411111******1111",
@@ -154,7 +185,7 @@ result.state = AUTORIZADO
 | `stateReason` | String | Razón o descripción del procesador o emisor. |
 | `amount` | String | Monto procesado en unidades menores. |
 | `currency` | String | Código numérico ISO 4217. |
-| `additionalFields` | Object / null | Información adicional asociada a la operación, cuando exista. |
+| `additionalFields` | Object / null | Información adicional enviada por CELSAT y asociada a la operación. |
 | `paymentMethod` | Object / null | Información no sensible del medio de pago. |
 | `processor` | Object / null | Información normalizada del procesador. |
 | `lifecycle` | Array | Historial de estados, cuando se encuentre disponible. |
@@ -265,8 +296,9 @@ Estos valores permanecen desacoplados del contrato para permitir ajustes menores
 
 ## 14. Criterios de aceptación
 
-- La solicitud contiene solo los tres campos definidos.
+- La solicitud contiene tres campos requeridos y admite `additionalFields` como objeto opcional.
 - `amount` se envía como una cadena numérica que representa un entero en unidades menores.
+- La respuesta conserva la información adicional asociada dentro de `result.additionalFields`.
 - El SCC confirma pagos únicamente con `state = AUTORIZADO`.
 - `success = true` no se interpreta como aprobación.
 - Las operaciones inciertas se consultan antes de otro cobro.

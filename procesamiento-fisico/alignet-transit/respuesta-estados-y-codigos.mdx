@@ -15,11 +15,16 @@ El Componente Local de Integración entrega al SCC una respuesta normalizada. La
   "resultMessage": "Se procesó correctamente la petición",
   "result": {
     "transactionID": "6f55a89d-bba1-4db7-bbc7-004011e0978d",
-    "operationNumber": "OP-20260821-000001",
+    "operationNumber": "OP-20260822-000001",
     "state": "AUTORIZADO",
     "stateReason": "Approved",
     "amount": "1500",
     "currency": "604",
+    "additionalFields": {
+      "montoPeaje": "10.00",
+      "montoDetraccion": "5.00",
+      "IdTurnoVia": "TV-20260822-001"
+    },
     "paymentMethod": {
       "name": "CARD",
       "maskedPan": "411111******1111",
@@ -58,7 +63,7 @@ Cuando `result` no es `null`, pueden recibirse los siguientes campos:
 | `stateReason` | String | Razón o descripción retornada por el procesador o emisor. |
 | `amount` | String | Monto procesado en unidades menores. |
 | `currency` | String | Código numérico ISO 4217. |
-| `additionalFields` | Object / null | Información adicional asociada a la operación, cuando exista. |
+| `additionalFields` | Object / null | Información adicional enviada por CELSAT y asociada a la operación. |
 | `paymentMethod` | Object / null | Información no sensible del medio de pago. |
 | `processor` | Object / null | Información normalizada del procesador. |
 | `lifecycle` | Array | Historial de estados de la operación, cuando se encuentre disponible. |
@@ -66,6 +71,22 @@ Cuando `result` no es `null`, pueden recibirse los siguientes campos:
 <Note>
   Tanto la solicitud como la respuesta representan `amount` como `String` numérico en unidades menores.
 </Note>
+
+## Retorno de la información adicional
+
+Cuando la solicitud contiene `additionalFields` y la respuesta incluye información de la operación, `result.additionalFields` devuelve los datos asociados a la transacción:
+
+```json
+{
+  "additionalFields": {
+    "montoPeaje": "10.00",
+    "montoDetraccion": "5.00",
+    "IdTurnoVia": "TV-20260822-001"
+  }
+}
+```
+
+El SCC debe correlacionar estos valores mediante `operationNumber` y conservarlos para sus procesos de conciliación. `additionalFields` aporta contexto de negocio; la aprobación continúa determinada exclusivamente por `result.state`.
 
 ## Estados financieros
 

@@ -17,6 +17,7 @@ La integración contempla:
 - respuesta normalizada con código general y estado financiero;
 - consulta HTTP `GET /api/v1/payments/{operationNumber}` para recuperar el estado;
 - correlación mediante `operationNumber` y `transactionID`;
+- asociación y retorno de información adicional para desglose de importes y conciliación;
 - idempotencia y prevención de cobros duplicados;
 - tratamiento de errores locales, respuestas del procesador y cancelaciones del usuario;
 - recuperación después de timeout, pérdida de comunicación o reinicio del SCC;
@@ -54,7 +55,7 @@ El Componente Local de Integración constituye la única frontera técnica consu
     El SCC calcula el importe, genera un `operationNumber` único y lo persiste antes de enviar la solicitud.
   </Step>
   <Step title="Solicitar la autorización">
-    El SCC envía `operationNumber`, `amount` y `currency` al endpoint local de autorización.
+    El SCC envía `operationNumber`, `amount` y `currency`. Puede incluir `additionalFields` para asociar el desglose de importes y el identificador de turno o vía.
   </Step>
   <Step title="Procesar el pago">
     El Componente Local coordina PaymePOS SDK y el SDK del dispositivo. Alignet procesa la transacción en la plataforma de pagos.
@@ -74,6 +75,7 @@ El Componente Local de Integración constituye la única frontera técnica consu
 
 - Una venta mantiene un único `operationNumber`.
 - `amount` se envía como una cadena numérica que representa un entero en unidades menores.
+- `additionalFields` mantiene información complementaria asociada a la operación y no reemplaza los campos requeridos.
 - La aprobación se determina con `result.state = "AUTORIZADO"`.
 - `success = true` solo indica que el flujo produjo una respuesta procesable.
 - Un timeout no equivale a pago rechazado.

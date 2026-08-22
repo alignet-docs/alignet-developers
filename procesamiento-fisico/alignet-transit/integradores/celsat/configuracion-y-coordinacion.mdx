@@ -16,7 +16,8 @@ Los siguientes elementos forman parte de la especificación de integración:
 | Autorización | `POST /api/v1/payments`. |
 | Consulta | `GET /api/v1/payments/{operationNumber}`. |
 | Formato | JSON con `Content-Type` y `Accept` en `application/json`. |
-| Solicitud | `operationNumber`, `amount` y `currency`. |
+| Solicitud | `operationNumber`, `amount` y `currency` como campos requeridos; `additionalFields` como objeto opcional. |
+| Información adicional | `montoPeaje`, `montoDetraccion` e `IdTurnoVia`, asociados y retornados con la operación. |
 | Respuesta | `success`, `resultCode`, `resultMessage` y `result`. |
 | Aprobación | `result.state = "AUTORIZADO"`. |
 | Correlación | `operationNumber` de CELSAT y `transactionID` de Alignet. |

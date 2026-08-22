@@ -67,6 +67,7 @@ El SCC no debe depender de:
 | --- | --- | --- | --- |
 | `operationNumber` | CELSAT | Se genera antes de la solicitud y se conserva durante todo el ciclo. | Idempotencia, consulta y correlación con el evento del carril. |
 | `transactionID` | Alignet | Se retorna cuando existe una transacción generada en backend. | Trazabilidad, soporte, búsqueda, conciliación y flujos posteriores. |
+| `IdTurnoVia` | CELSAT | Se envía dentro de `additionalFields`. | Agrupación y conciliación de las operaciones por turno o vía. |
 
 ```mermaid
 flowchart LR
@@ -84,6 +85,7 @@ Por cada operación, CELSAT debe registrar, cuando existan:
 
 - `operationNumber` y `transactionID`;
 - `amount` y `currency`;
+- `additionalFields`, cuando se haya enviado;
 - `success`, `resultCode` y `resultMessage`;
 - `state` y `stateReason`;
 - `authorizationCode` y `responseCode`;

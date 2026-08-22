@@ -2,7 +2,7 @@
 
 ## Fuente de referencia
 
-La documentación pública de Transit se alineó con la **Especificación de Integración — Autorización de Pago**, versión 1.0, correspondiente al contrato entre el SCC de CELSAT y el Componente Local instalado en el P5L.
+La documentación pública de Transit se alineó con la **Especificación de Integración — Autorización de Pago**, versión 1.0, y con la definición complementaria acordada para el intercambio de `additionalFields`. El contrato documental resultante corresponde a la versión 1.1.
 
 Cuando existieron diferencias con documentos anteriores, prevaleció esta especificación.
 
@@ -37,6 +37,10 @@ Campos requeridos:
 - `operationNumber`: `String`;
 - `amount`: `String` numérico en unidades menores;
 - `currency`: `String` con código ISO 4217.
+
+Campo opcional:
+
+- `additionalFields`: `Object` con `montoPeaje`, `montoDetraccion` e `IdTurnoVia` como valores de tipo `String`.
 
 ### Consulta
 
@@ -74,7 +78,7 @@ result.state = AUTORIZADO
 - Se reemplazó `transactionId` por `transactionID`.
 - Se eliminó `requestStatus`, `reasonCode`, `PASS` y `NO_PASS` del contrato.
 - Se precisó que `amount` se transmite como `String` numérico y representa un entero en unidades menores.
-- Se retiró `additionalFields` de la solicitud de autorización.
+- Se incorporó `additionalFields` como objeto opcional de la solicitud y se documentó su retorno dentro de `result`.
 - Se documentaron los endpoints confirmados de autorización y consulta.
 - Se eliminó la disponibilidad previa como operación expuesta al SCC.
 - Se retiraron notificaciones, conexiones persistentes y cancelación como capacidades confirmadas.

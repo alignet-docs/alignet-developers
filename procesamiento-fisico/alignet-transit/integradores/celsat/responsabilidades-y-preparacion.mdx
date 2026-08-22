@@ -8,7 +8,7 @@ icon: "people-arrows"
 
 | Área | CELSAT | Alignet | Coordinación |
 | --- | --- | --- | --- |
-| SCC y lógica del carril | Calcular el importe, generar la referencia, invocar la interfaz y aplicar la política operativa. | Entregar una respuesta normalizada y documentada. | Validar el comportamiento de extremo a extremo. |
+| SCC y lógica del carril | Calcular el importe, generar la referencia, incorporar la información adicional acordada, invocar la interfaz y aplicar la política operativa. | Entregar una respuesta normalizada y documentada. | Validar el comportamiento de extremo a extremo. |
 | Interfaz LAN | Implementar el cliente HTTP/JSON y gestionar la recuperación. | Proporcionar el Componente Local y los parámetros del ambiente. | Verificar conectividad y timeouts. |
 | Componente Local | Consumir únicamente la interfaz documentada. | Instalar, configurar y operar el agente dentro del P5L. | Ejecutar pruebas de contrato. |
 | PaymePOS SDK | No requiere integración directa. | Administrar inicialización, invocación y ciclo transaccional. | Validar códigos locales y comportamiento del terminal. |
@@ -33,6 +33,7 @@ icon: "people-arrows"
 
 - Calcular el importe total antes de solicitar el pago.
 - Representar el total como entero en unidades menores.
+- Incorporar `montoPeaje`, `montoDetraccion` e `IdTurnoVia` dentro de `additionalFields` cuando corresponda.
 - Confirmar el pago únicamente con `state = AUTORIZADO`.
 - Mantener la operación abierta cuando `state = PENDIENTE`.
 - Definir el comportamiento del carril para denegación, cancelación, expiración y error.
@@ -41,6 +42,7 @@ icon: "people-arrows"
 ### Trazabilidad
 
 - Registrar `operationNumber` y `transactionID`.
+- Conservar `additionalFields` para conciliación cuando forme parte de la operación.
 - Conservar códigos, mensajes, estado y razón.
 - Registrar fecha y hora de envío, respuesta, consulta y recuperación.
 - Excluir información sensible de tarjeta.
@@ -77,6 +79,10 @@ Alignet proporciona:
 
 <Check>
   El SCC representa `amount` como una cadena numérica en unidades menores.
+</Check>
+
+<Check>
+  El SCC puede construir y recuperar `additionalFields` con los valores asociados a la operación.
 </Check>
 
 <Check>

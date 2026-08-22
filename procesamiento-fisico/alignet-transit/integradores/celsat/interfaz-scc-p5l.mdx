@@ -34,6 +34,7 @@ El cliente debe:
 
 - generar y persistir un `operationNumber` único por venta;
 - construir el JSON con `operationNumber`, `amount` y `currency`;
+- incluir `additionalFields` cuando corresponda enviar el desglose de importes y el identificador de turno o vía;
 - enviar los headers `Content-Type` y `Accept` con valor `application/json`;
 - tolerar que `result` sea `null`;
 - evaluar `result.state` antes de resolver el pago;
@@ -52,10 +53,10 @@ El cliente debe:
     Genera un `operationNumber` único y lo almacena antes del envío.
   </Step>
   <Step title="Enviar la solicitud">
-    Ejecuta `POST /api/v1/payments` con los tres campos requeridos.
+    Ejecuta `POST /api/v1/payments` con los tres campos requeridos y, cuando corresponda, el objeto opcional `additionalFields`.
   </Step>
   <Step title="Procesar la respuesta">
-    Lee `success`, `resultCode`, `resultMessage` y `result` sin asumir que `success` representa aprobación.
+    Lee `success`, `resultCode`, `resultMessage` y `result` sin asumir que `success` representa aprobación. Conserva `result.additionalFields` cuando exista.
   </Step>
   <Step title="Resolver el estado financiero">
     Confirma el pago solo cuando `result.state` sea `AUTORIZADO`.

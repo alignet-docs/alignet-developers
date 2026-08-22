@@ -21,6 +21,7 @@ La habilitación requiere información acotada del SCC, del ambiente de pruebas 
 - formato y longitud utilizados para `operationNumber`;
 - regla que garantiza unicidad por venta;
 - importes y referencias de prueba;
+- valores de prueba para `montoPeaje`, `montoDetraccion` e `IdTurnoVia`;
 - comportamiento del carril para cada estado financiero;
 - formato del comprobante y datos no sensibles que requiere CELSAT.
 
@@ -52,6 +53,7 @@ Los valores del ambiente se encuentran sujetos a validación final y pueden ajus
 | `operationNumber` controlados | Correlación, consulta e idempotencia. |
 | Montos en unidades menores | Aprobación, denegación y validación. |
 | Moneda `604` | Operaciones en soles. |
+| `additionalFields` controlados | Validación del desglose de importes y la conciliación por turno o vía. |
 | Casos de timeout y reconexión | Validación del flujo de recuperación. |
 | Casos de error local | Validación de códigos del P5L y SDK. |
 

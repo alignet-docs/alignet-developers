@@ -1,6 +1,6 @@
 # Alignet Transit: parámetros sujetos a validación final
 
-Este documento registra únicamente las definiciones que deben confirmarse durante la habilitación del ambiente. No modifica el contrato de autorización versión 1.0.
+Este documento registra únicamente las definiciones que deben confirmarse durante la habilitación del ambiente. No modifica el contrato de autorización versión 1.1.
 
 ## 1. Conectividad del Componente Local
 
@@ -45,7 +45,6 @@ El SCC siempre debe conservar `resultCode` y `resultMessage` cuando el cuerpo no
 
 La estructura detallada y disponibilidad de los siguientes campos se confirmará durante las pruebas:
 
-- `additionalFields`;
 - `lifecycle`;
 - `paymentMethod`;
 - `processor`;

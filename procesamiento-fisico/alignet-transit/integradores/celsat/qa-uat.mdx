@@ -29,6 +29,7 @@ Antes de ejecutar los casos, verifica:
 | --- | --- | --- |
 | Pago autorizado | `success = true`, `resultCode = "00"` y `state = "AUTORIZADO"`. | Solicitud, respuesta y ambos identificadores. |
 | Pago denegado | `success = true`, `resultCode = "01"` y `state = "DENEGADO"`. | Código, estado y razón. |
+| Pago con información adicional | La respuesta conserva `montoPeaje`, `montoDetraccion` e `IdTurnoVia` en `result.additionalFields`. | Solicitud y respuesta correlacionadas. |
 | Solicitud inválida | `resultCode = "06"`. | Payload enviado y mensaje de validación. |
 | Configuración de comercio inválida | `resultCode = "08"`. | Respuesta y escalamiento técnico. |
 | Cancelación antes de presentar tarjeta | `success = false`, `resultCode = "14"` y `result = null`. | Respuesta local. |
@@ -52,11 +53,19 @@ Antes de ejecutar los casos, verifica:
 ## Validaciones de contrato
 
 <Check>
-  La solicitud contiene únicamente `operationNumber`, `amount` y `currency`.
+  La solicitud contiene `operationNumber`, `amount` y `currency` como campos requeridos, y admite `additionalFields` como objeto opcional.
 </Check>
 
 <Check>
   `amount` y `currency` se envían como cadenas. El contenido de `amount` representa un entero positivo en unidades menores.
+</Check>
+
+<Check>
+  `montoPeaje` y `montoDetraccion` se envían como cadenas decimales con dos posiciones, e `IdTurnoVia` conserva la capitalización documentada.
+</Check>
+
+<Check>
+  La respuesta devuelve en `result.additionalFields` la información adicional asociada a la operación.
 </Check>
 
 <Check>
@@ -88,6 +97,7 @@ La integración puede avanzar cuando:
 - los códigos locales y del procesador producen el tratamiento esperado;
 - timeout, reconexión y reinicio no generan cobros duplicados;
 - `operationNumber` y `transactionID` permiten correlacionar la evidencia;
+- la información adicional se conserva entre la solicitud y la respuesta;
 - los parámetros ajustables del ambiente han sido registrados;
 - ambas partes aprueban los resultados de integración y UAT.
 
