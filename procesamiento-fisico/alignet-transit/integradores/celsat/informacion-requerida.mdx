@@ -4,7 +4,7 @@ description: "Información operativa y técnica que CELSAT proporciona para conf
 icon: "clipboard-list"
 ---
 
-Alignet utiliza la siguiente información de CELSAT para parametrizar terminales, preparar conectividad y validar la integración. Los valores se consolidan en las fichas de configuración del ambiente.
+Alignet utiliza la siguiente información de CELSAT para parametrizar terminales y validar la integración. Los valores se consolidan en las fichas de configuración del ambiente.
 
 ## Arquitectura del SCC
 
@@ -15,26 +15,16 @@ Alignet utiliza la siguiente información de CELSAT para parametrizar terminales
 - integración actual con periféricos y TMC;
 - capacidad de almacenamiento persistente de operaciones abiertas.
 
-## Red y conectividad
+## Conectividad con el POS
 
-- topología LAN de los puntos participantes;
-- rangos IP, VLAN, gateway y DNS;
-- uso de DHCP o direccionamiento fijo;
-- restricciones de puertos y servicios en escucha;
-- firewall, proxy, inspección TLS y allowlists;
-- requisitos de autenticación dentro de la LAN;
-- fuente de sincronización horaria;
-- restricciones para acceso remoto en ambientes de prueba.
+Alignet gestiona la habilitación de la conexión Wi-Fi con el POS. Para las pruebas, CELSAT solo debe confirmar qué SCC se comunicará con cada terminal participante.
 
 ## Inventario operativo
 
 | Información | Contenido esperado | Finalidad |
 | --- | --- | --- |
-| Puntos de peaje | Código estable y nombre. | Parametrización de `tollPointId`. |
-| Casetas o carriles | Código, peaje asociado y sentido. | Parametrización de `laneId`. |
-| Terminales | Relación prevista entre P5L y carril. | Asociación con TID y serial. |
-| Categorías | Código y descripción. | Validación de `vehicleCategory`. |
-| Sentidos | Código y descripción. | Validación de `laneDirection`. |
+| Terminales | Inventario de equipos P5L que participarán en las pruebas. | Preparación y soporte de los dispositivos. |
+| Datos adicionales | Nombres y valores que CELSAT decida enviar dentro de `additionalFields`. | Preparación de casos de prueba representativos. |
 | Volumen | Promedio, pico y carriles simultáneos. | Pruebas de capacidad y concurrencia. |
 
 ## Operaciones y estados
@@ -75,8 +65,8 @@ Alignet utiliza la siguiente información de CELSAT para parametrizar terminales
   <Card title="Maestros" icon="table">
     Archivo estructurado con código, descripción y relaciones entre entidades.
   </Card>
-  <Card title="Topología" icon="network-wired">
-    Diagrama de red acompañado de una tabla de direccionamiento y reglas.
+  <Card title="Terminales" icon="tablet-screen-button">
+    Relación de los terminales P5L y los SCC que participarán en las pruebas.
   </Card>
   <Card title="Política operativa" icon="road-barrier">
     Matriz de escenario, estado recibido, acción de barrera y escalamiento.
@@ -85,7 +75,3 @@ Alignet utiliza la siguiente información de CELSAT para parametrizar terminales
     Casos, datos, resultado esperado y evidencia requerida.
   </Card>
 </CardGroup>
-
-<Note>
-  Las credenciales, certificados y datos sensibles deben utilizar el canal seguro acordado y no adjuntarse a documentos de circulación general.
-</Note>

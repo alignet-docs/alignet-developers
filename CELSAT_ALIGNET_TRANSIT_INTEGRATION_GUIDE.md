@@ -13,7 +13,7 @@ Su objetivo es que CELSAT pueda:
 
 - comprender los actores y límites de responsabilidad;
 - adaptar su Sistema de Control de Carril (SCC);
-- preparar la comunicación LAN con el terminal;
+- coordinar con Alignet la habilitación de la conexión Wi-Fi con el terminal;
 - construir y correlacionar solicitudes de pago;
 - interpretar estados y resultados;
 - gestionar timeouts, reintentos y recuperación;
@@ -41,7 +41,7 @@ La integración contempla:
 - generación del comprobante por CELSAT con los datos habilitados para ese fin;
 - pruebas conjuntas en un ambiente segregado de producción.
 
-La integración no asume autorización offline. La separación entre la comunicación LAN del carril y la comunicación WAN del terminal representa límites de conectividad distintos; el comportamiento operativo ante indisponibilidad WAN se coordina entre CELSAT y Alignet.
+La integración no asume autorización offline. Alignet gestiona la conectividad Wi-Fi necesaria para que el POS procese la operación.
 
 Las operaciones financieras distintas al pago descrito, como extornos o devoluciones, se gestionan mediante sus flujos y especificaciones correspondientes y no forman parte de esta guía.
 
@@ -53,7 +53,7 @@ La interacción específica para QR interoperable, incluyendo presentación, con
 2. **Idempotencia:** una retransmisión de la misma operación lógica no produce un segundo efecto financiero.
 3. **Separación de estados:** la recepción de una solicitud, la decisión de barrera y el estado financiero son conceptos distintos.
 4. **Recuperación antes de repetir:** ante una respuesta ausente o incierta, el SCC consulta el estado de la referencia original antes de iniciar otra operación.
-5. **Configuración por ambiente:** direcciones, puertos, credenciales, certificados y timeouts se suministran para cada ambiente.
+5. **Configuración por ambiente:** el terminal y los timeouts se coordinan para cada ambiente.
 6. **Mínima exposición:** las interfaces, logs y comprobantes incluyen únicamente la información necesaria y autorizada.
 7. **Trazabilidad extremo a extremo:** CELSAT y Alignet conservan identificadores que permiten relacionar el evento del carril con la transacción procesada.
 
@@ -88,8 +88,8 @@ flowchart TB
     TRANSIT[Alignet Transit / Pay-me]
     TMC[TMC / Registro operativo CELSAT]
 
-    SCC <-->|LAN del carril| LOCAL
-    PAYME <-->|WAN segura| TRANSIT
+    SCC <-->|Wi-Fi con el POS| LOCAL
+    PAYME <-->|Canal seguro gestionado por Alignet| TRANSIT
     SCC --> TMC
 ```
 
@@ -97,10 +97,10 @@ flowchart TB
 
 | Enlace | Finalidad | Naturaleza de la definición |
 | --- | --- | --- |
-| SCC ↔ Componente Local de Integración | Disponibilidad, inicio, seguimiento, consulta, cancelación y resultado. | El canal utiliza la LAN del carril. El transporte, puerto, direccionamiento y parámetros se formalizan para cada integración y ambiente. |
+| SCC ↔ Componente Local de Integración | Disponibilidad, inicio, seguimiento, consulta, cancelación y resultado. | Conexión Wi-Fi con el POS habilitada por Alignet. |
 | Componente Local ↔ PaymePOS SDK | Entrega de la operación a la capa de pago dentro del P5L. | Interfaz interna del terminal administrada por Alignet. |
 | PaymePOS SDK ↔ Wiseasy SDK | Interacción con lector, NFC, pinpad y hardware criptográfico. | Interfaz interna del terminal administrada por Alignet y Wiseasy. |
-| PaymePOS SDK ↔ Alignet Transit | Procesamiento y trazabilidad transaccional. | Comunicación WAN mediante HTTPS con TLS 1.3. Los hosts y credenciales dependen del ambiente. |
+| PaymePOS SDK ↔ Alignet Transit | Procesamiento y trazabilidad transaccional. | Canal seguro administrado por Alignet. |
 | SCC ↔ TMC | Registro operativo, seguimiento y conciliación del evento de carril. | Corresponde a la arquitectura de CELSAT. |
 
 La interfaz de CELSAT termina en el Componente Local de Integración. CELSAT no necesita interactuar directamente con PaymePOS SDK, Wiseasy SDK ni con los servicios internos de Alignet Transit.
@@ -123,7 +123,7 @@ CELSAT es responsable de:
 - evitar la reutilización de una referencia para operaciones con datos diferentes;
 - registrar la trazabilidad del evento en sus sistemas;
 - generar e imprimir el comprobante con los datos habilitados por la respuesta;
-- preparar su infraestructura LAN, reglas de red y ambiente de pruebas;
+- coordinar con Alignet la habilitación del POS y preparar el ambiente de pruebas;
 - proporcionar maestros, catálogos y parámetros operativos necesarios para la configuración;
 - participar en las pruebas de integración y validar el comportamiento del carril.
 
@@ -139,8 +139,8 @@ Alignet es responsable de:
 - asignar y devolver el identificador transaccional de Alignet cuando corresponda;
 - aplicar las reglas de idempotencia del ámbito transaccional;
 - exponer capacidades de consulta, recuperación y cancelación conforme al estado de la operación;
-- proteger las credenciales y datos administrados por sus componentes;
-- proporcionar los parámetros, accesos y terminales correspondientes al ambiente de integración;
+- proteger los datos administrados por sus componentes;
+- proporcionar los parámetros y terminales correspondientes al ambiente de integración;
 - habilitar la trazabilidad técnica necesaria para el análisis conjunto de pruebas e incidencias;
 - acompañar la configuración, interoperabilidad y validación de extremo a extremo.
 
@@ -148,14 +148,13 @@ Alignet es responsable de:
 
 CELSAT y Alignet coordinan:
 
-- transporte y parámetros de la comunicación local;
-- direccionamiento, puertos, firewall, VLAN, proxy y allowlists aplicables;
+- disponibilidad de la conexión Wi-Fi con el POS;
 - estructura versionada de mensajes y catálogo de respuestas;
 - catálogos de puntos de peaje, carriles, categorías y sentidos;
 - semántica operativa de `PASS`, `NO_PASS` y resultados inciertos;
 - valores de timeout y reglas de recuperación;
 - punto operativo hasta el cual procede una cancelación;
-- comportamiento del carril ante indisponibilidad local o WAN;
+- comportamiento del carril ante indisponibilidad de la conexión con el POS;
 - mecanismo de autenticación, integridad y protección contra replay en la interfaz local;
 - datos autorizados para el comprobante;
 - configuración de ambientes, datos de prueba y criterios de aceptación.
@@ -167,7 +166,7 @@ La interfaz entre el SCC y el terminal contempla las siguientes capacidades lóg
 | Capacidad | Solicitud de CELSAT | Respuesta esperada |
 | --- | --- | --- |
 | **Consultar disponibilidad** | El SCC consulta si el terminal puede recibir una operación. | Estado disponible, ocupado o no disponible, según el catálogo acordado. |
-| **Iniciar pago** | El SCC envía la referencia, ubicación, monto, moneda y datos operativos. | Aceptación de la solicitud o rechazo de validación correlacionado. |
+| **Iniciar pago** | El SCC envía la referencia, el monto, la moneda y, cuando corresponda, datos operativos adicionales. | Aceptación de la solicitud o rechazo de validación correlacionado. |
 | **Consultar operación** | El SCC solicita el último estado conocido mediante la referencia acordada. | Estado reproducible y resultado, si ya se encuentra disponible. |
 | **Recibir o recuperar resultado** | El SCC recibe el resultado por el mecanismo coordinado o lo recupera mediante consulta. | Decisión operativa, referencias y datos complementarios habilitados. |
 | **Solicitar cancelación** | El SCC solicita cerrar una operación que se encuentra en un estado cancelable. | Confirmación de cancelación o estado/resultado ya alcanzado. |
@@ -175,37 +174,42 @@ La interfaz entre el SCC y el terminal contempla las siguientes capacidades lóg
 
 El mecanismo de entrega del resultado puede adoptar un patrón de consulta, notificación o conexión persistente. La opción aplicable se registra en la especificación de interfaz acordada para la integración.
 
-## 10. Información de la solicitud
+## 10. Parámetros de envío
 
-La siguiente tabla representa el contrato funcional. Los nombres técnicos, longitudes, obligatoriedad condicional y reglas de serialización se detallan en la especificación de interfaz.
+La solicitud de autorización requiere únicamente tres campos. Todos se envían como cadenas.
 
-| Dato funcional | Referencia utilizada | Regla |
-| --- | --- | --- |
-| Referencia de la operación CELSAT | `operationNumber` | Identifica una única operación lógica dentro del ámbito del comercio. Su formato y longitud se coordinan con CELSAT. |
-| Punto de peaje | `tollPointId` | Código estable procedente del maestro acordado. |
-| Carril | `laneId` | Código estable asociado al punto de peaje. |
-| Monto | `amount` | Entero expresado en unidades menores de la moneda. Para S/ 8.50, el valor funcional es `850`. |
-| Moneda | `currency` | Código numérico `604` para PEN. |
-| Fecha y hora del evento | `eventDateTime` | Fecha y hora ISO 8601 con zona horaria. |
-| Categoría vehicular | `vehicleCategory` | Valor del catálogo coordinado con CELSAT. |
-| Sentido del carril | `laneDirection` | Valor del catálogo coordinado con CELSAT. |
+| Campo | Tipo | Obligatorio | Regla | Ejemplo |
+| --- | --- | --- | --- | --- |
+| `operationNumber` | String | Sí | Identifica una única operación lógica generada por CELSAT. | `20100008` |
+| `amount` | String | Sí | Monto expresado en unidades menores, sin separador decimal. | `850` equivale a S/ 8.50 |
+| `currency` | String | Sí | Código numérico ISO 4217 de la moneda. | `604` para PEN |
 
-Ejemplo funcional:
+Trama mínima:
 
 ```json
 {
-  "operationNumber": "<REFERENCIA_CELSAT>",
-  "tollPointId": "<CODIGO_PEAJE>",
-  "laneId": "<CODIGO_CARRIL>",
-  "amount": 850,
-  "currency": 604,
-  "eventDateTime": "2026-08-17T14:26:00-05:00",
-  "vehicleCategory": "<CATEGORIA>",
-  "laneDirection": "<SENTIDO>"
+  "operationNumber": "20100008",
+  "amount": "850",
+  "currency": "604"
 }
 ```
 
-El ejemplo ilustra el contenido funcional y no sustituye la especificación del mensaje. Los nombres, tipos, restricciones y envoltura del protocolo corresponden a la versión de interfaz acordada.
+La trama admite el atributo opcional `additionalFields` para enviar pares clave/valor complementarios. Incluir este atributo no agrega nuevos campos obligatorios a la autorización. CELSAT decide los nombres y valores que utilizará.
+
+Trama con datos adicionales:
+
+```json
+{
+  "operationNumber": "20100008",
+  "amount": "850",
+  "currency": "604",
+  "additionalFields": {
+    "<campo_definido_por_CELSAT>": "<valor>"
+  }
+}
+```
+
+Alignet no establece campos adicionales obligatorios. La especificación versionada de la interfaz define las restricciones y la envoltura final del mensaje.
 
 ## 11. Información de la respuesta
 
@@ -304,13 +308,13 @@ La referencia de la operación actúa como clave de idempotencia dentro del ámb
 | Misma referencia con datos diferentes | Rechazar la solicitud como conflicto o inconsistencia. |
 | Respuesta no recibida | Consultar la referencia original antes de retransmitir. |
 | Reinicio del SCC | Recuperar las operaciones abiertas desde el almacenamiento persistente y consultar su estado. |
-| Reconexión LAN | Consultar el último estado conocido antes de decidir otro envío. |
+| Restablecimiento de la conexión | Consultar el último estado conocido antes de decidir otro envío. |
 
 CELSAT debe persistir la referencia antes de enviar la solicitud y conservar una huella de los datos relevantes para detectar una reutilización inconsistente.
 
 ## 15. Timeouts, reintentos y recuperación
 
-Los timeouts son parámetros de ambiente coordinados de acuerdo con las características del carril, la red y el mecanismo de respuesta.
+Los timeouts son parámetros de ambiente coordinados de acuerdo con las características del flujo y el mecanismo de respuesta.
 
 Ante un timeout o pérdida de comunicación, el SCC debe:
 
@@ -334,7 +338,7 @@ flowchart TD
     G -->|No| I[Aplicar política operativa acordada]
 ```
 
-Una indisponibilidad WAN no debe interpretarse automáticamente como aprobación, rechazo ni habilitación offline.
+Una indisponibilidad de la conexión no debe interpretarse automáticamente como aprobación, rechazo ni habilitación offline.
 
 ## 16. Cancelación
 
@@ -363,49 +367,24 @@ CELSAT debe contemplar, como mínimo, las siguientes categorías:
 
 El catálogo versionado de `reasonCode`, errores y estados indicará cuáles son recuperables, cuáles requieren corrección de datos y cuáles deben escalarse.
 
-## 18. Conectividad y red
+## 18. Conectividad con el POS
 
-### 18.1 LAN del carril
+Alignet gestiona la conexión Wi-Fi necesaria para que el SCC se comunique con el terminal P5L y para que el POS procese la operación. CELSAT participa en la verificación funcional de esta conexión durante las pruebas.
 
-La comunicación entre el SCC y el terminal P5L utiliza la red LAN del carril. Para cada ambiente se coordina:
+### 18.1 Sincronización horaria
 
-- transporte de aplicación;
-- dirección IP o mecanismo de descubrimiento;
-- puerto de servicio;
-- rol de cliente y servidor;
-- persistencia y ciclo de vida de la conexión;
-- timeout de conexión y respuesta;
-- reglas de firewall y segmentación;
-- direccionamiento fijo o dinámico;
-- monitoreo de disponibilidad;
-- mecanismo de autenticación e integridad local.
-
-La configuración puede variar de acuerdo con la infraestructura del carril, manteniendo el mismo comportamiento funcional.
-
-### 18.2 WAN del terminal
-
-El PaymePOS SDK se comunica con Alignet Transit mediante HTTPS con TLS 1.3. Alignet proporciona los hosts, credenciales y certificados correspondientes al ambiente. CELSAT debe considerar en su infraestructura las reglas de salida, DNS, proxy o allowlist que correspondan.
-
-### 18.3 Sincronización horaria
-
-SCC y terminal deben mantener relojes sincronizados. CELSAT registra `eventDateTime` con zona horaria y conserva la hora de envío, recepción y aplicación de la respuesta para trazabilidad y análisis de latencia.
+SCC y terminal deben mantener relojes sincronizados. CELSAT conserva la hora del evento, envío, recepción y aplicación de la respuesta para trazabilidad y análisis de latencia.
 
 ## 19. Seguridad
 
 La integración aplica los siguientes principios:
 
 - segregación entre ambientes de integración y producción;
-- cifrado TLS 1.3 para la comunicación WAN administrada por Alignet;
-- segmentación y control de acceso en la LAN del carril;
-- autenticación, integridad y protección contra replay conforme al mecanismo acordado para la interfaz local;
-- entrega de credenciales y material criptográfico mediante canales seguros;
-- almacenamiento protegido y rotación de secretos;
+- protección de las comunicaciones administradas por Alignet;
 - aplicación del principio de mínimo privilegio;
-- exclusión de secretos, PAN completo, datos de chip y material criptográfico de logs, comprobantes y tickets de soporte;
+- exclusión de PAN completo, datos de chip y material criptográfico de logs, comprobantes y tickets de soporte;
 - enmascaramiento de datos de tarjeta cuando su uso se encuentre habilitado;
 - conservación de evidencia técnica suficiente sin exponer datos sensibles.
-
-`client_id`, `client_secret`, `merchant_code` (también denominado MID o `idComercio`), TID, certificados y demás parámetros se proporcionan de acuerdo con el ambiente y no deben incorporarse en código fuente ni repositorios.
 
 ## 20. Trazabilidad y logging de CELSAT
 
@@ -427,17 +406,16 @@ Para cada operación, CELSAT debe registrar, cuando estén disponibles:
 - identificador técnico del terminal, cuando corresponda;
 - resultado de impresión o registro del comprobante.
 
-Los logs deben permitir reconstruir la secuencia sin registrar credenciales, PAN completo, datos EMV sensibles ni llaves. La política de retención, acceso y anonimización se alinea con las normas de seguridad y operación de ambas organizaciones.
+Los logs deben permitir reconstruir la secuencia sin registrar PAN completo, datos EMV sensibles ni llaves. La política de retención, acceso y anonimización se alinea con las normas de seguridad y operación de ambas organizaciones.
 
 ## 21. Configuración por ambiente
 
 | Grupo | Parámetros típicos | Responsable de suministrar o coordinar |
 | --- | --- | --- |
-| Interfaz local | Transporte, IP, puerto, timeouts, autenticación y versión del contrato. | Alignet y CELSAT. |
-| Red CELSAT | VLAN, direccionamiento, gateway, DNS, proxy, firewall y allowlists. | CELSAT. |
-| Alignet Transit | Host, rutas, credenciales, certificados y políticas de acceso. | Alignet. |
-| Comercio y terminal | `merchant_code`/MID/`idComercio`, TID, serial y asociación del dispositivo. | Alignet, con los maestros operativos de CELSAT. |
-| Operación | Peaje, carril, categoría, sentido, moneda y zona horaria. | CELSAT y Alignet. |
+| Interfaz local | Timeouts y versión del contrato. | Alignet y CELSAT. |
+| Conectividad del POS | Habilitación de la conexión Wi-Fi. | Alignet. |
+| Terminal | Serial y asociación del dispositivo. | Alignet, con la información operativa de CELSAT. |
+| Operación | Moneda, zona horaria y datos adicionales definidos por CELSAT. | CELSAT y Alignet. |
 | Recuperación | Timeouts, frecuencia de consulta, límites de reintento y escalamiento. | Alignet y CELSAT. |
 | Evidencia | Niveles de log, correlación, retención y canales de soporte. | Alignet y CELSAT. |
 
@@ -449,7 +427,7 @@ La lectura de esta guía permite a CELSAT organizar los siguientes frentes de tr
 
 1. Inventariar la arquitectura y runtime del SCC.
 2. Definir la adaptación del SCC para consumir la interfaz local del P5L.
-3. Preparar conectividad LAN, direccionamiento y reglas de seguridad.
+3. Coordinar con Alignet la habilitación de la conexión Wi-Fi con el POS.
 4. Incorporar la construcción y validación de solicitudes.
 5. Implementar la interpretación de estados, resultados y razones.
 6. Persistir referencias y correlación transaccional.
@@ -467,7 +445,7 @@ La lectura de esta guía permite a CELSAT organizar los siguientes frentes de tr
 Antes de ejecutar las pruebas conjuntas, ambas partes verifican:
 
 - especificación de interfaz y catálogos versionados;
-- parámetros de red y seguridad aplicados;
+- conexión Wi-Fi con el POS habilitada por Alignet;
 - ambiente Alignet Transit accesible;
 - terminales P5L asociados al comercio y carril de prueba;
 - software y material criptográfico correspondientes al ambiente;
@@ -499,7 +477,7 @@ Antes de ejecutar las pruebas conjuntas, ambas partes verifican:
 - CELSAT y Alignet correlacionan cada operación mediante sus dos identificadores.
 - Los reintentos y reconexiones no generan duplicidad financiera.
 - Los estados desconocidos y resultados inciertos siguen el flujo de recuperación.
-- Cada terminal se encuentra asociado al punto de peaje, carril y TID correctos.
+- Cada operación queda asociada al terminal que la procesó.
 - La evidencia permite reconstruir cada escenario sin exponer información sensible.
 - La lógica de barrera responde a la decisión operativa acordada.
 - Ambas partes revisan los resultados y registran la conformidad de las pruebas.
@@ -509,9 +487,9 @@ Antes de ejecutar las pruebas conjuntas, ambas partes verifican:
 La integración se formaliza mediante los siguientes artefactos compartidos:
 
 1. **Especificación de interfaz:** transporte, mensajes, schemas, estados, errores, versionado y mecanismo de resultado.
-2. **Ficha de conectividad:** IP, puertos, VLAN, firewall, DNS, proxy, certificados y allowlists por ambiente.
+2. **Ficha de habilitación:** terminales participantes y disponibilidad de la conexión Wi-Fi.
 3. **Ficha de parametrización:** comercio, terminales, peajes, carriles, categorías, sentidos y zona horaria.
-4. **Política operativa:** timeout, recuperación, cancelación, contingencia WAN y uso de `PASS`/`NO_PASS`.
+4. **Política operativa:** timeout, recuperación, cancelación, contingencia de conexión y uso de `PASS`/`NO_PASS`.
 5. **Plan de pruebas:** escenarios, datos, evidencias, responsables de ejecución y criterios de aceptación.
 6. **Procedimiento de soporte:** canales, datos mínimos de diagnóstico, severidades y escalamiento.
 
@@ -521,4 +499,4 @@ La coordinación de estos valores no modifica la arquitectura ni las responsabil
 
 CELSAT se integra con una única interfaz local disponible en el terminal P5L. El SCC consulta el terminal, envía una operación correlacionada, sigue su estado y recibe o recupera una decisión operativa. Alignet administra el flujo de pago dentro del terminal y el procesamiento con Alignet Transit.
 
-Para integrarse correctamente, CELSAT debe preparar la comunicación LAN, los datos operativos, la persistencia de referencias, la interpretación de estados, la recuperación ante incertidumbre, los logs, la lógica de barrera y el ambiente de pruebas. Los valores particulares de red, seguridad y protocolo se registran durante la habilitación de cada ambiente y en la especificación de interfaz acordada.
+Para integrarse correctamente, CELSAT debe preparar los datos operativos, la persistencia de referencias, la interpretación de estados, la recuperación ante incertidumbre, los logs, la lógica de barrera y el ambiente de pruebas. Alignet gestiona la conexión Wi-Fi con el POS. Los valores particulares del protocolo se registran durante la habilitación de cada ambiente y en la especificación de interfaz acordada.

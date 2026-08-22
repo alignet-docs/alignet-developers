@@ -47,7 +47,7 @@ La sección pública se encuentra en **Pagos Fisicos → Guía → PaymePOS SDK*
 
 También se revisaron las páginas operativas de `paymepos/`, las páginas públicas del producto Procesamiento y la referencia POS existente.
 
-PaymePOS SDK documenta un SDK Android embebido. Su contrato usa `PaymeClient`, objetos `PM*`, Activities y callbacks. Incluye autorización, consulta, extorno e impresión. Para Transit, el Sistema de Control de Carril de CELSAT (SCC) se comunicará por LAN con una aplicación Agente ECR local instalada en el terminal P5L PIN Pad. El agente invocará el PaymePOS SDK de Alignet, que utilizará el Wiseasy SDK para presentar el monto y operar el hardware del POS. El PaymePOS SDK se comunicará por WAN con el backend Alignet Transit. El contrato técnico específico todavía está pendiente.
+PaymePOS SDK documenta un SDK Android embebido. Su contrato usa `PaymeClient`, objetos `PM*`, Activities y callbacks. Incluye autorización, consulta, extorno e impresión. Para Transit, el Sistema de Control de Carril de CELSAT (SCC) se comunicará por Wi-Fi con una aplicación Agente ECR local instalada en el terminal P5L PIN Pad. Alignet gestionará la conectividad del POS. El agente invocará el PaymePOS SDK de Alignet, que utilizará el Wiseasy SDK para presentar el monto y operar el hardware. El contrato técnico específico todavía está pendiente.
 
 ### Patrones identificados
 
@@ -63,15 +63,15 @@ PaymePOS SDK documenta un SDK Android embebido. Su contrato usa `PaymeClient`, o
 
 | Tema | PaymePOS SDK actual | Transit / P5L PIN Pad según backlog v0.14 | Acción implementada |
 | --- | --- | --- | --- |
-| Introducción | SDK Android para POS compatibles; tarjeta y QR. | CELSAT envía la solicitud por LAN al Agente ECR local del P5L PIN Pad; el agente invoca el PaymePOS SDK, que utiliza el Wiseasy SDK y se comunica con el backend Alignet Transit. | Nueva introducción Transit; contrato específico pendiente. |
-| Parámetros | `PMAuthorizationRequest` con `operationNumber`, `amount`, `currency` y campos del SDK. | Incluye además `tollPointId`, `laneId`, `eventDateTime`, `vehicleCategory` y `laneDirection`. | Contrato funcional documentado; compatibilidad del modelo `PM*` pendiente. |
+| Introducción | SDK Android para POS compatibles; tarjeta y QR. | CELSAT envía la solicitud por Wi-Fi al Agente ECR local del P5L PIN Pad; Alignet gestiona la conectividad del POS. | Nueva introducción Transit; contrato específico pendiente. |
+| Parámetros | `PMAuthorizationRequest` con `operationNumber`, `amount`, `currency` y `additionalFields`. | Requiere únicamente `operationNumber`, `amount` y `currency`; los datos propios del peaje se envían opcionalmente dentro de `additionalFields`. | Parámetros y ejemplos de trama documentados sin exponer código del SDK. |
 | Autorización | `PaymeClient.initAuthorization` y callback Android. | La solicitud de CELSAT / Sistema de Carril llega al Agente ECR local del P5L PIN Pad y después pasa al PaymePOS SDK provisto por Alignet. | No se confirma todavía el método aplicable a Transit. |
-| Request / response | Objetos `PM*` y ejemplos JSON del SDK. | Campos funcionales; schema y nombres técnicos pendientes. | Tabla funcional sin fabricar payloads JSON. |
+| Request / response | Objetos `PM*` y ejemplos JSON del SDK. | Tres parámetros obligatorios y un diccionario opcional para datos del peaje; el schema de respuesta permanece sujeto a la interfaz acordada. | Tablas de parámetros y ejemplos JSON de la trama de entrada, sin código Android. |
 | Consulta | `startSearch` por número de operación y `transactionID`. | Consulta para recuperar resultados inciertos por `operationNumber` o `transactionId`, según referencia futura. | Nuevo flujo de recuperación; sin enlazar la función del SDK como implementación. |
 | Extorno | `startReversal` sobre una transacción procesada. | La guía define cancelación previa cuando proceda; no define extorno financiero. | Se mantiene exclusivamente en PaymePOS SDK. No se agregó extorno a Transit. |
 | Voucher | El SDK imprime elementos mediante `startPrint`. | CELSAT genera e imprime el comprobante con trazabilidad devuelta por Alignet. | Se documenta la responsabilidad de CELSAT; no se reutiliza `startPrint`. |
 | Inicialización | Registro/configuración del POS y `initializeSDK`. | Estado del P5L PIN Pad y preparación QA; inicialización técnica ECR pendiente. | Nueva documentación de disponibilidad y preparación; no se copia el flujo Android. |
-| Comunicación con dispositivo | Aplicación Android integrada en un POS compatible. | CELSAT / Sistema de Carril ↔ Agente ECR local ↔ PaymePOS SDK ↔ Wiseasy SDK/hardware, dentro del P5L PIN Pad; PaymePOS SDK ↔ backend Alignet Transit por WAN. | Nueva página técnica; protocolo y puerto local definitivos, métodos, callbacks y modelos quedan pendientes. |
+| Comunicación con dispositivo | Aplicación Android integrada en un POS compatible. | CELSAT / Sistema de Carril ↔ Agente ECR local ↔ PaymePOS SDK ↔ Wiseasy SDK/hardware, con conectividad del POS gestionada por Alignet. | Nueva página técnica; métodos, callbacks y modelos quedan pendientes. |
 | Estado del terminal | Inicialización satisfactoria antes de operar. | CELSAT / Sistema de Carril debe conocer disponibilidad antes de iniciar. | Se reutiliza el principio operativo y se mantiene el contrato Transit separado. |
 | Manejo de errores | Callbacks y códigos del SDK. | `requestStatus`, `reasonCode`, timeout incierto y recuperación; catálogo técnico pendiente. | Nueva guía funcional sin códigos inventados. |
 | `PASS` / `NO_PASS` | No existe como contrato del SDK público. | Decisión operativa de carril. | Concepto propio de Transit, separado del lifecycle financiero. |
@@ -95,7 +95,7 @@ Procesamiento
         ├── Introducción
         ├── Conceptos comunes
         │   ├── Arquitectura y trazabilidad
-        │   ├── Contrato funcional
+        │   ├── Parámetros de envío
         │   └── Operación y recuperación
         └── Integradores
             └── CELSAT
@@ -134,7 +134,7 @@ El recorrido responde de forma progresiva a:
 
 - `procesamiento-fisico/alignet-transit/introduccion.mdx`
 - `procesamiento-fisico/alignet-transit/arquitectura-y-trazabilidad.mdx`
-- `procesamiento-fisico/alignet-transit/contrato-funcional.mdx`
+- `procesamiento-fisico/alignet-transit/parametros-de-envio.mdx`
 - `procesamiento-fisico/alignet-transit/operacion-y-recuperacion.mdx`
 - `procesamiento-fisico/alignet-transit/integradores/celsat/interfaz-scc-p5l.mdx`
 - `procesamiento-fisico/alignet-transit/integradores/celsat/responsabilidades-y-preparacion.mdx`
@@ -177,7 +177,7 @@ La contraseña o el proveedor de autenticación no se almacena en `docs.json`.
 
 ### Enlazado
 
-No se añadieron enlaces de implementación hacia métodos concretos de PaymePOS SDK. Se confirmó que la solicitud de CELSAT llegará por LAN al Agente ECR local instalado en el P5L PIN Pad. El agente invocará el PaymePOS SDK de Alignet; este utilizará el Wiseasy SDK para mostrar el monto y operar el hardware, y se comunicará por WAN con el backend Alignet Transit. La referencia técnica todavía debe confirmar si la versión, los métodos y los modelos coinciden con la documentación pública actual.
+No se añadieron enlaces de implementación hacia métodos concretos de PaymePOS SDK. Se confirmó que la solicitud de CELSAT llegará por Wi-Fi al Agente ECR local instalado en el P5L PIN Pad. Alignet gestionará la conectividad del POS. El agente invocará el PaymePOS SDK de Alignet y este utilizará el Wiseasy SDK para mostrar el monto y operar el hardware. La referencia técnica todavía debe confirmar si la versión, los métodos y los modelos coinciden con la documentación pública actual.
 
 ### Pendiente de confirmar para Transit
 
@@ -190,8 +190,7 @@ No se añadieron enlaces de implementación hacia métodos concretos de PaymePOS
 
 ### Específico del contrato Transit
 
-- Transit requiere `tollPointId`, `laneId`, `eventDateTime`, `vehicleCategory` y `laneDirection`.
-- En esta integración, MID, idComercio y `merchant_code` corresponden al mismo identificador de comercio; la documentación utiliza `merchant_code` como nombre técnico principal.
+- Transit requiere `operationNumber`, `amount` y `currency`. CELSAT puede enviar dentro de `additionalFields` los datos complementarios que decida asociar a la operación.
 - Transit usa `PASS` / `NO_PASS` como decisión operativa de barrera.
 - CELSAT, no PaymePOS SDK, genera el comprobante en este alcance.
 - Los métodos, callbacks y modelos del SDK POS aplicable a Transit siguen sin definición.
@@ -222,7 +221,7 @@ Un administrador debe:
 5. desplegar y verificar acceso anónimo a una página pública;
 6. verificar que una URL directa de Transit solicite autenticación.
 
-La contraseña de visualización fue definida por el responsable del proyecto, pero debe configurarse exclusivamente en Mintlify Dashboard. La autenticación requiere un plan Pro o Enterprise y debe utilizar un dominio personalizado o subdominio de Mintlify; no funciona en un subpath personalizado. Las credenciales de Transit, QA y producción no deben reutilizar la contraseña de visualización de la documentación.
+La contraseña de visualización fue definida por el responsable del proyecto, pero debe configurarse exclusivamente en Mintlify Dashboard. La autenticación requiere un plan Pro o Enterprise y debe utilizar un dominio personalizado o subdominio de Mintlify; no funciona en un subpath personalizado.
 
 ## Pendientes técnicos
 
@@ -230,8 +229,7 @@ La guía v0.13 todavía no define:
 
 - versión, distribución y dependencias del SDK POS;
 - métodos, callbacks y modelos aplicables a Transit;
-- selección definitiva de HTTP/REST o TCP Socket para la interfaz LAN;
-- asignación definitiva del puerto local `8080` o `9090`;
+- definición técnica de la interfaz local con el POS;
 - ciclo de conexión del socket, si se selecciona TCP Socket;
 - recursos, verbos y contratos, si se selecciona HTTP/REST;
 - interfaz con la que el Agente ECR local entrega la operación al PaymePOS SDK;
@@ -239,13 +237,12 @@ La guía v0.13 todavía no define:
 - representación técnica de estado, consulta, recuperación y cancelación;
 - endpoints, métodos y schemas;
 - mecanismo de autenticación, vigencia y renovación;
-- credenciales y host de QA;
+- host de QA;
 - catálogo técnico de errores y `reasonCode`;
 - timeouts y objetivos de tiempo;
 - punto permitido para cancelar;
-- política ante indisponibilidad WAN;
+- política ante indisponibilidad de la conexión con el POS;
 - comportamiento offline;
-- certificados, controles de acceso y reglas de firewall;
 - catálogos definitivos de CELSAT;
 - topología, volumen, concurrencia y comportamiento de barrera;
 - formato definitivo del comprobante.
@@ -255,7 +252,7 @@ La guía v0.13 todavía no define:
 1. Cerrar y publicar la referencia técnica de la interfaz entre CELSAT y el Agente ECR, además de la integración entre el Agente ECR, PaymePOS SDK y Wiseasy SDK.
 2. Publicar endpoints, schemas, autenticación y catálogo técnico de errores.
 3. Recibir maestros, catálogos, topología y reglas operativas de CELSAT.
-4. Parametrizar QA y entregar credenciales por un canal seguro.
+4. Parametrizar QA y habilitar el ambiente correspondiente.
 5. Preparar y entregar los tres P5L PIN Pad de prueba.
 6. Ejecutar QA y corregir hallazgos de integración.
 7. Ejecutar UAT y recopilar evidencias contra los criterios de salida.

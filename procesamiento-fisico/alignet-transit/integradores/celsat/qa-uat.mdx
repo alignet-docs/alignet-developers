@@ -10,16 +10,15 @@ Las pruebas conectan el SCC de CELSAT con el Componente Local del P5L y Alignet 
 
 | CELSAT | Alignet | Compartido |
 | --- | --- | --- |
-| SCC o simulador, red, datos de prueba, lógica de barrera, TMC, comprobante y evidencia del carril. | Ambiente Transit, terminales P5L, parametrización, credenciales y evidencia de procesamiento. | Conectividad, ejecución, análisis de resultados y aceptación. |
+| SCC o simulador, datos de prueba, lógica de barrera, TMC, comprobante y evidencia del carril. | Ambiente Transit, terminales P5L, conexión Wi-Fi y evidencia de procesamiento. | Ejecución, análisis de resultados y aceptación. |
 
 ## Paquete de configuración
 
 | Elemento | Contenido |
 | --- | --- |
 | Especificación de interfaz | Versión del contrato, transporte, mensajes, estados y errores. |
-| Ficha de conectividad | IP, puertos, firewall, DNS, proxy y allowlists. |
-| Accesos de ambiente | Hosts, mecanismo de autenticación y credenciales por canal seguro. |
-| Parametrización | Comercio, TID, P5L, peaje, carril, categoría y sentido. |
+| Habilitación del POS | Terminal participante y conexión Wi-Fi gestionada por Alignet. |
+| Parametrización | P5L y datos adicionales que CELSAT decida utilizar. |
 | Datos de prueba | Referencias controladas, montos y escenarios. |
 | Soporte | Contactos, horario, severidades y canal de incidencias. |
 
@@ -28,18 +27,16 @@ Las pruebas conectan el SCC de CELSAT con el Componente Local del P5L y Alignet 
 Antes de ejecutar las pruebas, verifica:
 
 - SCC o simulador de CELSAT disponible;
-- P5L asociado al comercio, peaje, carril y TID correctos;
-- conectividad LAN entre SCC y Componente Local;
-- salida WAN segura del terminal hacia Alignet Transit;
-- software y material criptográfico correspondientes al ambiente;
-- catálogos y datos de prueba cargados;
+- P5L habilitado para el ambiente de pruebas;
+- conexión Wi-Fi con el POS habilitada por Alignet;
+- software correspondiente al ambiente;
+- datos de prueba cargados;
 - relojes sincronizados;
-- logs correlacionados habilitados;
-- credenciales entregadas mediante canal seguro.
+- logs correlacionados habilitados.
 
 ```mermaid
 flowchart LR
-    SCC[SCC / Simulador CELSAT] <-->|LAN| LOCAL[Componente Local / P5L]
+    SCC[SCC / Simulador CELSAT] <-->|Wi-Fi| LOCAL[Componente Local / P5L]
     LOCAL --> PAYME[PaymePOS SDK]
     PAYME --> WISEASY[Wiseasy SDK / hardware]
     PAYME <-->|HTTPS TLS 1.3| QA[Alignet Transit QA]
@@ -84,7 +81,7 @@ flowchart LR
 </Check>
 
 <Check>
-  Cada terminal está asociado al punto de peaje, carril, comercio y TID correctos.
+  Cada operación queda asociada al terminal que la procesó.
 </Check>
 
 <Check>

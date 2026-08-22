@@ -4,7 +4,7 @@ description: "Guía técnica para adaptar el SCC de CELSAT a la interfaz local d
 icon: "ethernet"
 ---
 
-El SCC de CELSAT se comunica mediante la LAN del carril con el **Componente Local de Integración** disponible en el terminal P5L. Esta es la única interfaz que CELSAT debe consumir para iniciar, seguir y recuperar operaciones de pago.
+El SCC de CELSAT se comunica mediante una conexión Wi-Fi con el **Componente Local de Integración** disponible en el terminal P5L. Alignet gestiona la habilitación de esta conexión. Esta es la única interfaz que CELSAT debe consumir para iniciar, seguir y recuperar operaciones de pago.
 
 ## Capacidades de la interfaz
 
@@ -24,8 +24,8 @@ Los nombres de comandos, rutas, mensajes y constantes corresponden a la especifi
 ```mermaid
 flowchart LR
     EVENTO[Evento del carril] --> DATOS[Construir solicitud]
-    DATOS --> LAN[Cliente de interfaz local]
-    LAN --> ESTADOS[Interpretar estados]
+    DATOS --> CONEXION[Cliente de interfaz local]
+    CONEXION --> ESTADOS[Interpretar estados]
     ESTADOS --> RECUP[Consulta y recuperación]
     RECUP --> BARRERA[Política de barrera]
     BARRERA --> TMC[Logging, TMC y comprobante]
@@ -95,8 +95,8 @@ El trabajo técnico del SCC incluye:
 
 - almacenamiento persistente de operaciones abiertas;
 - sincronización horaria y zona configurada;
-- conexión LAN estable con monitoreo de disponibilidad;
-- protección de credenciales y configuración;
+- conexión disponible con el POS y monitoreo de su estado;
+- protección de la configuración;
 - logs correlacionados sin datos sensibles;
 - tolerancia a respuestas duplicadas;
 - capacidad de ignorar campos adicionales compatibles con la versión del contrato;

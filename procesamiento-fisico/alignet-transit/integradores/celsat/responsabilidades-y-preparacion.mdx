@@ -9,13 +9,13 @@ icon: "people-arrows"
 | Área | CELSAT | Alignet | Coordinación compartida |
 | --- | --- | --- | --- |
 | SCC, tarifa y barrera | Adaptar el SCC, calcular la tarifa y aplicar la política del carril. | Proporcionar estados y decisiones consumibles por el SCC. | Semántica operativa de `PASS`, `NO_PASS` y resultado incierto. |
-| Interfaz local | Implementar el cliente y gestionar conexión, mensajes y recuperación. | Proporcionar el Componente Local y la especificación versionada. | Transporte, puerto, timeouts, seguridad y pruebas de contrato. |
+| Interfaz local | Implementar el cliente y gestionar mensajes y recuperación. | Proporcionar el Componente Local, la conectividad Wi-Fi con el POS y la especificación versionada. | Timeouts y pruebas de contrato. |
 | Pago en el P5L | Consumir el resultado únicamente mediante la interfaz local. | Administrar PaymePOS SDK, Wiseasy SDK y hardware. | Validación de comportamiento de extremo a extremo. |
 | Datos operativos | Proporcionar peaje, carril, categoría, sentido, fecha y monto. | Validar y correlacionar la solicitud. | Catálogos, formatos y reglas de validación. |
 | Identificadores | Generar y persistir `operationNumber`. | Asignar `transactionId`. | Correlación y criterios de idempotencia. |
-| Conectividad | Preparar LAN, direccionamiento y controles de su infraestructura. | Proporcionar destinos WAN y requisitos del terminal. | Firewall, proxy, DNS, certificados y allowlists. |
+| Conectividad | Disponer del SCC que consumirá la interfaz. | Gestionar la conexión Wi-Fi con el POS. | Verificar disponibilidad durante las pruebas. |
 | Trazabilidad | Registrar el evento, respuesta, barrera y comprobante. | Mantener evidencia transaccional y soporte técnico. | Campos, retención y procedimiento de diagnóstico. |
-| Pruebas | Preparar SCC, datos, red y evidencia del carril. | Preparar ambiente Transit, P5L y evidencia de procesamiento. | Ejecución, análisis y aceptación conjunta. |
+| Pruebas | Preparar SCC, datos y evidencia del carril. | Preparar ambiente Transit, P5L y evidencia de procesamiento. | Ejecución, análisis y aceptación conjunta. |
 
 ## Preparación técnica de CELSAT
 
@@ -39,10 +39,7 @@ icon: "people-arrows"
 
 ### Infraestructura
 
-- Definir la topología LAN entre SCC y P5L.
-- Reservar el direccionamiento aplicable a los terminales.
-- Aplicar VLAN, firewall, DNS, proxy o allowlists requeridos.
-- Habilitar la salida WAN segura del terminal.
+- Coordinar con Alignet la habilitación de la conexión Wi-Fi con el POS.
 - Mantener sincronización horaria.
 - Preparar monitoreo y procedimientos de reinicio o reemplazo.
 
@@ -63,7 +60,7 @@ Alignet proporciona:
 - procesamiento mediante PaymePOS SDK y Alignet Transit;
 - estados, resultados y referencias correlacionadas;
 - capacidades de consulta, recuperación y cancelación;
-- parámetros y credenciales correspondientes al ambiente;
+- parámetros correspondientes al ambiente;
 - terminales P5L asociados para las pruebas acordadas;
 - trazabilidad y soporte para la validación conjunta.
 
@@ -72,8 +69,8 @@ Alignet proporciona:
 | Artefacto | Contenido |
 | --- | --- |
 | Especificación de interfaz | Transporte, mensajes, schemas, estados, errores y versionado. |
-| Ficha de conectividad | IP, puerto, VLAN, firewall, DNS, proxy, certificados y allowlists. |
-| Ficha de parametrización | Comercio, TID, terminales, peajes, carriles, categorías y sentidos. |
+| Ficha de habilitación | Identificación del POS y disponibilidad de la conexión Wi-Fi. |
+| Ficha de parametrización | Terminales y datos adicionales que CELSAT decida asociar a la operación. |
 | Política operativa | Timeout, recuperación, cancelación, contingencia y uso de `PASS`/`NO_PASS`. |
 | Plan de pruebas | Escenarios, datos, evidencias y criterios de aceptación. |
 | Procedimiento de soporte | Canales, severidades, diagnóstico y escalamiento. |
@@ -93,7 +90,7 @@ Alignet proporciona:
 </Check>
 
 <Check>
-  La topología LAN, direccionamiento y restricciones de seguridad están documentados.
+  La conexión Wi-Fi con el POS fue habilitada y verificada con Alignet.
 </Check>
 
 <Check>

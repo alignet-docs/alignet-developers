@@ -34,15 +34,6 @@
 
 ## 2. Comunicación
 
-### CELSAT-004
-
-**Categoría:** Comunicación  
-**Tema:** Topología y direccionamiento LAN  
-**Contexto interno:** La habilitación del terminal requiere conocer el esquema de red disponible en los puntos de prueba y operación.  
-**Consulta sugerida para CELSAT:** ¿Podrían compartir la topología LAN prevista para el SCC y los terminales P5L, incluyendo rangos IP, VLAN, gateway y uso de direccionamiento fijo o dinámico?  
-**Motivo o impacto:** Configuración de conectividad y asociación estable entre SCC, carril y terminal.  
-**Prioridad:** Alta
-
 ### CELSAT-005
 
 **Categoría:** Comunicación  
@@ -50,15 +41,6 @@
 **Contexto interno:** La interfaz local puede formalizarse sobre HTTP/REST o TCP, y el mecanismo de entrega del resultado debe ser interoperable con el SCC.  
 **Consulta sugerida para CELSAT:** Para la comunicación local con dispositivos del carril, ¿qué mecanismos soporta actualmente el SCC, por ejemplo HTTP/REST, TCP persistente o consulta periódica, y existe alguna restricción para recibir resultados asíncronos?  
 **Motivo o impacto:** Selección del transporte y del patrón de entrega o recuperación del resultado.  
-**Prioridad:** Alta
-
-### CELSAT-006
-
-**Categoría:** Comunicación  
-**Tema:** Restricciones de puertos y conexiones  
-**Contexto interno:** El puerto y el rol de conexión deben ajustarse a las políticas de infraestructura de CELSAT.  
-**Consulta sugerida para CELSAT:** ¿Existen rangos de puertos autorizados, restricciones para servicios en escucha o requisitos sobre cuál componente debe iniciar la conexión dentro de la LAN del carril?  
-**Motivo o impacto:** Configuración de la interfaz local y reglas de firewall.  
 **Prioridad:** Alta
 
 ### CELSAT-007
@@ -189,8 +171,9 @@
 **Categoría:** Timeouts y recuperación  
 **Tema:** Pérdida de comunicación local o externa  
 **Contexto interno:** La política operativa debe diferenciar la pérdida de enlace entre el SCC y el P5L de la indisponibilidad externa del terminal.  
-**Consulta sugerida para CELSAT:** ¿Qué comportamiento operativo espera CELSAT cuando se pierde la comunicación LAN con el P5L y cuando el terminal informa indisponibilidad de procesamiento externo?  
-**Motivo o impacto:** Recuperación, contingencia del carril y definición de pruebas de conectividad.  
+**Consulta sugerida para CELSAT:** ¿Qué comportamiento operativo espera CELSAT cuando se pierde la comunicación con el P5L?
+
+**Motivo o impacto:** Recuperación, contingencia del carril y definición de pruebas de conectividad.
 **Prioridad:** Alta
 
 ### CELSAT-021
@@ -201,26 +184,6 @@
 **Consulta sugerida para CELSAT:** Ante el reinicio o reemplazo de un P5L, ¿qué procedimiento aplica el SCC para restablecer la asociación con el carril y resolver operaciones que se encontraban en curso?  
 **Motivo o impacto:** Recuperación de estado, reasociación del dispositivo y soporte operativo.  
 **Prioridad:** Media
-
-## 6. Seguridad
-
-### CELSAT-022
-
-**Categoría:** Seguridad  
-**Tema:** Controles de la interfaz local  
-**Contexto interno:** La autenticación, integridad y protección contra replay deben ser compatibles con la infraestructura y políticas de CELSAT.  
-**Consulta sugerida para CELSAT:** ¿Qué controles de autenticación y protección de mensajes exige CELSAT para servicios dentro de la LAN del carril, por ejemplo certificados, mTLS, credenciales de servicio, allowlists o firma de mensajes?  
-**Motivo o impacto:** Diseño de seguridad de la interfaz local y gestión de credenciales.  
-**Prioridad:** Alta
-
-### CELSAT-023
-
-**Categoría:** Seguridad  
-**Tema:** Segmentación, firewall y salida WAN  
-**Contexto interno:** El terminal requiere comunicación local con el SCC y salida segura hacia el ambiente de Alignet.  
-**Consulta sugerida para CELSAT:** ¿Qué políticas de VLAN, firewall, DNS, proxy, inspección TLS o allowlist deben considerarse para los terminales instalados en los carriles?  
-**Motivo o impacto:** Habilitación de conectividad LAN/WAN y compatibilidad con políticas corporativas.  
-**Prioridad:** Alta
 
 ### CELSAT-024
 
@@ -278,15 +241,6 @@
 **Contexto interno:** Las pruebas de contrato y recuperación requieren una instancia controlada del SCC o un simulador equivalente.  
 **Consulta sugerida para CELSAT:** ¿CELSAT dispone de un ambiente de pruebas, simulador o instancia aislada del SCC que pueda conectarse con terminales P5L destinados a integración?  
 **Motivo o impacto:** Planificación de pruebas de contrato y validación antes del entorno operativo.  
-**Prioridad:** Alta
-
-### CELSAT-030
-
-**Categoría:** Testing  
-**Tema:** Conectividad del laboratorio  
-**Contexto interno:** El laboratorio debe reproducir los límites LAN y WAN relevantes del carril.  
-**Consulta sugerida para CELSAT:** ¿Podrían compartir la topología y restricciones de red del ambiente de pruebas, incluyendo accesos remotos permitidos, firewall, proxy y mecanismo para habilitar cambios de configuración?  
-**Motivo o impacto:** Preparación del laboratorio y resolución eficiente de incidencias de conectividad.  
 **Prioridad:** Alta
 
 ### CELSAT-031

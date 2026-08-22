@@ -1,62 +1,42 @@
 ---
 title: "Configuración y coordinación técnica"
-description: "Parámetros variables, seguridad, artefactos compartidos y habilitación por ambiente."
+description: "Parámetros variables, artefactos compartidos y habilitación por ambiente."
 icon: "sliders"
 ---
 
-La arquitectura y las reglas funcionales de Transit se mantienen entre ambientes. Los valores de conectividad, seguridad, operación y parametrización se registran en fichas de configuración para adaptar la integración a la infraestructura de CELSAT.
+La arquitectura y las reglas funcionales de Transit se mantienen entre ambientes. Los valores operativos y de parametrización se registran para adaptar la integración al flujo de CELSAT. Alignet gestiona la conexión Wi-Fi con el POS.
 
 ## Clasificación de la información
 
 | Tipo | Ejemplos | Tratamiento |
 | --- | --- | --- |
 | Contrato estable | Actores, responsabilidades, flujo, idempotencia y correlación. | Forma parte de la referencia técnica. |
-| Configuración de ambiente | IP, puerto, URL, credenciales, certificados, TID y timeout. | Se suministra o registra durante la habilitación. |
-| Coordinación técnica | Transporte local, schemas, códigos, cancelación, contingencia y catálogos. | Se formaliza entre CELSAT y Alignet en el artefacto correspondiente. |
+| Configuración de ambiente | Terminal y timeout. | Se suministra o registra durante la habilitación. |
+| Coordinación técnica | Transporte local, schemas, códigos, cancelación y contingencia. | Se formaliza entre CELSAT y Alignet en el artefacto correspondiente. |
 
 ## Interfaz local
 
-Los siguientes parámetros se registran para cada ambiente:
+Los siguientes aspectos se registran para cada ambiente:
 
-- transporte de aplicación;
-- dirección IP o mecanismo de descubrimiento;
-- puerto del servicio;
-- rol de cliente y servidor;
-- ciclo de vida de la conexión;
 - mecanismo de entrega o consulta del resultado;
 - timeout de conexión, solicitud y recuperación;
-- autenticación, integridad y protección contra replay;
 - política de reintentos;
 - versión del contrato.
 
 <Note>
-  La configuración puede variar de acuerdo con la infraestructura del carril sin cambiar el comportamiento funcional descrito en esta documentación.
+  Alignet coordina la habilitación de la conexión Wi-Fi con el POS sin cambiar el comportamiento funcional descrito en esta documentación.
 </Note>
 
-## Red y seguridad
+## Conectividad con el POS
 
-| Tema | Información de CELSAT | Información de Alignet |
-| --- | --- | --- |
-| LAN | Rangos IP, VLAN, gateway, DHCP o IP fija y reglas de acceso. | Requisitos de conectividad del Componente Local. |
-| WAN | Proxy, DNS, inspección TLS y política de salida. | Hosts, puertos externos, certificados y allowlists requeridas. |
-| Autenticación local | Controles admitidos por la infraestructura del carril. | Mecanismo compatible con la interfaz. |
-| Credenciales | Políticas de almacenamiento y rotación de CELSAT. | Credenciales y vigencia correspondientes al ambiente. |
-| Sincronización horaria | Fuente NTP y zona reportada por el SCC. | Requisitos de timestamp y tolerancia aplicable. |
-| Logging | Retención, acceso y datos compartibles. | Campos de correlación y procedimiento de diagnóstico. |
-
-Las credenciales y el material criptográfico se intercambian mediante canales seguros. No deben registrarse en repositorios, comprobantes, logs funcionales ni tickets de soporte.
+Alignet gestiona la conexión Wi-Fi necesaria para que el SCC se comunique con el POS y para que el terminal procese la operación. CELSAT participa en la verificación funcional de la conexión durante las pruebas.
 
 ## Parametrización operativa
 
 | Parámetro | Origen | Uso |
 | --- | --- | --- |
-| `merchant_code` / MID / `idComercio` | Alignet | Ámbito del comercio. |
-| `TID` | Alignet | Identificación del terminal. |
 | Serial del P5L | Alignet | Registro y soporte del dispositivo. |
-| `tollPointId` | CELSAT | Punto de peaje. |
-| `laneId` | CELSAT | Carril asociado. |
-| `vehicleCategory` | CELSAT | Categoría usada para la tarifa. |
-| `laneDirection` | CELSAT | Sentido del carril. |
+| Datos adicionales de la operación | CELSAT | Información que CELSAT decida enviar dentro de `additionalFields`. |
 | Zona horaria | CELSAT y Alignet | Correlación de eventos. |
 
 ## Estados y comportamiento operativo
@@ -70,14 +50,14 @@ CELSAT y Alignet registran en la especificación:
 - reglas de idempotencia y conflicto;
 - valores de timeout y frecuencia de consulta;
 - punto operativo hasta el cual procede una cancelación;
-- comportamiento ante indisponibilidad LAN o WAN;
+- comportamiento ante indisponibilidad de la conexión con el POS;
 - tratamiento de respuestas desconocidas.
 
 ## Ambientes
 
 | Ambiente | Finalidad | Principio de configuración |
 | --- | --- | --- |
-| Integración / QA | Pruebas de contrato, conectividad y escenarios funcionales. | Credenciales, terminales y material criptográfico segregados de producción. |
+| Integración / QA | Pruebas de contrato, conectividad y escenarios funcionales. | Terminales y datos de prueba segregados de producción. |
 | UAT | Validación conjunta del flujo de carril. | Datos representativos, evidencia correlacionada y criterios de aceptación. |
 | Producción | Operación de los carriles habilitados. | Parámetros productivos entregados por canal seguro y control de cambios. |
 
@@ -87,11 +67,11 @@ CELSAT y Alignet registran en la especificación:
   <Step title="Especificación de interfaz">
     Registra transporte, schemas, campos, validaciones, estados, errores, versionado y mecanismo de resultado.
   </Step>
-  <Step title="Ficha de conectividad">
-    Consolida direcciones, puertos, VLAN, firewall, DNS, proxy, certificados y allowlists.
+  <Step title="Ficha de habilitación">
+    Identifica el POS y confirma la disponibilidad de su conexión Wi-Fi.
   </Step>
   <Step title="Ficha de parametrización">
-    Relaciona comercio, TID, terminal, peaje, carril, categoría y sentido.
+    Registra el terminal y los datos adicionales que CELSAT decida asociar a la operación.
   </Step>
   <Step title="Política operativa">
     Define timeouts, recuperación, cancelación, contingencia y decisión de barrera.
@@ -104,4 +84,3 @@ CELSAT y Alignet registran en la especificación:
 ## Control de cambios
 
 Cada artefacto debe identificar versión, ambiente, fecha de vigencia y responsables de aprobación. Un cambio incompatible en mensajes, estados o validaciones requiere una nueva versión del contrato y una ventana de coordinación entre ambas partes.
-

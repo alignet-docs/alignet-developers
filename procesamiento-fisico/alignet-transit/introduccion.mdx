@@ -25,7 +25,7 @@ La integración contempla:
 - pruebas conjuntas en un ambiente segregado de producción.
 
 <Info>
-  La integración no asume autorización offline. La separación entre la LAN del carril y la comunicación WAN del terminal representa límites de conectividad distintos.
+  La integración no asume autorización offline. Alignet gestiona la conectividad Wi-Fi necesaria para que el POS procese la operación.
 </Info>
 
 ## Modelo de integración
@@ -44,8 +44,8 @@ flowchart TB
 
     TRANSIT[Alignet Transit / Pay-me]
 
-    SCC <-->|LAN del carril| LOCAL
-    PAYME <-->|WAN segura| TRANSIT
+    SCC <-->|Wi-Fi con el POS| LOCAL
+    PAYME <-->|Canal seguro gestionado por Alignet| TRANSIT
 ```
 
 CELSAT se integra con una única frontera funcional: el **Componente Local de Integración** disponible en el P5L. Este componente también puede denominarse Agente ECR o Servicio Local de Integración en los documentos de coordinación.
@@ -62,7 +62,7 @@ CELSAT no necesita invocar directamente PaymePOS SDK, Wiseasy SDK ni los servici
     CELSAT determina la categoría, calcula la tarifa y asigna una referencia única a la operación lógica.
   </Step>
   <Step title="Solicitar el pago">
-    El SCC envía la referencia, monto, moneda, ubicación y datos del evento mediante la interfaz LAN acordada.
+    El SCC envía `operationNumber`, `amount`, `currency` y, cuando corresponda, `additionalFields` mediante la interfaz acordada.
   </Step>
   <Step title="Procesar la transacción">
     El Componente Local coordina PaymePOS SDK y Wiseasy SDK. PaymePOS se comunica con Alignet Transit por un canal seguro.
@@ -83,7 +83,7 @@ CELSAT no necesita invocar directamente PaymePOS SDK, Wiseasy SDK ni los servici
 - Consultar el estado original antes de repetir una operación incierta.
 - No interpretar un timeout o código desconocido como `NO_PASS`.
 - No generar una nueva operación para resolver una respuesta ausente.
-- Registrar trazabilidad suficiente sin almacenar credenciales ni datos sensibles de tarjeta.
+- Registrar trazabilidad suficiente sin almacenar datos sensibles de tarjeta.
 
 ## Cómo usar esta documentación
 
@@ -91,8 +91,8 @@ CELSAT no necesita invocar directamente PaymePOS SDK, Wiseasy SDK ni los servici
   <Card title="Arquitectura y trazabilidad" icon="diagram-project" href="/procesamiento-fisico/alignet-transit/arquitectura-y-trazabilidad">
     Actores, comunicaciones, responsabilidades e identificadores.
   </Card>
-  <Card title="Contrato funcional" icon="file-contract" href="/procesamiento-fisico/alignet-transit/contrato-funcional">
-    Información de solicitud, respuesta y estados funcionales.
+  <Card title="Parámetros de envío" icon="file-export" href="/procesamiento-fisico/alignet-transit/parametros-de-envio">
+    Campos obligatorios, datos adicionales y ejemplos de la trama de pago.
   </Card>
   <Card title="Operación y recuperación" icon="rotate" href="/procesamiento-fisico/alignet-transit/operacion-y-recuperacion">
     Secuencia, idempotencia, errores, timeouts, cancelación y logging.
@@ -110,6 +110,6 @@ CELSAT no necesita invocar directamente PaymePOS SDK, Wiseasy SDK ni los servici
 
 ## Contrato y configuración
 
-La arquitectura, las responsabilidades y las reglas de integridad son permanentes. IP, puerto, credenciales, certificados, timeouts y asociaciones de terminal dependen del ambiente. Los schemas, códigos y parámetros particulares se registran en la especificación versionada de la interfaz y en la ficha de configuración correspondiente.
+La arquitectura, las responsabilidades y las reglas de integridad son permanentes. La conectividad Wi-Fi con el POS se habilita para cada ambiente bajo gestión de Alignet. Los schemas, códigos y parámetros particulares se registran en la especificación versionada de la interfaz.
 
 La interacción específica para QR interoperable, incluyendo presentación, confirmación y datos de respuesta aplicables, se formaliza en la especificación de interfaz, manteniendo las mismas reglas de correlación, trazabilidad y recuperación descritas en esta documentación.

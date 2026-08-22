@@ -61,7 +61,7 @@ El resultado puede entregarse mediante consulta, notificación o una conexión p
 | Misma referencia con datos distintos | Rechazar la solicitud como conflicto o inconsistencia. |
 | Respuesta no recibida | Consultar la referencia original antes de retransmitir. |
 | Reinicio del SCC | Recuperar referencias abiertas desde almacenamiento persistente y consultar su estado. |
-| Reconexión LAN | Resolver el último estado antes de decidir otro envío. |
+| Restablecimiento de la conexión | Resolver el último estado antes de decidir otro envío. |
 
 CELSAT debe conservar una huella de los datos relevantes asociados a `operationNumber` para detectar una reutilización inconsistente.
 
@@ -119,12 +119,12 @@ El punto operativo de no retorno y los códigos asociados se registran en la esp
 Registra, cuando se encuentren disponibles:
 
 - `operationNumber` y `transactionId`;
-- peaje, carril, categoría y sentido;
 - monto y moneda;
+- datos adicionales definidos por CELSAT, cuando los envíe;
 - fecha del evento, envío y recepción;
 - estado, resultado y razón;
 - intentos de consulta o recuperación;
 - eventos de conexión, timeout y reinicio;
 - versión del contrato y terminal asociado.
 
-No registres credenciales, PAN completo, datos EMV sensibles ni material criptográfico.
+No registres PAN completo, datos EMV sensibles ni material criptográfico.

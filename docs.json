@@ -425,7 +425,7 @@
                     "icon": "diagram-project",
                     "pages": [
                       "procesamiento-fisico/alignet-transit/arquitectura-y-trazabilidad",
-                      "procesamiento-fisico/alignet-transit/contrato-funcional",
+                      "procesamiento-fisico/alignet-transit/parametros-de-envio",
                       "procesamiento-fisico/alignet-transit/operacion-y-recuperacion"
                     ]
                   },
@@ -505,6 +505,10 @@
     }
   },
   "redirects": [
+    {
+      "source": "/procesamiento-fisico/alignet-transit/contrato-funcional",
+      "destination": "/procesamiento-fisico/alignet-transit/parametros-de-envio"
+    },
     {
       "source": "/metodos-de-integracion",
       "destination": "/primeros-pasos/metodos-de-integracion"
