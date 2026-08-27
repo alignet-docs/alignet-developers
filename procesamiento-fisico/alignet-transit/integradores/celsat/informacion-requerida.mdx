@@ -1,75 +1,103 @@
 ---
 title: "Información para la habilitación"
-description: "Información que CELSAT y Alignet coordinan para preparar el ambiente y las pruebas."
+description: "Datos que el integrador y Alignet deben intercambiar para preparar pruebas y producción."
 icon: "clipboard-list"
 ---
 
-La habilitación requiere información acotada del SCC, del ambiente de pruebas y de la operación del carril. Los detalles internos de la plataforma de pagos no forman parte de esta coordinación.
+Completa esta información antes de ejecutar las pruebas conjuntas. Evita incluir credenciales o datos sensibles en documentos de coordinación sin protección.
 
-## Información de CELSAT
+## Información del integrador
 
 ### SCC y despliegue
 
-- plataforma tecnológica, sistema operativo y runtime;
-- componente que realizará las llamadas HTTP;
-- relación entre las instancias del SCC y los carriles de prueba;
+- nombre y versión del componente que realizará las llamadas HTTP;
+- sistema operativo, runtime y biblioteca HTTP;
+- relación entre instancias del SCC, carriles y terminales;
 - estrategia de persistencia de operaciones abiertas;
-- procedimiento de recuperación después de reinicio.
+- mecanismo de serialización de cobros por terminal;
+- procedimiento de recuperación después de un reinicio.
 
-### Operaciones
+### Red
 
-- formato y longitud utilizados para `operationNumber`;
-- regla que garantiza unicidad por venta;
-- importes y referencias de prueba;
-- valores de prueba para `montoPeaje`, `montoDetraccion` e `IdTurnoVia`;
-- comportamiento del carril para cada estado financiero;
-- formato del comprobante y datos no sensibles que requiere CELSAT.
+- subred y dirección IP del SCC;
+- reglas de firewall aplicables;
+- confirmación de que AP/Client Isolation está desactivado;
+- reserva DHCP o mecanismo de IP estática del Wiseasy P5L;
+- contacto responsable de red durante las pruebas.
 
-### Pruebas y soporte
+### Operación
 
-- SCC de pruebas o simulador disponible;
-- terminales y carriles que participarán;
-- escenarios de excepción requeridos;
-- evidencia técnica disponible del lado CELSAT;
-- contactos de desarrollo, QA y operación.
+- formato utilizado para `operationNumber` dentro del límite de 1 a 64 caracteres sin espacios;
+- regla que garantiza unicidad por operación real;
+- montos y referencias de prueba;
+- claves y valores de `additionalFields` requeridos por el negocio, si aplica;
+- acción del carril para `APPROVED`, `DENIED`, `CANCELLED`, `PENDING`, `PROCESSING`, `UNKNOWN` y `ERROR`;
+- formato de comprobante y datos de conciliación.
+
+### Observabilidad y soporte
+
+- evidencia técnica disponible en el SCC;
+- retención y protección de logs;
+- responsables de desarrollo, QA, redes y operación;
+- procedimiento para inmovilizar una operación incierta y escalarla.
 
 ## Información de Alignet
 
-Antes de las pruebas, Alignet confirma:
+Alignet debe confirmar antes de la salida a producción:
 
-- terminal P5L asignado;
-- URL base del Componente Local;
-- mecanismo de autenticación aplicable;
-- parámetros iniciales de timeout y consulta;
-- versión de la especificación desplegada;
-- contactos y procedimiento de soporte.
+- Wiseasy P5L y versión de Pay-me PinPAD asignados;
+- IP y puerto configurados para cada terminal;
+- espera interna definitiva de Pay-me PinPAD;
+- recomendación definitiva de timeout del SCC;
+- intervalo, backoff y límite de consulta;
+- catálogo aplicable de códigos del procesador;
+- monedas y medios de pago habilitados;
+- claves admitidas en `additionalFields` y su finalidad;
+- contactos, horarios y procedimiento de soporte.
 
-Los valores del ambiente se encuentran sujetos a validación final y pueden ajustarse durante las pruebas sin modificar el contrato principal.
+## Ficha por terminal
 
-## Datos de prueba mínimos
-
-| Dato | Uso |
+| Campo | Valor |
 | --- | --- |
-| `operationNumber` controlados | Correlación, consulta e idempotencia. |
-| Montos en unidades menores | Aprobación, denegación y validación. |
-| Moneda `604` | Operaciones en soles. |
-| `additionalFields` controlados | Validación del desglose de importes y la conciliación por turno o vía. |
-| Casos de timeout y reconexión | Validación del flujo de recuperación. |
-| Casos de error local | Validación de códigos del P5L y SDK. |
+| Ambiente | Por completar |
+| Carril o caja | Por completar |
+| Identificador del Wiseasy P5L | Por completar |
+| Versión de Pay-me PinPAD | Por completar |
+| IP | Por completar |
+| Puerto | `8080` por defecto; confirmar |
+| SCC autorizado | Por completar |
+| Fecha de `GET /health` exitoso | Por completar |
+| Timeout del SCC | Por completar |
+| Política de consulta | Por completar |
+| Contacto de soporte | Por completar |
 
-## Entregables recomendados
+## Evidencia mínima por caso
+
+- identificador y descripción del caso;
+- fecha, hora y ambiente;
+- terminal y SCC utilizados;
+- `operationNumber`;
+- solicitud y respuesta sanitizadas;
+- código HTTP y header `Retry-After`, cuando corresponda;
+- `status`, `resultCode`, `resultMessage`, `authorizationCode` y `completedAt`;
+- tiempos de inicio, respuesta y consultas;
+- resultado esperado, resultado observado y conformidad.
+
+No incluyas PAN completo, CVV, PIN, PIN Block, pistas ni datos EMV sensibles.
+
+## Entregables de habilitación
 
 <CardGroup cols={2}>
-  <Card title="Matriz de estados" icon="table-list">
-    Relación entre cada `state` y la acción operativa del SCC.
+  <Card title="Ficha de terminal" icon="sliders">
+    Asociación SCC–carril–Wiseasy P5L, IP, puerto, versión y timeouts.
   </Card>
-  <Card title="Ficha del ambiente" icon="sliders">
-    URL, mecanismo de autenticación, timeouts y terminal asignado.
+  <Card title="Matriz de decisiones" icon="table-list">
+    Acción del SCC para cada código HTTP y estado transaccional.
   </Card>
-  <Card title="Casos de prueba" icon="flask-vial">
-    Solicitud, respuesta esperada y evidencia requerida.
+  <Card title="Evidencias de certificación" icon="flask-vial">
+    Casos normales, errores, concurrencia, timeout y recuperación.
   </Card>
-  <Card title="Procedimiento de recuperación" icon="rotate">
-    Tratamiento de timeout, pérdida de comunicación y reinicio.
+  <Card title="Procedimiento de soporte" icon="headset">
+    Contactos, severidades, datos de diagnóstico y escalamiento.
   </Card>
 </CardGroup>

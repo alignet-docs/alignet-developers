@@ -1,69 +1,70 @@
 ---
 title: "Configuración y coordinación técnica"
-description: "Separación entre el contrato estable y los parámetros que se confirman por ambiente."
+description: "Contrato vigente, parámetros por ambiente y decisiones pendientes antes de producción."
 icon: "sliders"
 ---
 
-La integración mantiene un contrato funcional estable y desacopla los valores que pueden ajustarse durante la habilitación del ambiente.
+Esta página separa el contrato confirmado de los parámetros que deben acordarse para cada ambiente. No implementes valores pendientes como si fueran parte estable de la API.
 
-## Elementos estables
+## Contrato confirmado
 
-Los siguientes elementos forman parte de la especificación de integración:
-
-| Elemento | Definición |
+| Elemento | Definición vigente |
 | --- | --- |
-| Arquitectura | SCC → LAN → Componente Local en P5L → PaymePOS SDK → SDK del dispositivo → plataforma de pagos. |
-| Autorización | `POST /api/v1/payments`. |
-| Consulta | `GET /api/v1/payments/{operationNumber}`. |
-| Formato | JSON con `Content-Type` y `Accept` en `application/json`. |
-| Solicitud | `operationNumber`, `amount` y `currency` como campos requeridos; `additionalFields` como objeto opcional. |
-| Información adicional | `montoPeaje`, `montoDetraccion` e `IdTurnoVia`, asociados y retornados con la operación. |
-| Respuesta | `success`, `resultCode`, `resultMessage` y `result`. |
-| Aprobación | `result.state = "AUTORIZADO"`. |
-| Correlación | `operationNumber` de CELSAT y `transactionID` de Alignet. |
-| Recuperación | Consultar la referencia original después de timeout o pérdida de comunicación. |
+| Cliente HTTP | SCC o sistema de caja. |
+| Servidor HTTP | Aplicación Pay-me PinPAD en el Wiseasy P5L. |
+| Transporte | HTTP/JSON sobre la red local. |
+| Disponibilidad | `GET /health`. |
+| Autorización | `POST /authorize`. |
+| Consulta | `GET /payments/{operationNumber}`. |
+| Puerto | Configurable; valor predeterminado `8080`. |
+| Solicitud | `operationNumber` y `amount` obligatorios; `currency` y `additionalFields` opcionales. |
+| Moneda predeterminada | `604` (PEN). |
+| Aprobación | HTTP `200`, `status: "APPROVED"` y `resultCode: "00"`. |
+| Recuperación | Consultar la misma referencia ante `202`, timeout o pérdida de conexión. |
+| Idempotencia | Una referencia identifica una sola operación real de cobro. |
+| Concurrencia | Una operación activa por terminal. |
 
-## Parámetros sujetos a validación final
+## Configuración por terminal
 
-| Parámetro | Tratamiento |
-| --- | --- |
-| URL base del ambiente | Por confirmar durante la habilitación final. |
-| Mecanismo de autenticación | Pendiente de confirmación en ambiente de integración. |
-| Timeout de conexión y lectura | Parámetro sujeto a ajuste durante las pruebas de integración. |
-| Frecuencia y límite de consulta | Parámetro sujeto a ajuste durante las pruebas de integración. |
-| Direccionamiento del P5L en la LAN | Por confirmar para cada terminal y ambiente. |
-| Asociación SCC–P5L | Se valida durante la preparación del carril o laboratorio. |
-| Política de soporte y escalamiento | Se entrega como parte de la habilitación operativa. |
+Registra para cada Wiseasy P5L:
 
-<Info>
-  Los ajustes de estos parámetros no modifican los endpoints, los mensajes, los estados ni las responsabilidades principales de la solución.
-</Info>
+| Parámetro | Ejemplo | Responsable |
+| --- | --- | --- |
+| Identificador interno del terminal | `P5L-CARRIL-03` | Operación / Alignet |
+| Carril o caja asociada | `VIA-03` | Integrador |
+| Dirección IP | `192.168.68.121` | Administración de red |
+| Puerto TCP | `8080` | Alignet / administración de red |
+| Dirección MAC, si se reserva DHCP | Valor del terminal | Administración de red |
+| Ambiente | Integración, UAT o producción | Alignet / integrador |
+| Versión de Pay-me PinPAD | Versión entregada | Alignet |
+
+No copies la IP de ejemplo en un ambiente real.
+
+## Parámetros pendientes de confirmación
+
+| Punto | Referencia disponible | Confirmación necesaria |
+| --- | --- | --- |
+| Espera interna de Pay-me PinPAD | 90 segundos en desarrollo. | Valor definitivo de producción. |
+| Timeout del cliente | Al menos 100 a 110 segundos con la espera de referencia. | Valor definitivo, siempre superior al timeout del terminal. |
+| Frecuencia de consulta | `Retry-After`; aproximadamente 2 segundos como referencia. | Intervalo, backoff y tiempo máximo de consulta. |
+| Operación no resuelta | No iniciar otro cobro ante `PENDING` o `UNKNOWN`. | Escalamiento y regla operativa de la barrera. |
+| `operationNumber` | 1 a 64 caracteres, sin espacios y único por operación. | Convención operativa adicional si el procesador la requiere. |
+| `additionalFields` | Objeto opcional con valores String. | Claves aceptadas y uso final de cada dato. |
+| Códigos del procesador | `00` aprobado; `01` es un ejemplo verificado de rechazo. | Catálogo completo de códigos no aprobados. |
+| Monedas y medios de pago | `604` es la moneda predeterminada. | Monedas y medios habilitados para el comercio. |
 
 ## Ambientes
 
-| Ambiente | Finalidad | Condición de uso |
+| Ambiente | Objetivo | Salida esperada |
 | --- | --- | --- |
-| Integración | Validar conectividad, contrato y comportamiento técnico. | Utiliza terminales y datos controlados. |
-| UAT | Validar el flujo completo del carril con CELSAT. | Requiere evidencia y criterios de aceptación conjuntos. |
-| Producción | Procesar operaciones de los carriles habilitados. | Se habilita después de completar las validaciones acordadas. |
-
-## Artefactos de habilitación
-
-<Steps>
-  <Step title="Especificación de interfaz">
-    Contiene endpoints, mensajes, tipos, estados y códigos confirmados.
-  </Step>
-  <Step title="Ficha del ambiente">
-    Registra URL base, mecanismo de autenticación, timeouts y terminales asignados.
-  </Step>
-  <Step title="Plan de pruebas">
-    Define escenarios, datos, evidencias y criterios de aceptación.
-  </Step>
-  <Step title="Procedimiento de soporte">
-    Define contactos, severidades, información de diagnóstico y escalamiento.
-  </Step>
-</Steps>
+| Integración | Validar red, contrato JSON y control de errores. | Cliente compatible con los endpoints y códigos HTTP. |
+| UAT | Validar el flujo físico y la política del carril. | Evidencias aprobadas de escenarios normales y de recuperación. |
+| Producción | Procesar cobros reales. | Parámetros definitivos registrados, monitoreo y soporte habilitados. |
 
 ## Control de cambios
 
-Cada ajuste debe identificar versión, ambiente y fecha de vigencia. Un cambio en endpoints, campos, tipos, estados o semántica requiere actualizar la especificación versionada. Un ajuste de URL, timeout o asignación de terminal se gestiona en la ficha del ambiente.
+Registra la versión de Pay-me PinPAD y la fecha de vigencia junto con la configuración de cada terminal. Un cambio en rutas, campos, tipos, estados, timeouts o semántica requiere revisar el cliente antes del despliegue.
+
+<Warning>
+  Las rutas `/api/v1/payments` y `/api/v1/payments/{operationNumber}`, la respuesta anidada en `result.state` y los códigos locales `P01–P21` pertenecen a documentación anterior. No forman parte del contrato vigente descrito en esta sección.
+</Warning>

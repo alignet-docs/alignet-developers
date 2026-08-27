@@ -1,186 +1,153 @@
 ---
 title: "Operación y recuperación"
-description: "Secuencia de autorización, consulta, idempotencia y recuperación ante resultados inciertos."
+description: "Flujo síncrono, timeouts, consulta, idempotencia, concurrencia y recuperación segura."
 icon: "rotate"
 ---
 
-## Secuencia de autorización
+## Secuencia normal
 
 ```mermaid
 sequenceDiagram
-    participant SCC as SCC CELSAT
-    participant LOCAL as Componente Local / P5L
-    participant PAYME as PaymePOS SDK
-    participant DEVICE as SDK del dispositivo
-    participant PLATFORM as Plataforma Alignet
+    participant SCC as SCC o sistema de caja
+    participant PINPAD as Pay-me PinPAD / Wiseasy P5L
+    participant BANK as Procesador o banco
 
     SCC->>SCC: Generar y persistir operationNumber
-    SCC->>LOCAL: POST /api/v1/payments
-    LOCAL->>PAYME: Iniciar autorización
-    PAYME->>DEVICE: Habilitar interacción de pago
-    PAYME->>PLATFORM: Procesar transacción
-    PLATFORM-->>PAYME: Resultado financiero
-    PAYME-->>LOCAL: Resultado del SDK
-    LOCAL-->>SCC: Respuesta normalizada
-    SCC->>SCC: Evaluar result.state
+    SCC->>PINPAD: POST /authorize
+    PINPAD->>PINPAD: Mostrar pago y leer tarjeta/PIN
+    PINPAD->>BANK: Procesar autorización
+    BANK-->>PINPAD: Aprobar o rechazar
+    PINPAD-->>SCC: 200 con resultado final
+    SCC->>SCC: Evaluar status y resultCode
 ```
 
-El SCC inicia siempre la operación. Una vez recibida la solicitud válida, el P5L coordina la interacción de pago y devuelve una única respuesta normalizada al SCC.
+`POST /authorize` es síncrono. La misma llamada permanece abierta mientras el usuario presenta su tarjeta e ingresa el PIN cuando corresponde.
 
-## Preparación del cliente
+## Timeouts
 
-Antes del primer envío, CELSAT debe contar con:
+La espera interna documentada de Pay-me PinPAD es de **90 segundos** como valor de referencia en desarrollo. Este valor se ajustará antes de producción.
 
-- acceso por red LAN al Componente Local del P5L;
-- URL base del ambiente;
-- mecanismo de autenticación confirmado para el ambiente;
-- timeouts de conexión y lectura;
-- manejo persistente de operaciones abiertas;
-- lógica para interpretar el contrato de respuesta.
-
-La URL base, el mecanismo de autenticación y los timeouts están sujetos a validación final durante la habilitación del ambiente.
-
-## Inicialización y disponibilidad del P5L
-
-Alignet prepara el Componente Local, PaymePOS SDK y el SDK del dispositivo antes de habilitar el P5L para las pruebas. El SCC no invoca métodos internos de inicialización.
-
-Si el dispositivo no se encuentra preparado, la respuesta puede incluir:
-
-| Código | Condición | Acción del SCC |
-| --- | --- | --- |
-| `P01` | Dispositivo no registrado | Detener el intento y solicitar revisión del terminal. |
-| `P02` | Configuración requerida ausente | Detener el intento y solicitar revisión de configuración. |
-| `P04` | SDK no inicializado | Detener el intento y solicitar inicialización del P5L. |
-
-La especificación de autorización no define un endpoint de inicialización o disponibilidad para el SCC. La preparación del terminal corresponde a Alignet.
-
-## Procesamiento de la respuesta
-
-El SCC debe evaluar la respuesta en este orden:
-
-1. comprobar si `result` contiene una transacción;
-2. evaluar `result.state` cuando `result` exista;
-3. usar `resultCode` para clasificar el resultado general o local;
-4. conservar `resultMessage` y `stateReason` para diagnóstico;
-5. registrar `transactionID` cuando haya sido asignado.
-
-El pago solo se considera aprobado cuando:
+Configura el timeout de lectura del cliente HTTP por encima de la espera del terminal:
 
 ```text
-result.state = AUTORIZADO
+Espera interna de Pay-me PinPAD: 90 s, referencia de desarrollo
+Timeout HTTP del SCC:          al menos 100–110 s
 ```
 
-## Consulta de estado
+Un cobro puede tomar decenas de segundos. No uses el mismo timeout corto que aplicarías a una API convencional.
 
-Cuando el resultado no sea conocido, consulta la operación mediante el mismo `operationNumber`:
+<Warning>
+  Si el timeout del SCC vence antes que el del terminal, el pago puede continuar aunque la caja haya perdido la conexión. Un timeout de red nunca equivale a rechazo.
+</Warning>
 
-```http
-GET /api/v1/payments/{operationNumber}
-```
+El valor definitivo de la espera interna, el timeout del SCC y el tiempo máximo de recuperación deben validarse con Alignet antes de producción.
 
-Ejemplo:
+## Recuperación de una operación incierta
 
-```http
-GET /api/v1/payments/OP-20260821-000001
-```
+Consulta cuando ocurra cualquiera de estos casos:
 
-La consulta devuelve la estructura normalizada de respuesta. Si el estado continúa como `PENDIENTE`, conserva la operación abierta y aplica la frecuencia de consulta definida para el ambiente.
-
-## Timeout y pérdida de comunicación
+- `POST /authorize` devuelve HTTP `202` con `status: "PENDING"`;
+- el timeout del cliente HTTP vence sin recibir respuesta;
+- la conexión se interrumpe durante el cobro;
+- el SCC se reinicia con una operación abierta;
+- el estado recuperado es `PROCESSING` o `UNKNOWN`.
 
 ```mermaid
 flowchart TD
-    START[POST enviado] --> RESPONSE{¿Respuesta recibida?}
-    RESPONSE -->|Sí| RESULT{¿result existe?}
-    RESULT -->|Sí| STATE[Evaluar result.state]
-    RESULT -->|No| CODE[Evaluar resultCode]
-    RESPONSE -->|No| UNKNOWN[Conservar operationNumber]
-    UNKNOWN --> RESTORE[Restablecer comunicación]
-    RESTORE --> QUERY[GET por operationNumber]
-    QUERY --> STATE
+    POST[POST /authorize] --> RESPONSE{¿Hay respuesta?}
+    RESPONSE -->|200 final| FINAL[Evaluar status y resultCode]
+    RESPONSE -->|202| STORE[Conservar operationNumber]
+    RESPONSE -->|Timeout o desconexión| STORE
+    STORE --> GET[GET /payments/operationNumber]
+    GET -->|200 final| FINAL
+    GET -->|202 pendiente| WAIT[Esperar Retry-After o ~2 s]
+    WAIT --> GET
+    GET -->|404| REVIEW[Verificar referencia y escalar si persiste]
 ```
 
-Ante timeout o pérdida de comunicación, el SCC debe:
+Procedimiento:
 
-1. conservar el `operationNumber` original;
-2. registrar la operación como pendiente de resolución;
-3. no asumir aprobación ni rechazo;
-4. restablecer la comunicación con el P5L;
-5. consultar la operación original;
-6. aplicar una decisión únicamente cuando la respuesta permita conocer el estado real.
-
-## Regla crítica de reintento
-
-<Warning>
-  No generes otro `operationNumber` inmediatamente después de un timeout. Esto puede originar un segundo cobro.
-</Warning>
-
-```text
-Incorrecto
-OP001 → POST → timeout → crear OP002 → POST
-
-Correcto
-OP001 → POST → timeout → GET /api/v1/payments/OP001
-```
-
-La estrategia y frecuencia de reintento técnico son parámetros sujetos a ajuste durante las pruebas de integración. No implementes reintentos automáticos ilimitados.
+1. Conserva el `operationNumber` original.
+2. Mantén la operación como no resuelta en el SCC.
+3. No abras la barrera ni marques rechazo definitivo.
+4. Ejecuta `GET /payments/{operationNumber}`.
+5. Si recibes `202`, respeta `Retry-After`; si el header no está disponible, usa aproximadamente 2 segundos como referencia inicial.
+6. Continúa hasta recibir un resultado final o alcanzar el límite operativo acordado.
+7. Si alcanzas ese límite con `PENDING`, `PROCESSING` o `UNKNOWN`, escala la operación para resolución. No inicies automáticamente otro cobro.
 
 ## Idempotencia
 
-| Escenario | Comportamiento del SCC |
-| --- | --- |
-| Nueva venta | Generar y persistir un nuevo `operationNumber`. |
-| Timeout del `POST` | Consultar con el mismo `operationNumber`. |
-| Pérdida y recuperación de la LAN | Consultar las operaciones abiertas antes de realizar nuevos envíos. |
-| Reinicio del SCC | Recuperar las referencias persistidas y consultar su estado. |
-| Referencia ya utilizada para otra venta | No enviar la solicitud. |
+`operationNumber` es la clave de idempotencia de Pay-me PinPAD.
 
-La regla base es:
+| Escenario | Comportamiento garantizado |
+| --- | --- |
+| Misma referencia mientras se procesa | No se inicia un segundo cobro. Pay-me PinPAD responde HTTP `202` con el estado actual. |
+| Misma referencia ya finalizada | No se inicia un segundo cobro. Pay-me PinPAD responde HTTP `200` con el resultado almacenado. |
+| Resultado perdido por el SCC | El SCC puede consultar o reenviar la misma referencia para recuperar el resultado existente. |
+| Nueva operación real | El SCC debe generar una referencia nueva. |
 
 ```text
-1 venta = 1 operationNumber
+1 operación real de cobro = 1 operationNumber
 ```
 
-## Cancelaciones y extornos
+No cambies el monto ni la moneda al reutilizar una referencia. El contrato vigente no documenta el comportamiento para una misma referencia con un payload diferente; evita esa condición y escálala si ocurre.
 
-Los códigos `14` y `15` indican que el usuario abandonó o canceló la interacción local. No representan una denegación del emisor.
+## Concurrencia
 
-Los códigos `P20` y `P21` pertenecen a un flujo de extorno. La especificación final de autorización no define un endpoint de cancelación o extorno para el SCC. Cualquier interfaz adicional se documentará cuando sea confirmada durante la habilitación final del ambiente.
+Pay-me PinPAD procesa una sola operación a la vez:
 
-## Tratamiento de errores
+- Si llega el mismo `operationNumber`, aplica la regla de idempotencia.
+- Si llega otro `operationNumber` mientras existe un cobro activo, responde HTTP `409` con `POS_BUSY`.
+- El SCC debe serializar los cobros destinados al mismo terminal.
+- Después de `POS_BUSY`, espera a que el terminal se libere antes de reintentar la solicitud que no fue aceptada.
 
-| Condición | Tratamiento recomendado |
-| --- | --- |
-| `result.state = AUTORIZADO` | Confirmar el pago. |
-| `result.state = DENEGADO` | Informar el rechazo. |
-| `result.state = PENDIENTE` | Consultar el estado. |
-| `resultCode = 06` | Corregir la solicitud antes de un nuevo intento válido. |
-| `resultCode = 08` | Detener la operación y solicitar revisión de configuración. |
-| `resultCode = 14` o `15` | Registrar la cancelación local. |
-| `resultCode = P01` a `P07` | Registrar el error, mostrar un mensaje controlado y solicitar soporte cuando corresponda. |
-| Timeout o respuesta ausente | Conservar la referencia y consultar. |
-| Código desconocido | Registrar el valor original y escalar sin asumir su significado. |
+Si varios procesos pueden enviar pagos al mismo Wiseasy P5L, coordínalos mediante una cola o bloqueo único en el SCC.
 
-## Información recomendada para almacenar
+## Reinicios
 
-Por cada operación, conserva:
+### Reinicio del SCC
+
+Al iniciar, recupera de almacenamiento persistente todas las operaciones sin resultado final y consulta cada `operationNumber` antes de aceptar una decisión financiera.
+
+### Reinicio del Wiseasy P5L durante el cobro
+
+La operación en curso queda en `UNKNOWN`. No la marques como aprobada ni rechazada. Consulta la referencia y aplica el procedimiento de escalamiento si no alcanza un estado final.
+
+## Flujo recomendado del SCC
+
+```text
+1. GET /health para confirmar disponibilidad.
+2. Generar y persistir un operationNumber único.
+3. POST /authorize con timeout de al menos 100–110 s.
+4. Evaluar el código HTTP, status y resultCode.
+5. Confirmar solo 200 + APPROVED + 00.
+6. Ante 202, timeout o desconexión, consultar la referencia original.
+7. Reintentar una operación final DENIED o CANCELLED solo como una nueva venta,
+   con un operationNumber nuevo y después de la decisión del usuario.
+```
+
+## Regla de la barrera
+
+Define antes de producción qué hará el carril ante resultados no finales. La regla segura es no abrir hasta confirmar `APPROVED` con `resultCode: "00"`.
+
+La política final para `PENDING` y `UNKNOWN`, incluido el escalamiento manual, requiere acuerdo entre el integrador y Alignet.
+
+## Persistencia mínima
+
+Guarda, cuando existan:
 
 ```text
 operationNumber
-transactionID
 amount
 currency
-additionalFields.montoPeaje
-additionalFields.montoDetraccion
-additionalFields.IdTurnoVia
-success
+additionalFields
+HTTP status
+status
 resultCode
 resultMessage
-state
-stateReason
 authorizationCode
-responseCode
-fecha y hora
+completedAt
+fecha y hora de cada solicitud y respuesta
 ```
 
-No almacenes PAN completo, CVV, PIN, PIN Block, tracks ni datos EMV sensibles.
+No almacenes datos sensibles de tarjeta.

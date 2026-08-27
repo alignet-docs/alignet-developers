@@ -1,113 +1,226 @@
 ---
-title: "Integración del SCC con el P5L"
-description: "Guía de implementación del cliente HTTP que conecta el SCC de CELSAT con el Componente Local."
+title: "Implementación del cliente HTTP"
+description: "Ejemplos para conectar el SCC o sistema de caja con Pay-me PinPAD."
 icon: "ethernet"
 ---
 
-El SCC se comunica por red LAN con el **Componente Local de Integración** instalado en el P5L. Esta es la única interfaz que CELSAT debe implementar.
+El SCC o sistema de caja actúa como **cliente HTTP**. La aplicación Pay-me PinPAD instalada en el Wiseasy P5L actúa como **servidor HTTP** sobre la red local.
 
-## Operaciones disponibles
+En los ejemplos, reemplaza `192.168.68.121` y `8080` por la IP y el puerto configurados en tu terminal.
 
-| Operación | Método y ruta | Uso |
-| --- | --- | --- |
-| Autorizar pago | `POST /api/v1/payments` | Iniciar una autorización con la referencia y el importe calculados por el SCC. |
-| Consultar estado | `GET /api/v1/payments/{operationNumber}` | Recuperar el resultado de una operación existente. |
+## Referencia rápida
 
-No se han definido otros endpoints para el SCC en la especificación de autorización. La incorporación de operaciones adicionales requiere confirmación y documentación versionada.
+| Método | Ruta | Uso | Respuestas documentadas |
+| --- | --- | --- | --- |
+| `GET` | `/health` | Verificar disponibilidad. | `200` |
+| `POST` | `/authorize` | Iniciar un cobro síncrono. | `200`, `202`, `400`, `409`, `503` |
+| `GET` | `/payments/{operationNumber}` | Consultar una operación. | `200`, `202`, `404` |
 
-## Responsabilidad del cliente SCC
+## cURL
 
-```mermaid
-flowchart LR
-    EVENT[Evento del carril] --> AMOUNT[Calcular importe]
-    AMOUNT --> ID[Generar y persistir operationNumber]
-    ID --> POST[POST de autorización]
-    POST --> PARSE[Interpretar respuesta]
-    PARSE --> DECISION{result.state}
-    DECISION -->|AUTORIZADO| APPROVE[Confirmar pago]
-    DECISION -->|PENDIENTE| GET[Consultar estado]
-    DECISION -->|Otro estado| HANDLE[Aplicar tratamiento operativo]
-    GET --> PARSE
+### Disponibilidad
+
+```bash
+curl http://192.168.68.121:8080/health
 ```
 
-El cliente debe:
+### Autorización
 
-- generar y persistir un `operationNumber` único por venta;
-- construir el JSON con `operationNumber`, `amount` y `currency`;
-- incluir `additionalFields` cuando corresponda enviar el desglose de importes y el identificador de turno o vía;
-- enviar los headers `Content-Type` y `Accept` con valor `application/json`;
-- tolerar que `result` sea `null`;
-- evaluar `result.state` antes de resolver el pago;
-- almacenar `transactionID` cuando exista;
-- consultar después de timeout o pérdida de comunicación;
-- ignorar campos adicionales compatibles que pueda recibir en futuras revisiones del contrato;
-- registrar evidencia sin datos sensibles de tarjeta.
+```bash
+curl -X POST http://192.168.68.121:8080/authorize \
+  -H "Content-Type: application/json" \
+  --max-time 110 \
+  -d '{
+    "operationNumber": "44992528",
+    "amount": 100,
+    "currency": 604,
+    "additionalFields": {
+      "plate": "ABC-123",
+      "tollPointId": "PEAJE-01",
+      "laneId": "VIA-03"
+    }
+  }'
+```
 
-## Flujo de autorización
+### Consulta
 
-<Steps>
-  <Step title="Calcular el importe">
-    El SCC determina el total que debe cobrarse y lo convierte a unidades menores.
-  </Step>
-  <Step title="Crear la referencia">
-    Genera un `operationNumber` único y lo almacena antes del envío.
-  </Step>
-  <Step title="Enviar la solicitud">
-    Ejecuta `POST /api/v1/payments` con los tres campos requeridos y, cuando corresponda, el objeto opcional `additionalFields`.
-  </Step>
-  <Step title="Procesar la respuesta">
-    Lee `success`, `resultCode`, `resultMessage` y `result` sin asumir que `success` representa aprobación. Conserva `result.additionalFields` cuando exista.
-  </Step>
-  <Step title="Resolver el estado financiero">
-    Confirma el pago solo cuando `result.state` sea `AUTORIZADO`.
-  </Step>
-  <Step title="Recuperar si es necesario">
-    Si no recibió respuesta o el estado es `PENDIENTE`, consulta con el mismo `operationNumber`.
-  </Step>
-</Steps>
+```bash
+curl -i http://192.168.68.121:8080/payments/44992528
+```
 
-## Manejo de condiciones especiales
+Usa `-i` durante las pruebas para comprobar `Retry-After` en una respuesta `202`.
 
-<AccordionGroup>
-  <Accordion title="Respuesta con result = null" icon="circle-info">
-    Evalúa `resultCode`. La operación pudo haberse detenido localmente o no haber generado una transacción en backend.
-  </Accordion>
-  <Accordion title="Pago denegado" icon="circle-xmark">
-    `success` puede ser `true`. El rechazo se determina mediante `result.state = "DENEGADO"`.
-  </Accordion>
-  <Accordion title="Estado pendiente" icon="clock">
-    Conserva la operación abierta y ejecuta la consulta de estado con la frecuencia configurada.
-  </Accordion>
-  <Accordion title="Timeout o respuesta ausente" icon="link-slash">
-    No generes otra venta. Restablece la comunicación y consulta el `operationNumber` original.
-  </Accordion>
-  <Accordion title="Dispositivo no inicializado" icon="terminal">
-    El código `P04` requiere detener la operación y solicitar la inicialización del dispositivo. El SCC no inicializa directamente PaymePOS SDK.
-  </Accordion>
-  <Accordion title="Código desconocido" icon="circle-question">
-    Conserva el código y el mensaje originales, evita inferir su significado y escala el caso.
-  </Accordion>
-</AccordionGroup>
+## Java 11 o posterior
 
-## Parámetros del ambiente
+```java
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 
-Los siguientes valores se confirman durante la habilitación final:
+public final class PinpadClient {
+    private final HttpClient http = HttpClient.newHttpClient();
+    private final String baseUrl;
 
-- URL base del Componente Local;
-- mecanismo de autenticación;
-- timeouts de conexión y lectura;
-- frecuencia y límite de consultas;
-- asociación entre el SCC y el P5L del carril.
+    public PinpadClient(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
 
-Estos parámetros no modifican los endpoints, el payload ni la lógica principal descritos en esta documentación.
+    public HttpResponse<String> authorize(
+            String operationNumber, long amountCents, int currency) throws Exception {
+        String json = """
+            {"operationNumber":"%s","amount":%d,"currency":%d}
+            """.formatted(operationNumber, amountCents, currency);
 
-## Referencias de implementación
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(baseUrl + "/authorize"))
+            .header("Content-Type", "application/json")
+            .timeout(Duration.ofSeconds(110))
+            .POST(HttpRequest.BodyPublishers.ofString(json))
+            .build();
 
-<CardGroup cols={2}>
-  <Card title="Solicitud de autorización" icon="file-export" href="/procesamiento-fisico/alignet-transit/parametros-de-envio">
-    Revisa los campos y reglas del `POST`.
-  </Card>
-  <Card title="Respuesta, estados y códigos" icon="code" href="/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos">
-    Implementa la interpretación de la respuesta normalizada.
-  </Card>
-</CardGroup>
+        return http.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    public HttpResponse<String> query(String operationNumber) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(baseUrl + "/payments/" + operationNumber))
+            .timeout(Duration.ofSeconds(10))
+            .GET()
+            .build();
+
+        return http.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+}
+```
+
+## C# con .NET
+
+```csharp
+using System.Net.Http.Json;
+
+public sealed class PinpadClient
+{
+    private readonly HttpClient _http;
+
+    public PinpadClient(string baseUrl)
+    {
+        _http = new HttpClient
+        {
+            BaseAddress = new Uri(baseUrl),
+            Timeout = TimeSpan.FromSeconds(110)
+        };
+    }
+
+    public async Task<(int StatusCode, string Body)> AuthorizeAsync(
+        string operationNumber, long amountCents, int currency = 604)
+    {
+        var payload = new
+        {
+            operationNumber,
+            amount = amountCents,
+            currency
+        };
+
+        using var response = await _http.PostAsJsonAsync("/authorize", payload);
+        return ((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+    }
+
+    public async Task<(int StatusCode, string Body)> QueryAsync(string operationNumber)
+    {
+        using var response = await _http.GetAsync($"/payments/{operationNumber}");
+        return ((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+    }
+}
+```
+
+## Python con requests
+
+```python
+import requests
+
+BASE_URL = "http://192.168.68.121:8080"
+
+
+def authorize(operation_number, amount_cents, currency=604):
+    payload = {
+        "operationNumber": operation_number,
+        "amount": amount_cents,
+        "currency": currency,
+    }
+    response = requests.post(
+        f"{BASE_URL}/authorize",
+        json=payload,
+        timeout=110,
+    )
+    return response.status_code, response.json()
+
+
+def query_status(operation_number):
+    response = requests.get(
+        f"{BASE_URL}/payments/{operation_number}",
+        timeout=10,
+    )
+    return response.status_code, response.json(), response.headers.get("Retry-After")
+
+
+http_status, body = authorize("44992528", 100)
+if http_status == 200 and body.get("status") == "APPROVED" \
+        and body.get("resultCode") == "00":
+    print("Pago aprobado", body.get("authorizationCode"))
+elif http_status == 202:
+    http_status, body, retry_after = query_status("44992528")
+```
+
+## Node.js 18 o posterior
+
+```javascript
+const BASE_URL = "http://192.168.68.121:8080";
+
+async function authorize(operationNumber, amountCents, currency = 604) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 110_000);
+
+  try {
+    const response = await fetch(`${BASE_URL}/authorize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ operationNumber, amount: amountCents, currency }),
+      signal: controller.signal,
+    });
+
+    return {
+      statusCode: response.status,
+      body: await response.json(),
+      retryAfter: response.headers.get("retry-after"),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function queryStatus(operationNumber) {
+  const response = await fetch(`${BASE_URL}/payments/${operationNumber}`);
+  return {
+    statusCode: response.status,
+    body: await response.json(),
+    retryAfter: response.headers.get("retry-after"),
+  };
+}
+```
+
+## Reglas para cualquier lenguaje
+
+- Persiste `operationNumber` antes del `POST`.
+- Configura al menos 100 a 110 segundos para la autorización.
+- Conserva por separado el código HTTP y el JSON.
+- Confirma únicamente `200` + `APPROVED` + `00`.
+- Ante `202`, timeout o pérdida de conexión, consulta la misma referencia.
+- Respeta `Retry-After` si está presente.
+- Serializa los cobros dirigidos al mismo terminal.
+- No registres datos sensibles de tarjeta.
+
+<Warning>
+  Los ejemplos se concentran en el contrato HTTP. En producción, serializa JSON con la biblioteca estándar del lenguaje, valida las respuestas y persiste el estado antes de ejecutar acciones irreversibles como abrir la barrera.
+</Warning>

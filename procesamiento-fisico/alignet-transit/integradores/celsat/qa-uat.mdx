@@ -1,117 +1,128 @@
 ---
-title: "Pruebas de integración y UAT"
-description: "Escenarios y criterios de aceptación para validar el SCC, el P5L y la plataforma de pagos."
+title: "Certificación y salida a producción"
+description: "Casos de prueba, evidencias y checklist de certificación para Pay-me Transit PinPAD."
 icon: "flask-vial"
 ---
 
-Las pruebas deben validar el contrato HTTP, la interacción con el P5L, la interpretación de estados y la recuperación ante resultados inciertos. Cada caso debe conservar evidencia correlacionada mediante `operationNumber` y, cuando exista, `transactionID`.
+La certificación debe validar el contrato HTTP, la interacción física con el Wiseasy P5L, la decisión del carril y la recuperación sin doble cobro.
 
 ## Preparación
 
-| CELSAT | Alignet | Compartido |
+Antes de ejecutar casos:
+
+- registra la versión de Pay-me PinPAD instalada;
+- confirma la asociación entre SCC, carril y Wiseasy P5L;
+- configura una IP estable y el puerto del terminal;
+- ejecuta `GET /health` desde el SCC;
+- completa la verificación de llaves en el terminal;
+- configura el timeout de autorización en al menos 100 a 110 segundos para las pruebas;
+- habilita persistencia y logs sanitizados;
+- acuerda referencias, montos y medios de pago de prueba.
+
+## Casos de contrato
+
+| Caso | Estímulo | Resultado esperado |
 | --- | --- | --- |
-| SCC o simulador, referencias, montos, lógica operativa y evidencia. | Componente Local, P5L, PaymePOS SDK, plataforma y evidencia de procesamiento. | Conectividad LAN, ejecución, análisis y aceptación. |
+| Disponibilidad | `GET /health` | HTTP `200`, `status: "UP"`, `service: "Alignet ECR"`. |
+| Solicitud mínima | `operationNumber` y `amount` válidos | Se acepta `currency` predeterminada `604`. |
+| Solicitud completa | Incluye moneda y `additionalFields` con valores String | La autorización se procesa sin error de validación. |
+| Monto como número | `amount: 100` | Se acepta como entero en unidades menores. |
+| Monto como cadena | `amount: "100"` | Se acepta como cadena numérica entera. |
+| Moneda como número o cadena | `604` y `"604"` | Ambas representaciones se aceptan. |
+| Referencia inválida | Vacía, con espacios o mayor de 64 caracteres | HTTP `400` con `BAD_REQUEST`. |
+| Monto inválido | Cero, negativo, decimal, no numérico o mayor de 12 dígitos | HTTP `400` con `BAD_REQUEST`. |
+| Moneda inválida | No contiene exactamente tres dígitos | HTTP `400` con `BAD_REQUEST`. |
+| Campo adicional inválido | Valor que no es String | HTTP `400` con `BAD_REQUEST`. |
 
-Antes de ejecutar los casos, verifica:
+## Casos transaccionales
 
-- SCC o simulador disponible;
-- P5L asignado y preparado para el ambiente;
-- URL base y mecanismo de autenticación confirmados;
-- conectividad LAN entre el SCC y el Componente Local;
-- timeouts iniciales configurados;
-- operaciones abiertas persistidas por el SCC;
-- logs correlacionados habilitados;
-- versión de la especificación registrada.
-
-## Escenarios de autorización
-
-| Escenario | Resultado esperado | Evidencia mínima |
+| Caso | Resultado esperado | Decisión del SCC |
 | --- | --- | --- |
-| Pago autorizado | `success = true`, `resultCode = "00"` y `state = "AUTORIZADO"`. | Solicitud, respuesta y ambos identificadores. |
-| Pago denegado | `success = true`, `resultCode = "01"` y `state = "DENEGADO"`. | Código, estado y razón. |
-| Pago con información adicional | La respuesta conserva `montoPeaje`, `montoDetraccion` e `IdTurnoVia` en `result.additionalFields`. | Solicitud y respuesta correlacionadas. |
-| Solicitud inválida | `resultCode = "06"`. | Payload enviado y mensaje de validación. |
-| Configuración de comercio inválida | `resultCode = "08"`. | Respuesta y escalamiento técnico. |
-| Cancelación antes de presentar tarjeta | `success = false`, `resultCode = "14"` y `result = null`. | Respuesta local. |
-| Cancelación después de un intento | `success = false`, `resultCode = "15"` y `result = null`. | Respuesta local. |
-| Dispositivo no registrado | `resultCode = "P01"`. | Serial del terminal y respuesta. |
-| Dispositivo no inicializado | `resultCode = "P04"`. | Estado del terminal y respuesta. |
-| Batería baja | `resultCode = "P05"`. | Respuesta local. |
-| Impresora no disponible | `resultCode = "P06"` o `"P07"`. | Respuesta y condición física. |
+| Pago aprobado | HTTP `200`, `APPROVED`, `00`, código de autorización y fecha final. | Confirmar y aplicar la regla de apertura. |
+| Pago rechazado | HTTP `200`, `DENIED` y código distinto de `00`. | No confirmar. |
+| Cancelación | HTTP `200`, `CANCELLED`. | No confirmar. |
+| Espera agotada | HTTP `202`, `PENDING`, `WAITING_RESULT`. | Consultar, sin nuevo cobro. |
+| Terminal ocupado | Otra referencia durante un cobro activo devuelve `409 POS_BUSY`. | Esperar y reintentar cuando se libere. |
+| Terminal no listo | HTTP `503 POS_NOT_AVAILABLE`. | Recuperar disponibilidad antes de reintentar. |
+| Referencia inexistente | La consulta devuelve `404 NOT_FOUND`. | Verificar la referencia; no asumir rechazo financiero. |
 
-## Escenarios de recuperación
+## Casos de idempotencia y recuperación
 
-| Escenario | Resultado esperado |
+| Caso | Validación esperada |
 | --- | --- |
-| Timeout durante el `POST` | El SCC conserva `operationNumber` y ejecuta el `GET` antes de cualquier nueva venta. |
-| `state = PENDIENTE` | El SCC mantiene la operación abierta y consulta el estado. |
-| Pérdida de la LAN | Después de la reconexión, el SCC consulta las operaciones abiertas. |
-| Reinicio del SCC | El SCC recupera las referencias persistidas y consulta cada operación pendiente. |
-| Respuesta duplicada | El SCC procesa el resultado de forma idempotente. |
-| Código desconocido | El SCC conserva el valor original y escala sin asumir su significado. |
+| Misma referencia durante el proceso | El segundo envío no inicia otro cobro y devuelve `202` con el estado actual. |
+| Misma referencia finalizada | Devuelve `200` con el resultado guardado sin otro cargo. |
+| Otra referencia concurrente | Devuelve `409 POS_BUSY`. |
+| Timeout del SCC | El SCC consulta la referencia original antes de aceptar otro intento. |
+| Pérdida de red | Al reconectar, el SCC consulta las operaciones abiertas. |
+| Reinicio del SCC | Recupera desde persistencia y consulta cada referencia no final. |
+| Reinicio del P5L durante el cobro | La operación queda `UNKNOWN`; el SCC no confirma ni rechaza automáticamente. |
+| `202` repetido | El SCC respeta `Retry-After` y aplica el límite de consulta acordado. |
 
-## Validaciones de contrato
+## Verificaciones de seguridad
 
 <Check>
-  La solicitud contiene `operationNumber`, `amount` y `currency` como campos requeridos, y admite `additionalFields` como objeto opcional.
+  El puerto del terminal no es accesible desde redes no autorizadas ni desde Internet.
 </Check>
 
 <Check>
-  `amount` y `currency` se envían como cadenas. El contenido de `amount` representa un entero positivo en unidades menores.
+  `operationNumber` no contiene datos personales.
 </Check>
 
 <Check>
-  `montoPeaje` y `montoDetraccion` se envían como cadenas decimales con dos posiciones, e `IdTurnoVia` conserva la capitalización documentada.
+  Las solicitudes, respuestas y evidencias no contienen PAN completo, CVV, PIN, PIN Block, pistas ni datos EMV sensibles.
 </Check>
 
 <Check>
-  La respuesta devuelve en `result.additionalFields` la información adicional asociada a la operación.
+  El acceso y la retención de logs están controlados.
+</Check>
+
+## Checklist de salida a producción
+
+<Check>
+  Cada Wiseasy P5L tiene IP fija o reserva DHCP y puerto documentado.
 </Check>
 
 <Check>
-  El SCC no interpreta `success = true` como aprobación.
+  El SCC ejecuta satisfactoriamente los tres endpoints vigentes.
 </Check>
 
 <Check>
-  El pago solo se confirma cuando `result.state = "AUTORIZADO"`.
+  El timeout definitivo del SCC es mayor que la espera interna confirmada de Pay-me PinPAD.
 </Check>
 
 <Check>
-  Un timeout no genera automáticamente un nuevo `operationNumber`.
+  La frecuencia, el backoff y el límite de consulta están acordados.
 </Check>
 
 <Check>
-  La consulta utiliza `GET /api/v1/payments/{operationNumber}`.
+  El SCC confirma únicamente `200` + `APPROVED` + `00`.
 </Check>
 
 <Check>
-  La evidencia no contiene datos sensibles de tarjeta.
+  La lógica de idempotencia, concurrencia, timeout y reinicio superó las pruebas.
 </Check>
 
-## Criterios de salida
+<Check>
+  La política del carril para `PENDING` y `UNKNOWN` está aprobada.
+</Check>
 
-La integración puede avanzar cuando:
+<Check>
+  Las claves de `additionalFields`, monedas y medios de pago están confirmados.
+</Check>
 
-- los endpoints responden de acuerdo con el contrato;
-- CELSAT interpreta correctamente todos los estados financieros;
-- los códigos locales y del procesador producen el tratamiento esperado;
-- timeout, reconexión y reinicio no generan cobros duplicados;
-- `operationNumber` y `transactionID` permiten correlacionar la evidencia;
-- la información adicional se conserva entre la solicitud y la respuesta;
-- los parámetros ajustables del ambiente han sido registrados;
-- ambas partes aprueban los resultados de integración y UAT.
+<Check>
+  El catálogo de códigos y el procedimiento para códigos desconocidos están registrados.
+</Check>
 
-## Evidencia por caso
+<Check>
+  Existen monitoreo, contactos de soporte y un procedimiento de escalamiento.
+</Check>
 
-Registra:
+<Check>
+  El integrador y Alignet aprobaron las evidencias de integración y UAT.
+</Check>
 
-- identificador del caso;
-- fecha y hora;
-- ambiente y versión de interfaz;
-- SCC y P5L utilizados;
-- `operationNumber` y `transactionID`, cuando exista;
-- solicitud y respuesta sanitizadas;
-- `success`, `resultCode`, `resultMessage`, `state` y `stateReason`;
-- tiempos observados;
-- resultado esperado y obtenido;
-- observaciones y conformidad.
+## Criterio de aceptación
+
+No habilites producción mientras exista riesgo de interpretar `PENDING`, `UNKNOWN`, timeout o `404` como rechazo y generar un cobro adicional. La salida requiere demostrar que toda operación incierta conserva su referencia original hasta resolverse o escalarse.

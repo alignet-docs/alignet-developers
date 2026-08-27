@@ -1,0 +1,102 @@
+---
+title: "Solución de problemas"
+description: "Diagnóstico de conectividad, solicitudes inválidas, terminal ocupado y operaciones pendientes."
+icon: "screwdriver-wrench"
+---
+
+Usa el código HTTP, `status`, `resultCode` y `operationNumber` para diagnosticar cada caso. No uses `resultMessage` como única base para la lógica del SCC.
+
+## Diagnóstico rápido
+
+| Síntoma | Causa probable | Acción |
+| --- | --- | --- |
+| `GET /health` no responde | IP o puerto incorrectos, firewall, aislamiento de clientes o aplicación cerrada. | Verifica la IP del terminal, la misma red local, AP/Client Isolation, puerto TCP y estado de Pay-me PinPAD. |
+| `ping` no responde | Sin ruta IP o ICMP bloqueado. | Verifica direccionamiento. Si la red bloquea ICMP, prueba directamente `GET /health`. |
+| `404` al autorizar | El SCC llama a una ruta anterior o incorrecta. | Usa exactamente `POST /authorize`; no uses `/payment` ni `/api/v1/payments`. |
+| `400 BAD_REQUEST` | JSON o campo inválido. | Revisa tipo, obligatoriedad, longitud y formato. Corrige antes de reenviar. |
+| `409 POS_BUSY` | Existe otra operación activa. | Espera a que termine. Serializa los cobros por terminal. |
+| `503 POS_NOT_AVAILABLE` | Pay-me PinPAD o el SDK de pagos no está listo. | El operador debe abrir la aplicación y dejarla en estado **Listo**. |
+| El SCC pierde la respuesta | Timeout menor que la duración del cobro o pérdida de red. | No inicies otro cobro. Consulta el `operationNumber` original. |
+| `202 PENDING` | Venció la espera, pero la operación puede seguir activa. | Consulta y respeta `Retry-After`. |
+| `404 NOT_FOUND` al consultar | La referencia no existe o no coincide con la enviada. | Verifica el valor exacto y el terminal consultado. No asumas rechazo financiero. |
+| Estado `UNKNOWN` | El terminal se reinició durante el proceso. | Mantén la operación abierta, consulta y aplica el escalamiento acordado. |
+| Pago rechazado con HTTP `200` | `DENIED` es un resultado financiero válido. | No confirmes el pago. Un nuevo intento requiere otro `operationNumber`. |
+
+## `GET /health` no responde
+
+Sigue este orden:
+
+1. Confirma en el Wiseasy P5L la IP y el puerto configurados.
+2. Confirma que el SCC usa esos valores y no una dirección anterior.
+3. Verifica que ambos equipos estén en la misma red local.
+4. Desactiva AP Isolation o Client Isolation para esos equipos.
+5. Verifica que el firewall permita el puerto TCP configurado, `8080` por defecto.
+6. Abre Pay-me PinPAD y confirma que la aplicación continúa en primer plano y lista.
+7. Ejecuta nuevamente `GET /health` desde el mismo host y proceso de red que usará el SCC.
+
+Respuesta esperada:
+
+```json
+{ "status": "UP", "service": "Alignet ECR" }
+```
+
+## `400 BAD_REQUEST`
+
+Verifica:
+
+- `operationNumber`: String, entre 1 y 64 caracteres y sin espacios;
+- `amount`: número entero o cadena numérica, positivo, de 1 a 12 dígitos y en unidades menores;
+- `currency`: si se incluye, número o cadena de exactamente tres dígitos;
+- `additionalFields`: objeto opcional cuyos valores son únicamente String;
+- header `Content-Type: application/json`;
+- JSON bien formado.
+
+Conserva el `resultMessage` para saber qué validación falló. No lo muestres sin control al usuario final.
+
+## Timeout o desconexión
+
+Un timeout describe la conexión del SCC, no el resultado financiero.
+
+```text
+POST sin respuesta
+  → conservar operationNumber
+  → GET /payments/{operationNumber}
+  → repetir si responde 202
+  → resolver solo con un estado final
+```
+
+Confirma que el timeout del `POST` sea mayor que la espera interna del terminal. Con la referencia de desarrollo de 90 segundos, utiliza al menos 100 a 110 segundos.
+
+## Operación pendiente por demasiado tiempo
+
+1. Mantén el mismo `operationNumber`.
+2. Respeta `Retry-After`; usa aproximadamente 2 segundos solo como referencia cuando el header no esté presente.
+3. Verifica que el terminal conserve conectividad local y conectividad con la plataforma de pagos.
+4. Al alcanzar el límite acordado, inmoviliza la operación y escala. No crees automáticamente otra venta.
+
+El límite máximo de consulta y la decisión operativa de la barrera deben definirse antes de producción.
+
+## Datos para soporte
+
+Comparte:
+
+- ambiente, fecha y hora con zona horaria;
+- identificador del SCC, carril y Wiseasy P5L;
+- versión de Pay-me PinPAD;
+- IP y puerto, sin exponer información innecesaria fuera del canal de soporte;
+- `operationNumber`;
+- código HTTP y `Retry-After`;
+- cuerpo de solicitud y respuesta sanitizados;
+- duración del `POST` y secuencia de consultas;
+- cambios de red o reinicios observados.
+
+No compartas PAN completo, CVV, PIN, PIN Block, pistas ni datos EMV sensibles.
+
+<CardGroup cols={2}>
+  <Card title="Operación y recuperación" icon="rotate" href="/procesamiento-fisico/alignet-transit/operacion-y-recuperacion">
+    Revisa el algoritmo de consulta, idempotencia y concurrencia.
+  </Card>
+  <Card title="Certificación y producción" icon="flask-vial" href="/procesamiento-fisico/alignet-transit/integradores/celsat/qa-uat">
+    Ejecuta los casos antes de habilitar cobros reales.
+  </Card>
+</CardGroup>

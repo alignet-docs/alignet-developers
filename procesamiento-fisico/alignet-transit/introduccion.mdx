@@ -1,106 +1,78 @@
 ---
-title: "Introducción a Alignet Transit"
-description: "Referencia técnica para integrar el SCC de CELSAT con el terminal P5L y la plataforma de pagos Alignet."
+title: "Introducción a Pay-me Transit PinPAD"
+description: "Referencia técnica para integrar un SCC o sistema de caja con Pay-me PinPAD en el Wiseasy P5L."
 icon: "road"
 ---
 
-Alignet Transit permite que el **Sistema de Control de Carril de CELSAT (SCC)** inicie una autorización de pago en un **terminal P5L PIN Pad** y reciba una respuesta normalizada para resolver la operación del carril.
+**Pay-me Transit PinPAD** permite iniciar y recuperar pagos desde un **Sistema de Control de Carril (SCC)** o sistema de caja. La integración utiliza HTTP/JSON sobre la red local.
 
-Esta documentación está dirigida a los equipos de arquitectura, desarrollo, QA y operación técnica de CELSAT. El SCC solo se integra con el Componente Local de Integración instalado en el P5L. Las estructuras internas de PaymePOS SDK, el SDK del dispositivo, el procesamiento adquirente y los datos sensibles de tarjeta permanecen encapsulados por Alignet.
+Esta documentación corresponde a la aplicación **Pay-me PinPAD** con package `com.alignet.pinpad.ecr`, instalada en el terminal **Wiseasy P5L**.
 
-## Alcance de la integración
+<Info>
+  En esta integración, el **cliente HTTP** es el SCC o sistema de caja. El **servidor HTTP** es la aplicación Pay-me PinPAD instalada en el Wiseasy P5L.
+</Info>
 
-La integración contempla:
+## Qué debes implementar
 
-- autorización de pagos iniciada por el SCC;
-- solicitud HTTP `POST /api/v1/payments` en formato JSON;
-- respuesta normalizada con código general y estado financiero;
-- consulta HTTP `GET /api/v1/payments/{operationNumber}` para recuperar el estado;
-- correlación mediante `operationNumber` y `transactionID`;
-- asociación y retorno de información adicional para desglose de importes y conciliación;
-- idempotencia y prevención de cobros duplicados;
-- tratamiento de errores locales, respuestas del procesador y cancelaciones del usuario;
-- recuperación después de timeout, pérdida de comunicación o reinicio del SCC;
-- registro de información no sensible para trazabilidad, soporte y comprobante.
+| Operación | Método y ruta | Finalidad |
+| --- | --- | --- |
+| Verificar disponibilidad | `GET /health` | Confirmar que la aplicación está abierta y accesible. |
+| Autorizar un pago | `POST /authorize` | Iniciar un cobro y esperar su resultado en la misma conexión. |
+| Consultar una operación | `GET /payments/{operationNumber}` | Recuperar el resultado después de un estado pendiente, timeout o pérdida de conexión. |
 
-## Arquitectura de la solución
+El contrato no requiere instalar una librería en el SCC. Debes implementar un cliente HTTP capaz de enviar y recibir JSON, mantener abierta la solicitud de autorización y recuperar operaciones inciertas.
 
-```mermaid
-flowchart LR
-    SCC[SCC CELSAT]
-
-    subgraph P5L[Terminal P5L PIN Pad]
-        LOCAL[Componente Local de Integración]
-        PAYME[PaymePOS SDK]
-        DEVICE[SDK y hardware del dispositivo]
-
-        LOCAL --> PAYME
-        PAYME --> DEVICE
-    end
-
-    PLATFORM[Plataforma de pagos Alignet]
-    NETWORK[Procesador y redes de pago]
-
-    SCC <-->|Red LAN| LOCAL
-    PAYME <-->|Canal administrado por Alignet| PLATFORM
-    PLATFORM <-->|Procesamiento| NETWORK
-```
-
-El Componente Local de Integración constituye la única frontera técnica consumida por CELSAT. El SCC no invoca directamente PaymePOS SDK, el SDK del dispositivo ni la plataforma de pagos.
-
-## Flujo principal
+## Flujo en cinco pasos
 
 <Steps>
-  <Step title="Preparar la operación">
-    El SCC calcula el importe, genera un `operationNumber` único y lo persiste antes de enviar la solicitud.
+  <Step title="Comprobar conectividad">
+    Ejecuta `GET /health`. Durante la configuración inicial, esta llamada también permite que Pay-me PinPAD confirme que el SCC alcanza el terminal.
   </Step>
-  <Step title="Solicitar la autorización">
-    El SCC envía `operationNumber`, `amount` y `currency`. Puede incluir `additionalFields` para asociar el desglose de importes y el identificador de turno o vía.
+  <Step title="Crear la referencia">
+    Genera y persiste un `operationNumber` único antes de iniciar el cobro.
   </Step>
-  <Step title="Procesar el pago">
-    El Componente Local coordina PaymePOS SDK y el SDK del dispositivo. Alignet procesa la transacción en la plataforma de pagos.
+  <Step title="Enviar la autorización">
+    Ejecuta `POST /authorize` con el monto en unidades menores. Configura un timeout HTTP de al menos 100 a 110 segundos.
   </Step>
-  <Step title="Interpretar la respuesta">
-    El SCC evalúa `result`, `resultCode` y, principalmente, `result.state`. El campo `success` no determina por sí solo la aprobación.
+  <Step title="Interpretar el resultado">
+    Confirma el pago únicamente si recibes HTTP `200`, `status: "APPROVED"` y `resultCode: "00"`.
   </Step>
-  <Step title="Recuperar una operación incierta">
-    Ante timeout o pérdida de comunicación, el SCC conserva `operationNumber` y consulta la operación original antes de intentar otro cobro.
-  </Step>
-  <Step title="Cerrar el evento del carril">
-    CELSAT registra la respuesta, aplica su política operativa y genera el comprobante cuando corresponda.
+  <Step title="Recuperar un resultado incierto">
+    Ante HTTP `202`, timeout o pérdida de conexión, consulta `GET /payments/{operationNumber}`. No inicies otro cobro.
   </Step>
 </Steps>
 
 ## Principios de implementación
 
-- Una venta mantiene un único `operationNumber`.
-- `amount` se envía como una cadena numérica que representa un entero en unidades menores.
-- `additionalFields` mantiene información complementaria asociada a la operación y no reemplaza los campos requeridos.
-- La aprobación se determina con `result.state = "AUTORIZADO"`.
-- `success = true` solo indica que el flujo produjo una respuesta procesable.
-- Un timeout no equivale a pago rechazado.
-- El SCC consulta antes de generar una nueva operación después de un resultado incierto.
-- CELSAT no recibe ni almacena PAN completo, CVV, PIN, PIN Block, tracks ni datos EMV sensibles.
+- Una operación real de cobro utiliza un único `operationNumber`.
+- `amount` representa un entero positivo en unidades menores. Por ejemplo, `1500` equivale a S/ 15.00.
+- El cobro es síncrono. `POST /authorize` permanece abierto mientras el usuario presenta la tarjeta e ingresa el PIN cuando corresponde.
+- `PENDING` y `UNKNOWN` no significan rechazo. Debes consultar antes de tomar una decisión o iniciar otro cobro.
+- Pay-me PinPAD procesa una operación a la vez. Una referencia diferente recibida durante un cobro activo obtiene `409 POS_BUSY`.
+- El SCC no recibe PAN completo, CVV, PIN, PIN Block, pistas ni datos EMV sensibles.
 
-## Cómo usar esta documentación
+## Contenido de esta guía
 
 <CardGroup cols={2}>
-  <Card title="Arquitectura y trazabilidad" icon="diagram-project" href="/procesamiento-fisico/alignet-transit/arquitectura-y-trazabilidad">
-    Componentes, límites de responsabilidad e identificadores.
+  <Card title="Arquitectura, red y seguridad" icon="diagram-project" href="/procesamiento-fisico/alignet-transit/arquitectura-y-trazabilidad">
+    Revisa componentes, responsabilidades, IP, puerto, configuración inicial y protección de datos.
   </Card>
   <Card title="Solicitud de autorización" icon="file-export" href="/procesamiento-fisico/alignet-transit/parametros-de-envio">
-    Endpoint, headers, campos de entrada y reglas de validación.
+    Implementa `POST /authorize`, sus validaciones y ejemplos.
   </Card>
-  <Card title="Respuesta, estados y códigos" icon="code" href="/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos">
-    Contrato de respuesta, interpretación financiera y catálogo de resultados.
+  <Card title="Respuestas, consulta y códigos" icon="code" href="/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos">
+    Interpreta estados de negocio, códigos HTTP y `GET /payments/{operationNumber}`.
   </Card>
   <Card title="Operación y recuperación" icon="rotate" href="/procesamiento-fisico/alignet-transit/operacion-y-recuperacion">
-    Secuencia, idempotencia, timeout, consulta y reconexión.
+    Controla timeouts, operaciones pendientes, idempotencia y concurrencia.
   </Card>
-  <Card title="Integración del SCC con el P5L" icon="ethernet" href="/procesamiento-fisico/alignet-transit/integradores/celsat/interfaz-scc-p5l">
-    Comportamiento que debe implementar el cliente de CELSAT.
+  <Card title="Solución de problemas" icon="screwdriver-wrench" href="/procesamiento-fisico/alignet-transit/solucion-de-problemas">
+    Diagnostica conectividad, errores operativos y resultados inciertos.
   </Card>
-  <Card title="Responsabilidades y preparación" icon="people-arrows" href="/procesamiento-fisico/alignet-transit/integradores/celsat/responsabilidades-y-preparacion">
-    Responsabilidades de CELSAT y Alignet para iniciar la integración.
+  <Card title="Implementación del cliente HTTP" icon="ethernet" href="/procesamiento-fisico/alignet-transit/integradores/celsat/interfaz-scc-p5l">
+    Usa ejemplos completos de cURL, Java, C#, Python y Node.js.
+  </Card>
+  <Card title="Certificación y producción" icon="flask-vial" href="/procesamiento-fisico/alignet-transit/integradores/celsat/qa-uat">
+    Valida escenarios, evidencias y criterios de salida.
   </Card>
 </CardGroup>

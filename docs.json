@@ -416,18 +416,19 @@
             "icon": "people-arrows",
             "pages": [
               {
-                "group": "Alignet Transit",
+                "group": "Pay-me Transit PinPAD",
                 "icon": "road",
                 "pages": [
                   "procesamiento-fisico/alignet-transit/introduccion",
                   {
-                    "group": "Conceptos comunes",
+                    "group": "Integración técnica",
                     "icon": "diagram-project",
                     "pages": [
                       "procesamiento-fisico/alignet-transit/arquitectura-y-trazabilidad",
                       "procesamiento-fisico/alignet-transit/parametros-de-envio",
                       "procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos",
-                      "procesamiento-fisico/alignet-transit/operacion-y-recuperacion"
+                      "procesamiento-fisico/alignet-transit/operacion-y-recuperacion",
+                      "procesamiento-fisico/alignet-transit/solucion-de-problemas"
                     ]
                   },
                   {
@@ -435,7 +436,7 @@
                     "icon": "people-arrows",
                     "pages": [
                       {
-                        "group": "CELSAT",
+                        "group": "SCC / CELSAT",
                         "icon": "road-barrier",
                         "pages": [
                           "procesamiento-fisico/alignet-transit/integradores/celsat/interfaz-scc-p5l",

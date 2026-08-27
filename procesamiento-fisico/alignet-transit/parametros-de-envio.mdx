@@ -1,120 +1,161 @@
 ---
 title: "Solicitud de autorización"
-description: "Endpoint, headers y campos requeridos para iniciar un pago desde el SCC de CELSAT."
+description: "Contrato, campos, validaciones y ejemplos de POST /authorize."
 icon: "file-export"
 ---
 
-El SCC inicia la autorización mediante el Componente Local de Integración instalado en el P5L.
+El SCC o sistema de caja inicia un cobro mediante Pay-me PinPAD y espera el resultado en la misma llamada.
 
 ```http
-POST /api/v1/payments
-```
-
-La URL base está sujeta a validación final durante la habilitación del ambiente.
-
-## Headers
-
-```http
+POST /authorize
 Content-Type: application/json
-Accept: application/json
 ```
 
-## Campos de la solicitud
+URL completa:
 
-| Campo | Tipo | Requerido | Descripción | Ejemplo |
+```text
+http://<IP_DEL_PINPAD>:<PUERTO>/authorize
+```
+
+## Cuerpo de la solicitud
+
+```json
+{
+  "operationNumber": "44992528",
+  "amount": 100,
+  "currency": 604,
+  "additionalFields": {
+    "plate": "ABC-123",
+    "tollPointId": "PEAJE-01",
+    "laneId": "VIA-03"
+  }
+}
+```
+
+## Campos
+
+| Campo | Tipo JSON aceptado | Obligatorio | Validación | Descripción |
 | --- | --- | --- | --- | --- |
-| `operationNumber` | String | Sí | Identificador único de la operación generado por CELSAT. | `OP-20260821-000001` |
-| `amount` | String | Sí | Cadena numérica que representa el monto en unidades menores, sin separador decimal. | `"1500"` equivale a S/ 15.00 |
-| `currency` | String | Sí | Código numérico ISO 4217 de la moneda. | `604` para PEN |
-| `additionalFields` | Object | No | Contenedor de información complementaria asociada a la operación. | Ver [Información adicional](#información-adicional) |
+| `operationNumber` | String | Sí | Entre 1 y 64 caracteres, sin espacios. | Identificador único generado por el SCC. Funciona como clave de idempotencia y referencia de consulta. |
+| `amount` | Number o String | Sí | Entero positivo de 1 a 12 dígitos, expresado en unidades menores. | Monto total del cobro. `1500` o `"1500"` representan S/ 15.00. |
+| `currency` | Number o String | No | Código numérico ISO 4217 de exactamente 3 dígitos. | Moneda del cobro. Si se omite, Pay-me PinPAD utiliza `604` (PEN). |
+| `additionalFields` | Object | No | Todas las claves deben tener valores String. | Información complementaria asociada al cobro. |
 
-Los tres primeros campos conforman el contrato mínimo de autorización. `additionalFields` amplía la información de negocio sin sustituir ni modificar `operationNumber`, `amount` o `currency`.
+## Reglas de validación
+
+### `operationNumber`
+
+- Genéralo en el SCC antes de enviar la solicitud.
+- Persístelo antes del `POST` para poder recuperar el resultado.
+- Usa un valor nuevo para cada operación real de cobro.
+- No uses espacios ni excedas 64 caracteres.
+- Reutiliza exactamente el mismo valor si necesitas recuperar o reenviar una solicitud cuyo resultado no recibiste.
+
+<Warning>
+  No generes un nuevo `operationNumber` después de un timeout. La primera solicitud puede haber producido un cargo.
+</Warning>
+
+### `amount`
+
+El monto no admite decimales ni separadores. Convierte el importe a unidades menores:
+
+| Importe | Valor válido de `amount` |
+| --- | ---: |
+| S/ 1.00 | `100` |
+| S/ 8.50 | `850` |
+| S/ 15.00 | `1500` |
+| S/ 125.40 | `12540` |
+
+Pay-me PinPAD acepta el valor como número JSON o cadena numérica. Para simplificar el contrato de tu cliente, utiliza una representación de forma consistente.
+
+### `currency`
+
+Para soles peruanos utiliza `604` o `"604"`. Si omites el campo, la aplicación utiliza `604`.
+
+La habilitación de monedas distintas de PEN debe confirmarse con Alignet antes de producción.
+
+### `additionalFields`
+
+Todos los valores deben ser texto:
+
+```json
+{
+  "additionalFields": {
+    "plate": "ABC-123",
+    "tollPointId": "PEAJE-01",
+    "laneId": "VIA-03"
+  }
+}
+```
+
+No envíes números, booleanos, arreglos, objetos anidados ni valores `null` dentro de `additionalFields`.
+
+<Note>
+  La versión vigente confirma que `additionalFields` admite pares clave/valor de texto, pero no confirma un catálogo obligatorio ni el uso final de claves como `plate`, `tollPointId` o `laneId` por el procesador. Acuerda las claves de negocio con Alignet. Si no las necesitas, omite el objeto.
+</Note>
 
 ## Ejemplo mínimo
 
 ```json
 {
-  "operationNumber": "OP-20260821-000001",
-  "amount": "1500",
-  "currency": "604"
+  "operationNumber": "44992528",
+  "amount": 100
 }
 ```
 
-<Note>
-  `amount` es un `String` cuyo contenido debe ser un número entero positivo. No incluyas símbolo de moneda, separador decimal ni separador de miles.
-</Note>
+En este ejemplo, Pay-me PinPAD aplica la moneda predeterminada `604`.
 
-## Información adicional
-
-Para el flujo de CELSAT, `additionalFields` permite asociar el desglose de importes y el identificador de turno o vía a la misma operación de pago. Cuando se incluya este objeto, debe contener las tres claves acordadas.
-
-| Campo dentro de `additionalFields` | Tipo JSON | Requerido dentro del objeto | Formato | Descripción |
-| --- | --- | --- | --- | --- |
-| `montoPeaje` | String | Sí | Decimal(12,2): hasta 10 dígitos enteros y 2 decimales | Importe correspondiente al peaje. |
-| `montoDetraccion` | String | Sí | Decimal(12,2): hasta 10 dígitos enteros y 2 decimales | Importe correspondiente a la detracción. Usa `"0.00"` cuando no aplique. |
-| `IdTurnoVia` | String | Sí | Máximo 50 caracteres | Identificador de turno o vía utilizado por CELSAT para conciliación. |
+## Ejemplo completo con cadenas numéricas
 
 ```json
 {
-  "operationNumber": "OP-20260822-000001",
+  "operationNumber": "PEAJE01-20260827-000001",
   "amount": "1500",
   "currency": "604",
   "additionalFields": {
-    "montoPeaje": "10.00",
-    "montoDetraccion": "5.00",
-    "IdTurnoVia": "TV-20260822-001"
+    "plate": "ABC-123",
+    "tollPointId": "PEAJE-01",
+    "laneId": "VIA-03"
   }
 }
 ```
 
-Las claves y los valores de `additionalFields` se envían como cadenas y los nombres distinguen mayúsculas de minúsculas. CELSAT debe conservar exactamente `montoPeaje`, `montoDetraccion` e `IdTurnoVia`.
+## Solicitud inválida
 
-<Info>
-  `amount` mantiene el formato de unidades menores: `"1500"` representa S/ 15.00. En cambio, `montoPeaje` y `montoDetraccion` utilizan representación decimal con dos posiciones. Los datos adicionales no reemplazan el importe total autorizado.
-</Info>
+Una validación fallida devuelve HTTP `400` y no debe tratarse como un rechazo financiero:
 
-Cuando CELSAT envía `additionalFields`, el Componente Local conserva esta información asociada a la transacción y la devuelve en `result.additionalFields` cuando la respuesta contiene datos de la operación. Esto permite mantener el mismo contexto en autorización, consulta y conciliación.
-
-## Reglas de `operationNumber`
-
-El SCC debe:
-
-- generar un valor único para cada venta;
-- persistirlo antes de enviar la solicitud;
-- conservarlo hasta conocer el resultado final;
-- no reutilizarlo para otra venta;
-- mantener el mismo valor ante timeout o pérdida de comunicación;
-- utilizarlo para consultar la operación cuando el resultado sea incierto.
-
-```text
-1 venta = 1 operationNumber
+```json
+{
+  "status": "ERROR",
+  "resultCode": "BAD_REQUEST",
+  "resultMessage": "amount inválido: debe ser un entero positivo en unidades menores"
+}
 ```
 
-## Representación del monto
+Corrige el campo indicado antes de reenviar y registra el intento para mantener trazabilidad. La guía vigente no especifica el tratamiento de una misma referencia cuando cambia el payload; evita modificar monto o moneda para una referencia ya enviada.
 
-`amount` expresa el total que el P5L debe procesar en unidades menores de la moneda.
+## Antes de enviar
 
-| Importe | `amount` |
-| --- | ---: |
-| S/ 8.50 | `"850"` |
-| S/ 15.00 | `"1500"` |
-| S/ 125.40 | `"12540"` |
+<Check>
+  `operationNumber` está persistido, es único, tiene de 1 a 64 caracteres y no contiene espacios.
+</Check>
 
-El cálculo del importe corresponde al SCC. El P5L procesa el valor recibido y no requiere que CELSAT conozca las estructuras internas de PaymePOS SDK.
+<Check>
+  `amount` contiene un entero positivo de hasta 12 dígitos en unidades menores.
+</Check>
 
-## Validaciones antes del envío
+<Check>
+  `currency`, si está presente, contiene exactamente tres dígitos.
+</Check>
 
-Antes de realizar el `POST`, verifica que:
+<Check>
+  Todos los valores de `additionalFields`, si está presente, son cadenas.
+</Check>
 
-- `operationNumber` sea una cadena no vacía y corresponda a una única venta;
-- `amount` sea una cadena numérica que represente un entero positivo en unidades menores;
-- `currency` sea `"604"` para operaciones en soles;
-- si incluyes `additionalFields`, sus claves respeten la capitalización documentada y sus valores sean cadenas con el formato indicado;
-- la solicitud use `Content-Type: application/json`;
-- la referencia ya se encuentre almacenada para una posible recuperación.
+<Check>
+  La solicitud usa `Content-Type: application/json` y un timeout HTTP de al menos 100 a 110 segundos.
+</Check>
 
-## Siguiente paso
-
-<Card title="Respuesta, estados y códigos" icon="code" href="/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos">
-  Implementa la interpretación de `success`, `resultCode`, `resultMessage` y `result.state`.
+<Card title="Respuestas, consulta y códigos" icon="code" href="/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos">
+  Implementa los códigos HTTP, estados y la consulta de operaciones.
 </Card>

@@ -1,200 +1,204 @@
 ---
-title: "Respuesta, estados y códigos"
-description: "Estructura de respuesta, estados financieros y códigos retornados al SCC."
+title: "Respuestas, consulta y códigos"
+description: "Estructura de respuesta, estados transaccionales, códigos HTTP y consulta por operationNumber."
 icon: "code"
 ---
 
-El Componente Local de Integración entrega al SCC una respuesta normalizada. La misma estructura se utiliza para la autorización y para la consulta de estado cuando existe información de la operación.
-
-## Estructura general
-
-```json
-{
-  "success": true,
-  "resultCode": "00",
-  "resultMessage": "Se procesó correctamente la petición",
-  "result": {
-    "transactionID": "6f55a89d-bba1-4db7-bbc7-004011e0978d",
-    "operationNumber": "OP-20260822-000001",
-    "state": "AUTORIZADO",
-    "stateReason": "Approved",
-    "amount": "1500",
-    "currency": "604",
-    "additionalFields": {
-      "montoPeaje": "10.00",
-      "montoDetraccion": "5.00",
-      "IdTurnoVia": "TV-20260822-001"
-    },
-    "paymentMethod": {
-      "name": "CARD",
-      "maskedPan": "411111******1111",
-      "brand": "VISA"
-    },
-    "processor": {
-      "authorizationCode": "123456",
-      "responseCode": "00"
-    }
-  }
-}
-```
-
-## Campos principales
-
-| Campo | Tipo | Descripción |
-| --- | --- | --- |
-| `success` | Boolean | Indica si el PinPad y el SDK pudieron procesar la solicitud y producir un resultado. |
-| `resultCode` | String | Código general retornado por el backend o por el procesamiento local. |
-| `resultMessage` | String | Mensaje legible asociado al código general. |
-| `result` | Object / null | Datos de la transacción cuando existen. |
+Pay-me PinPAD diferencia los **resultados de negocio** de los **errores operativos** mediante el código HTTP y el cuerpo JSON.
 
 <Warning>
-  `success = true` no significa que el pago fue aprobado. La aprobación se determina exclusivamente cuando `result.state = "AUTORIZADO"`.
+  Un pago rechazado por el procesador devuelve HTTP `200` con `status: "DENIED"`. No interpretes todos los HTTP `200` como aprobación.
 </Warning>
 
-## Datos de `result`
+## Estructura de respuesta de pago
 
-Cuando `result` no es `null`, pueden recibirse los siguientes campos:
+```json
+{
+  "operationNumber": "44992528",
+  "status": "APPROVED",
+  "resultCode": "00",
+  "resultMessage": "Aprobado",
+  "authorizationCode": "123456",
+  "completedAt": "2026-08-27T20:12:48Z"
+}
+```
 
 | Campo | Tipo | Descripción |
 | --- | --- | --- |
-| `transactionID` | String | Identificador único generado por Alignet. |
-| `operationNumber` | String | Identificador enviado por CELSAT. |
-| `state` | String | Estado financiero de la transacción. |
-| `stateReason` | String | Razón o descripción retornada por el procesador o emisor. |
-| `amount` | String | Monto procesado en unidades menores. |
-| `currency` | String | Código numérico ISO 4217. |
-| `additionalFields` | Object / null | Información adicional enviada por CELSAT y asociada a la operación. |
-| `paymentMethod` | Object / null | Información no sensible del medio de pago. |
-| `processor` | Object / null | Información normalizada del procesador. |
-| `lifecycle` | Array | Historial de estados de la operación, cuando se encuentre disponible. |
+| `operationNumber` | String | Referencia recibida desde el SCC. Puede faltar en errores de validación donde no fue posible identificarla. |
+| `status` | String | Estado transaccional u operativo. |
+| `resultCode` | String o null | Código financiero u operativo. `"00"` es el único código documentado como aprobación. |
+| `resultMessage` | String | Mensaje legible asociado al resultado. Úsalo para diagnóstico, no para lógica de decisión. |
+| `authorizationCode` | String o null | Código del procesador cuando el pago fue aprobado. |
+| `completedAt` | String o null | Fecha y hora final en ISO 8601 UTC (`yyyy-MM-ddTHH:mm:ssZ`). Es `null` mientras no existe un resultado final. |
 
-<Note>
-  Tanto la solicitud como la respuesta representan `amount` como `String` numérico en unidades menores.
-</Note>
+## Respuestas de `POST /authorize`
 
-## Retorno de la información adicional
-
-Cuando la solicitud contiene `additionalFields` y la respuesta incluye información de la operación, `result.additionalFields` devuelve los datos asociados a la transacción:
+### Pago aprobado — `200 OK`
 
 ```json
 {
-  "additionalFields": {
-    "montoPeaje": "10.00",
-    "montoDetraccion": "5.00",
-    "IdTurnoVia": "TV-20260822-001"
-  }
+  "operationNumber": "44992528",
+  "status": "APPROVED",
+  "resultCode": "00",
+  "resultMessage": "Aprobado",
+  "authorizationCode": "123456",
+  "completedAt": "2026-08-27T20:12:48Z"
 }
 ```
 
-El SCC debe correlacionar estos valores mediante `operationNumber` y conservarlos para sus procesos de conciliación. `additionalFields` aporta contexto de negocio; la aprobación continúa determinada exclusivamente por `result.state`.
-
-## Estados financieros
-
-| Estado | Final | Tratamiento del SCC |
-| --- | --- | --- |
-| `AUTORIZADO` | Sí | Confirmar el pago y aplicar la política de carril correspondiente. |
-| `DENEGADO` | Sí | Informar el rechazo y no habilitar el paso por aprobación. |
-| `PENDIENTE` | No | Conservar la referencia y consultar el estado. |
-| `INVALIDO` | Sí | Registrar el error y aplicar el tratamiento operativo definido. |
-| `CANCELADO` | Sí | Registrar la cancelación de la operación. |
-| `EXPIRADO` | Sí | Registrar la expiración y cerrar el intento conforme a la política operativa. |
-| `EXTORNADO` | Sí | Marcar la operación como extornada. |
-
-## Lógica de decisión
+Abre la barrera o confirma la venta únicamente cuando se cumplan ambas condiciones:
 
 ```text
-¿result existe?
-├─ Sí → evaluar result.state
-│  ├─ AUTORIZADO → confirmar pago
-│  ├─ DENEGADO → informar rechazo
-│  ├─ PENDIENTE → consultar estado
-│  ├─ CANCELADO → registrar cancelación
-│  ├─ EXTORNADO → confirmar extorno
-│  └─ otro estado → registrar y aplicar tratamiento operativo
-└─ No → evaluar resultCode como respuesta local o error sin transacción
+status = APPROVED
+resultCode = 00
 ```
 
-No utilices `success` como equivalente a aprobación.
-
-## Códigos del procesador
-
-| Código | Nombre | Mensaje | Significado |
-| --- | --- | --- | --- |
-| `00` | `SUCCESS` | Se procesó correctamente la petición | Transacción aprobada. |
-| `01` | `DENIED` | Petición rechazada por el Procesador | El procesador o emisor rechazó la operación. |
-| `03` | `INTERNAL_ERROR` | Ocurrió un error | Error interno del backend. |
-| `04` | `NO_PROCESSED` | No se pudo procesar la petición | El backend no pudo completar la operación. |
-| `06` | `BAD_REQUEST` | Algunos datos no fueron enviados correctamente | Error de validación de la solicitud. |
-| `08` | `MERCHANT_BAD_CONFIG` | Comercio requiere configuración | Configuración del comercio incompleta o inválida. |
-
-## Códigos locales del P5L y SDK
-
-| Código | Nombre | Mensaje | Significado |
-| --- | --- | --- | --- |
-| `14` | `ABANDONED` | Operación cancelada | El usuario canceló antes de presentar la tarjeta. |
-| `15` | `ABANDONED_ONE_INTENT` | Operación cancelada con al menos 1 intento | El usuario canceló después de uno o más intentos. |
-| `P01` | `DEVICE_NOT_REGISTERED` | Dispositivo no registrado | El serial del P5L no está registrado. |
-| `P02` | `DEVICE_BAD_CONFIG` | Dispositivo requiere configuración | Falta configuración requerida. |
-| `P03` | `DEVICE_INTERNAL_ERROR` | Ocurrió un error | Error interno del SDK. |
-| `P04` | `DEVICE_NO_INITIALIZED` | Dispositivo requiere ser inicializado | El SDK todavía no fue inicializado. |
-| `P05` | `DEVICE_LOW_BATTERY` | Dispositivo con batería baja | El nivel de batería es insuficiente. |
-| `P06` | `DEVICE_NO_PRINTER` | Impresora no detectada | No se encontró la impresora. |
-| `P07` | `DEVICE_NO_PAPER` | Impresora requiere papel | La impresora no tiene papel. |
-| `P20` | `REVERSAL_CARD_MISMATCH` | La tarjeta no corresponde a esta transacción | La tarjeta utilizada para el extorno no corresponde. |
-| `P21` | `REVERSAL_INVALID_STATE` | La transacción no se puede extornar | La operación no existe o no admite extorno. |
-
-Los códigos `P20` y `P21` pertenecen al flujo de extorno y no al flujo normal de autorización. La interfaz aplicable al extorno está pendiente de confirmación en el ambiente de integración.
-
-## Ejemplos de interpretación
-
-### Pago denegado
+### Pago rechazado — `200 OK`
 
 ```json
 {
-  "success": true,
+  "operationNumber": "44992528",
+  "status": "DENIED",
   "resultCode": "01",
-  "resultMessage": "Petición rechazada por el Procesador",
-  "result": {
-    "transactionID": "021d85af-f5bc-44cb-9d90-c104572bd30e",
-    "operationNumber": "OP-20260821-000002",
-    "state": "DENEGADO",
-    "stateReason": "Do not honor",
-    "amount": "1500",
-    "currency": "604",
-    "processor": {
-      "responseCode": "05"
-    }
-  }
+  "resultMessage": "Peticion rechazada por el Procesador",
+  "authorizationCode": null,
+  "completedAt": "2026-08-27T20:12:48Z"
 }
 ```
 
-El flujo produjo una respuesta válida, pero el pago fue denegado.
+El rechazo es final para esa operación. Si el usuario desea volver a pagar, crea una operación nueva con otro `operationNumber`.
 
-### Cancelación local antes de presentar la tarjeta
+### Resultado pendiente — `202 Accepted`
+
+```http
+Retry-After: 2
+```
 
 ```json
 {
-  "success": false,
-  "resultCode": "14",
-  "resultMessage": "Operación cancelada",
-  "result": null
+  "operationNumber": "44992528",
+  "status": "PENDING",
+  "resultCode": "WAITING_RESULT",
+  "resultMessage": "Consulte el estado antes de reintentar",
+  "authorizationCode": null,
+  "completedAt": null
 }
 ```
 
-No se generó una transacción en backend. El código `14` no representa una denegación del emisor.
+No vuelvas a cobrar. Consulta la operación y respeta `Retry-After` cuando esté presente.
 
-## Información no sensible del medio de pago
-
-Cuando esté disponible, `paymentMethod` puede incluir:
+### Terminal ocupado — `409 Conflict`
 
 ```json
 {
-  "name": "CARD",
-  "maskedPan": "411111******1111",
-  "brand": "VISA"
+  "operationNumber": "44992530",
+  "status": "ERROR",
+  "resultCode": "POS_BUSY",
+  "resultMessage": "El Pinpad está procesando otra operación",
+  "authorizationCode": null,
+  "completedAt": null
 }
 ```
 
-CELSAT nunca recibe PAN completo, CVV, PIN, PIN Block, Track 1, Track 2 ni datos EMV sensibles.
+Pay-me PinPAD procesa una operación a la vez. Espera a que finalice la operación activa antes de reintentar la solicitud rechazada por concurrencia.
 
-El objeto `processor`, cuando exista, contiene información normalizada como `authorizationCode` y `responseCode`. El SCC no debe depender de estructuras internas del procesador.
+### Terminal no disponible — `503 Service Unavailable`
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "ERROR",
+  "resultCode": "POS_NOT_AVAILABLE",
+  "resultMessage": "El SDK de pagos no está disponible",
+  "authorizationCode": null,
+  "completedAt": null
+}
+```
+
+El operador debe dejar Pay-me PinPAD abierta y en estado listo. Reintenta cuando el terminal vuelva a estar disponible.
+
+### Solicitud inválida — `400 Bad Request`
+
+```json
+{
+  "status": "ERROR",
+  "resultCode": "BAD_REQUEST",
+  "resultMessage": "amount inválido: debe ser un entero positivo en unidades menores"
+}
+```
+
+Corrige la solicitud. No clasifiques este caso como un rechazo del procesador.
+
+## Consulta de estado
+
+Usa la misma referencia que enviaste en la autorización:
+
+```http
+GET /payments/{operationNumber}
+```
+
+Ejemplo:
+
+```http
+GET http://192.168.68.121:8080/payments/44992528
+```
+
+| Código HTTP | Significado | Acción del SCC |
+| --- | --- | --- |
+| `200 OK` | La operación tiene un resultado final. | Evalúa `status` y `resultCode`. |
+| `202 Accepted` | La operación todavía está en curso o pendiente. | Consulta nuevamente y respeta `Retry-After` si está presente. |
+| `404 Not Found` | No existe una operación con esa referencia. | Verifica que la referencia sea exactamente la enviada. No asumas que el pago fue rechazado. |
+
+Respuesta de una operación inexistente:
+
+```json
+{
+  "operationNumber": "27423555",
+  "status": "ERROR",
+  "resultCode": "NOT_FOUND",
+  "resultMessage": "Operación no encontrada",
+  "authorizationCode": null,
+  "completedAt": null
+}
+```
+
+## Estados
+
+| `status` | Final | Significado | Acción |
+| --- | --- | --- | --- |
+| `APPROVED` | Sí | Pago aprobado. | Confirma solo si `resultCode` también es `"00"`. |
+| `DENIED` | Sí | Pago rechazado por el procesador. | No confirmes. Un nuevo intento requiere otro `operationNumber`. |
+| `CANCELLED` | Sí | Operación cancelada por el operador o usuario. | No confirmes. Un nuevo intento requiere otra referencia. |
+| `PENDING` | No | Venció la espera, pero el cobro puede continuar. | Consulta; no inicies otro cobro. |
+| `PROCESSING` | No | El cobro se está procesando. | Consulta; no inicies otro cobro. |
+| `UNKNOWN` | No | El resultado es incierto, por ejemplo después de un reinicio durante el proceso. | Mantén la operación abierta y consulta. |
+| `ERROR` | Depende del código HTTP y `resultCode` | Error operativo, de validación o de consulta. | Aplica el tratamiento del código recibido. |
+
+## Códigos confirmados
+
+| `resultCode` | Contexto | Significado |
+| --- | --- | --- |
+| `00` | Financiero | Pago aprobado. |
+| `01` | Financiero, ejemplo verificado | Petición rechazada por el procesador. |
+| `WAITING_RESULT` | Operativo | La operación sigue pendiente; consulta su estado. |
+| `POS_BUSY` | Operativo | Ya existe otra operación activa. |
+| `POS_NOT_AVAILABLE` | Operativo | El SDK de pagos no está disponible. |
+| `BAD_REQUEST` | Validación | El JSON o uno de sus campos no cumple el contrato. |
+| `NOT_FOUND` | Consulta | No existe una operación con esa referencia. |
+
+<Note>
+  No se ha confirmado el catálogo completo de códigos del procesador. Trata únicamente `APPROVED` junto con `"00"` como aprobación. Conserva cualquier código desconocido y escálalo sin asignarle un significado.
+</Note>
+
+## Matriz de decisión
+
+| Respuesta | Decisión |
+| --- | --- |
+| `200` + `APPROVED` + `00` | Confirmar el pago, guardar el código de autorización y aplicar la regla de apertura. |
+| `200` + `DENIED` o `CANCELLED` | No confirmar. Informar el resultado. |
+| `202` + `PENDING` | Mantener la operación abierta y consultar. |
+| `409` + `POS_BUSY` | Esperar a que el terminal se libere. |
+| `503` + `POS_NOT_AVAILABLE` | Restablecer la disponibilidad del terminal y reintentar. |
+| `400` + `BAD_REQUEST` | Corregir la solicitud. |
+| Timeout o conexión interrumpida | Consultar la referencia original antes de cualquier nuevo cobro. |

@@ -1,131 +1,25 @@
-# Implementación de documentación Alignet Transit
+# Implementación de documentación Pay-me Transit PinPAD
 
-## Fuente de referencia
+## Estado
 
-La documentación pública de Transit se alineó con la **Especificación de Integración — Autorización de Pago**, versión 1.0, y con la definición complementaria acordada para el intercambio de `additionalFields`. El contrato documental resultante corresponde a la versión 1.1.
+La sección pública de Transit PinPAD fue alineada con la guía de integración del SDK entregado al cliente, versión 1.0, aplicable al package `com.alignet.pinpad.ecr`.
 
-Cuando existieron diferencias con documentos anteriores, prevaleció esta especificación.
+## Cambios de contrato documentados
 
-## Arquitectura aplicada
+- Se establecieron los roles correctos: el SCC o sistema de caja es el cliente HTTP y Pay-me PinPAD en el Wiseasy P5L es el servidor HTTP.
+- Se reemplazó el contrato anterior por `GET /health`, `POST /authorize` y `GET /payments/{operationNumber}`.
+- Se documentaron IP, puerto `8080` predeterminado, red local, configuración inicial y verificación de llaves.
+- Se corrigieron tipos, obligatoriedad y validaciones de `operationNumber`, `amount`, `currency` y `additionalFields`.
+- Se reemplazó la respuesta anidada anterior por la estructura plana vigente.
+- Se documentaron códigos HTTP, estados, idempotencia, concurrencia, timeouts y recuperación por consulta.
+- Se añadieron ejemplos de cURL, Java, C#, Python y Node.js.
+- Se añadió una página de solución de problemas y se renovaron los checklists de certificación y producción.
+- Se retiraron de la documentación vigente los endpoints, campos y códigos no respaldados por la guía del SDK.
 
-```text
-SCC CELSAT
-    ↓ HTTP/JSON sobre red LAN
-Componente Local de Integración en P5L
-    ↓
-PaymePOS SDK
-    ↓
-SDK del dispositivo y hardware
-    ↓
-Plataforma de pagos Alignet
-    ↓
-Procesador y redes de pago
-```
+## Páginas públicas
 
-La única frontera consumida por CELSAT es el Componente Local. Los modelos y protocolos internos permanecen encapsulados.
+La navegación se encuentra en `docs.json` bajo **Procesamiento → Integraciones → Pay-me Transit PinPAD**. Todas las páginas canónicas están dentro de `procesamiento-fisico/alignet-transit/`.
 
-## Contrato estable documentado
+## Validaciones pendientes
 
-### Autorización
-
-```http
-POST /api/v1/payments
-```
-
-Campos requeridos:
-
-- `operationNumber`: `String`;
-- `amount`: `String` numérico en unidades menores;
-- `currency`: `String` con código ISO 4217.
-
-Campo opcional:
-
-- `additionalFields`: `Object` con `montoPeaje`, `montoDetraccion` e `IdTurnoVia` como valores de tipo `String`.
-
-### Consulta
-
-```http
-GET /api/v1/payments/{operationNumber}
-```
-
-### Respuesta
-
-La documentación utiliza los nombres exactos:
-
-- `success`;
-- `resultCode`;
-- `resultMessage`;
-- `result`;
-- `transactionID`;
-- `operationNumber`;
-- `state`;
-- `stateReason`;
-- `amount`;
-- `currency`;
-- `additionalFields`;
-- `paymentMethod`;
-- `processor`;
-- `lifecycle`.
-
-La aprobación se determina únicamente con:
-
-```text
-result.state = AUTORIZADO
-```
-
-## Cambios aplicados frente a la documentación anterior
-
-- Se reemplazó `transactionId` por `transactionID`.
-- Se eliminó `requestStatus`, `reasonCode`, `PASS` y `NO_PASS` del contrato.
-- Se precisó que `amount` se transmite como `String` numérico y representa un entero en unidades menores.
-- Se incorporó `additionalFields` como objeto opcional de la solicitud y se documentó su retorno dentro de `result`.
-- Se documentaron los endpoints confirmados de autorización y consulta.
-- Se eliminó la disponibilidad previa como operación expuesta al SCC.
-- Se retiraron notificaciones, conexiones persistentes y cancelación como capacidades confirmadas.
-- Se eliminó QR interoperable del alcance de esta especificación.
-- Se reemplazaron referencias específicas al SDK del fabricante por el término `SDK del dispositivo`.
-- Se actualizó la conectividad a red LAN entre el SCC y el P5L.
-- Se incorporaron los estados financieros y los códigos confirmados.
-- Se documentó que `success = true` no equivale a aprobación.
-- Se reforzó la consulta obligatoria después de timeout o resultado incierto.
-
-## Organización publicada
-
-```text
-Alignet Transit
-├── Introducción
-├── Conceptos comunes
-│   ├── Arquitectura y trazabilidad
-│   ├── Solicitud de autorización
-│   ├── Respuesta, estados y códigos
-│   └── Operación y recuperación
-└── Integradores
-    └── CELSAT
-        ├── Integración del SCC con el P5L
-        ├── Responsabilidades y preparación
-        ├── Configuración y coordinación técnica
-        ├── Pruebas de integración y UAT
-        └── Información para la habilitación
-```
-
-## Parámetros desacoplados del contrato
-
-Los siguientes valores se mantienen sujetos a validación final del ambiente:
-
-- URL base;
-- mecanismo de autenticación;
-- timeouts de conexión y lectura;
-- frecuencia y límite de consultas;
-- direccionamiento del P5L;
-- asociación SCC–P5L;
-- procedimiento de soporte.
-
-Estos valores pueden ajustarse sin modificar la arquitectura, los endpoints ni los mensajes.
-
-## Validación requerida antes de publicar
-
-1. Ejecutar `mint validate`.
-2. Ejecutar `mint broken-links --check-redirects`.
-3. Revisar la vista local con `mint dev`.
-4. Confirmar que la URL anterior de contrato redirija a la solicitud de autorización.
-5. Confirmar que las páginas de Transit aparezcan en el orden definido en `docs.json`.
+Consulta `CELSAT_TECHNICAL_CLARIFICATIONS.md` antes de habilitar producción.

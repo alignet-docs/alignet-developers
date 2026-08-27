@@ -1,96 +1,135 @@
 ---
-title: "Arquitectura y trazabilidad"
-description: "Componentes, límites de integración e identificadores de la solución Alignet Transit."
+title: "Arquitectura, red y seguridad"
+description: "Componentes, responsabilidades, direccionamiento local, configuración inicial y protección de datos."
 icon: "diagram-project"
 ---
 
-## Arquitectura por carril
+## Arquitectura
 
 ```mermaid
 flowchart LR
-    SCC[SCC CELSAT]
+    SCC[SCC o sistema de caja<br/>Cliente HTTP]
 
-    subgraph P5L[Terminal P5L PIN Pad]
-        LOCAL[Componente Local de Integración]
-        PAYME[PaymePOS SDK]
-        DEVICE[SDK del dispositivo]
-        HARDWARE[Hardware de pago]
-
-        LOCAL --> PAYME
-        PAYME --> DEVICE
-        DEVICE --> HARDWARE
+    subgraph P5L[Wiseasy P5L]
+        PINPAD[Aplicación Pay-me PinPAD<br/>Servidor HTTP]
+        SDK[SDK de pagos y dispositivo]
+        READER[Lector de tarjeta y PIN]
+        PINPAD --> SDK
+        SDK --> READER
     end
 
-    PLATFORM[Plataforma de pagos Alignet]
-    PROCESSOR[Procesador y redes de pago]
+    PLATFORM[Procesador y banco]
 
-    SCC <-->|HTTP/JSON sobre red LAN| LOCAL
-    PAYME <-->|Canal administrado por Alignet| PLATFORM
-    PLATFORM <-->|Procesamiento| PROCESSOR
+    SCC <-->|HTTP/JSON sobre red local| PINPAD
+    SDK <-->|Conexión del terminal| PLATFORM
 ```
 
-La red LAN conecta el SCC con el Componente Local de Integración del P5L. Los valores de direccionamiento y habilitación del ambiente se entregan fuera del contrato funcional y están sujetos a validación final.
+El SCC inicia todas las llamadas hacia la IP y el puerto configurados en el Wiseasy P5L. Pay-me PinPAD muestra la pantalla de pago, captura la interacción con la tarjeta, procesa el pago y devuelve un resultado normalizado.
 
-## Componentes y responsabilidades
+La comunicación de Pay-me PinPAD con el procesador o banco es transparente para el SCC.
 
-| Componente | Responsabilidad | Visibilidad para CELSAT |
-| --- | --- | --- |
-| SCC CELSAT | Calcular el importe, generar `operationNumber`, enviar solicitudes, interpretar respuestas y aplicar la política del carril. | Componente implementado y operado por CELSAT. |
-| Componente Local de Integración | Exponer los endpoints HTTP, validar la solicitud, invocar PaymePOS SDK y normalizar la respuesta. | Única interfaz técnica consumida por el SCC. |
-| PaymePOS SDK | Coordinar el flujo transaccional y la interacción con la plataforma de pagos. | Encapsulado dentro del P5L. |
-| SDK del dispositivo | Controlar las capacidades del P5L y la interacción con el medio de pago. | Encapsulado dentro del P5L. |
-| Plataforma de pagos Alignet | Procesar la autorización, asignar `transactionID` y devolver el resultado financiero. | Accedida indirectamente mediante el Componente Local. |
-| Procesador y redes de pago | Autorizar o denegar la operación de acuerdo con las reglas del medio de pago. | Sin integración directa con CELSAT. |
+## Responsabilidades
 
-## Frontera de integración
+| Componente | Responsabilidades |
+| --- | --- |
+| SCC o sistema de caja — **cliente HTTP** | Calcular el monto, generar y persistir `operationNumber`, enviar las solicitudes, configurar los timeouts, interpretar las respuestas, recuperar operaciones pendientes y aplicar la regla del carril. |
+| Pay-me PinPAD — **servidor HTTP** | Escuchar en la red local, validar el JSON, asegurar idempotencia y exclusión mutua, coordinar la interacción de pago y conservar el resultado por operación. |
+| Wiseasy P5L y SDK | Leer tarjeta contactless, chip o banda, capturar PIN cuando corresponda y comunicarse con la plataforma de pagos. No requieren integración directa con el SCC. |
+| Procesador o banco | Aprobar o rechazar la transacción. No tiene una interfaz directa con el SCC. |
 
-CELSAT consume únicamente:
+## Requisitos de red
 
-```http
-POST /api/v1/payments
-GET /api/v1/payments/{operationNumber}
+Antes de integrar, verifica lo siguiente:
+
+- El SCC y el Wiseasy P5L están en la misma red local y existe conectividad entre ambos.
+- El punto de acceso no usa **AP Isolation** o **Client Isolation** entre el SCC y el terminal.
+- El puerto TCP configurado en Pay-me PinPAD es accesible desde el SCC. El valor predeterminado es `8080`.
+- El terminal mantiene una IP estable, preferiblemente mediante una reserva DHCP o una dirección estática.
+- Las reglas de firewall permiten tráfico desde el SCC hacia la IP y el puerto del terminal.
+- La aplicación Pay-me PinPAD permanece abierta y en estado listo durante la operación.
+
+La URL base sigue este formato:
+
+```text
+http://<IP_DEL_PINPAD>:<PUERTO>
 ```
 
-Ambas operaciones usan JSON. La URL base y el mecanismo de autenticación se confirman durante la habilitación final del ambiente.
+Ejemplo:
 
-El SCC no debe depender de:
-
-- modelos, métodos o callbacks internos de PaymePOS SDK;
-- mensajes ISO 8583;
-- estructuras internas del procesador;
-- datos EMV o información sensible de tarjeta;
-- detalles de comunicación entre el P5L y la plataforma de pagos.
-
-## Identificadores
-
-| Identificador | Origen | Disponibilidad | Uso |
-| --- | --- | --- | --- |
-| `operationNumber` | CELSAT | Se genera antes de la solicitud y se conserva durante todo el ciclo. | Idempotencia, consulta y correlación con el evento del carril. |
-| `transactionID` | Alignet | Se retorna cuando existe una transacción generada en backend. | Trazabilidad, soporte, búsqueda, conciliación y flujos posteriores. |
-| `IdTurnoVia` | CELSAT | Se envía dentro de `additionalFields`. | Agrupación y conciliación de las operaciones por turno o vía. |
-
-```mermaid
-flowchart LR
-    OP[operationNumber<br/>CELSAT] --> RECORD[Operación correlacionada]
-    TX[transactionID<br/>Alignet] --> RECORD
-    RECORD --> SCCLOG[Registro CELSAT]
-    RECORD --> ALILOG[Registro Alignet]
+```text
+http://192.168.68.121:8080
 ```
 
-`operationNumber` y `transactionID` son identificadores distintos. El SCC debe conservar ambos cuando `transactionID` se encuentre disponible.
+<Warning>
+  La dirección del ejemplo es ilustrativa. Confirma la IP y el puerto de cada terminal. Si cambia la IP del Wiseasy P5L, actualiza la configuración del SCC.
+</Warning>
 
-## Trazabilidad mínima
+### Verificación desde el SCC
 
-Por cada operación, CELSAT debe registrar, cuando existan:
+Primero verifica alcance IP y después la aplicación:
 
-- `operationNumber` y `transactionID`;
-- `amount` y `currency`;
-- `additionalFields`, cuando se haya enviado;
-- `success`, `resultCode` y `resultMessage`;
-- `state` y `stateReason`;
-- `authorizationCode` y `responseCode`;
-- información no sensible de `paymentMethod`;
-- fecha y hora de envío y recepción;
-- eventos de timeout, consulta, reconexión y recuperación.
+```bash
+ping <IP_DEL_PINPAD>
+curl http://<IP_DEL_PINPAD>:<PUERTO>/health
+```
 
-No registres PAN completo, CVV, PIN, PIN Block, Track 1, Track 2 ni datos EMV sensibles.
+Una respuesta válida de la aplicación es:
+
+```json
+{ "status": "UP", "service": "Alignet ECR" }
+```
+
+Si `ping` responde pero `GET /health` no, revisa el puerto, el firewall y que Pay-me PinPAD esté abierta. Algunos entornos bloquean ICMP; en ese caso, usa `GET /health` como prueba definitiva de la aplicación.
+
+## Configuración inicial de Pay-me PinPAD
+
+Al iniciar Pay-me PinPAD por primera vez, el operador verá un asistente de configuración con tres etapas: **Bienvenida**, **Conexión** y **Verificación**.
+
+<Frame>
+  ![Asistente de configuración inicial de Pay-me PinPAD con las etapas Bienvenida, Conexión y Verificación](/images/Pay-mePOS.png)
+</Frame>
+
+<Note>
+  La dirección `192.168.20.50` mostrada en la imagen es solo un ejemplo. Ingresa la IP asignada al Wiseasy P5L en la red del carril. El puerto predeterminado es `8080`, pero debes confirmar el valor configurado para el terminal.
+</Note>
+
+El operador completa el asistente una vez en cada Wiseasy P5L:
+
+<Steps>
+  <Step title="Bienvenida">
+    La primera pantalla presenta el proceso de configuración. Selecciona **Empezar** para continuar.
+  </Step>
+  <Step title="Conexión">
+    Ingresa la **Dirección IP** del propio Wiseasy P5L y el **Puerto** en el que escuchará Pay-me PinPAD. El SCC utilizará ambos valores para construir la URL base `http://<IP_DEL_PINPAD>:<PUERTO>`.
+  </Step>
+  <Step title="Verificación">
+    La pantalla final valida **Conexión disponible** e **Inyección de llaves**. Envía un `GET /health` real desde el SCC para confirmar la conexión. Pay-me PinPAD verifica las llaves de seguridad en el terminal. Cuando ambos indicadores estén en verde, selecciona **Continuar**. La aplicación quedará en **Listo para el siguiente vehículo**.
+  </Step>
+</Steps>
+
+El SCC no inyecta llaves ni inicializa directamente el SDK de pagos.
+
+## Trazabilidad
+
+Por cada intento, registra únicamente información no sensible:
+
+- `operationNumber`;
+- `amount` y `currency` enviados;
+- código HTTP recibido;
+- `status`, `resultCode` y `resultMessage`;
+- `authorizationCode` y `completedAt`, cuando existan;
+- fecha y hora del envío, la respuesta y las consultas;
+- timeouts, pérdidas de conexión y reintentos de consulta.
+
+El contrato vigente no devuelve `transactionID`, información de `paymentMethod`, `stateReason`, `processor` ni un historial `lifecycle`. No diseñes la integración dependiendo de esos campos.
+
+## Seguridad y protección de datos
+
+- Mantén la red local controlada y restringe el puerto a los SCC autorizados mediante segmentación y reglas de firewall.
+- No expongas el puerto de Pay-me PinPAD a Internet.
+- No incluyas nombres, documentos, placa u otros datos personales dentro de `operationNumber`.
+- No registres PAN completo, CVV, PIN, PIN Block, Track 1, Track 2 ni datos EMV sensibles.
+- Protege los logs y limita su acceso según la política de retención de tu organización.
+- Conserva `operationNumber` y `authorizationCode` para conciliación y comprobantes.
+
+La versión vigente documenta HTTP dentro de la red local y no define headers de autenticación para la interfaz SCC–Pay-me PinPAD. Cualquier control adicional debe acordarse con Alignet antes de incorporarlo al cliente.
