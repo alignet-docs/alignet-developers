@@ -9,7 +9,7 @@ icon: "people-arrows"
 | Área | SCC o sistema de caja | Pay-me PinPAD / Alignet | Validación conjunta |
 | --- | --- | --- | --- |
 | Red local | Alcanzar la IP y el puerto del terminal; configurar firewall y timeout. | Exponer el servidor HTTP en el Wiseasy P5L. | Ejecutar `GET /health` desde el SCC. |
-| Operación | Calcular el monto, generar y persistir `operationNumber` y aplicar la decisión del carril. | Validar la solicitud, ejecutar el cobro y devolver el resultado. | Probar aprobación, rechazo, cancelación y recuperación. |
+| Operación | Calcular el monto, generar y persistir `operationNumber` y aplicar la decisión del carril. | Validar la solicitud; ejecutar el cobro, cancelación o extorno; y devolver el resultado. | Probar aprobación, rechazo, cancelación, extorno y recuperación. |
 | Idempotencia | Mantener una sola referencia por operación real y consultar ante incertidumbre. | Evitar un segundo cargo para la misma referencia y conservar el resultado. | Simular timeout, reenvío y consulta. |
 | Concurrencia | Serializar solicitudes destinadas al mismo terminal. | Procesar una operación a la vez y devolver `409 POS_BUSY` a otra referencia. | Enviar solicitudes concurrentes controladas. |
 | Configuración | Registrar IP, puerto y asociación entre SCC, carril y terminal. | Instalar la aplicación, configurar IP/puerto y verificar llaves. | Confirmar el estado **Listo para el siguiente vehículo**. |
@@ -20,11 +20,11 @@ icon: "people-arrows"
 
 ### Cliente HTTP
 
-- Implementa `GET /health`, `POST /authorize` y `GET /payments/{operationNumber}`.
-- Envía `Content-Type: application/json` en la autorización.
-- Configura al menos 100 a 110 segundos de timeout para `POST /authorize`.
+- Implementa `GET /health`, `POST /authorize`, `GET /payments/{operationNumber}`, `POST /reversals` y `GET /reversals/{operationNumber}`.
+- Envía `Content-Type: application/json` en la autorización y en la cancelación o extorno.
+- Configura al menos 100 a 110 segundos de timeout para `POST /authorize` y `POST /reversals` con la espera de desarrollo actual.
 - Lee el código HTTP, el cuerpo JSON y `Retry-After` cuando esté disponible.
-- Maneja `200`, `202`, `400`, `404`, `409` y `503` según la operación.
+- Maneja `200`, `202`, `400`, `404`, `409`, `502` y `503` según la operación.
 - Mantén una cola o bloqueo por terminal para no enviar cobros concurrentes.
 
 ### Estado transaccional

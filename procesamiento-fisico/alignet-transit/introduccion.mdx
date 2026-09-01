@@ -19,6 +19,8 @@ Esta documentación corresponde a la aplicación **Pay-me PinPAD** con package `
 | Verificar disponibilidad | `GET /health` | Confirmar que la aplicación está abierta y accesible. |
 | Autorizar un pago | `POST /authorize` | Iniciar un cobro y esperar su resultado en la misma conexión. |
 | Consultar una operación | `GET /payments/{operationNumber}` | Recuperar el resultado después de un estado pendiente, timeout o pérdida de conexión. |
+| Cancelar o extornar | `POST /reversals` | Interrumpir una autorización en curso o revertir totalmente una venta aprobada, según su estado actual. |
+| Consultar una cancelación o extorno | `GET /reversals/{operationNumber}` | Recuperar el resultado de la solicitud pendiente o incierta. |
 
 El contrato no requiere instalar una librería en el SCC. Debes implementar un cliente HTTP capaz de enviar y recibir JSON, mantener abierta la solicitud de autorización y recuperar operaciones inciertas.
 
@@ -49,6 +51,7 @@ El contrato no requiere instalar una librería en el SCC. Debes implementar un c
 - El cobro es síncrono. `POST /authorize` permanece abierto mientras el usuario presenta la tarjeta e ingresa el PIN cuando corresponde.
 - `PENDING` y `UNKNOWN` no significan rechazo. Debes consultar antes de tomar una decisión o iniciar otro cobro.
 - Pay-me PinPAD procesa una operación a la vez. Una referencia diferente recibida durante un cobro activo obtiene `409 POS_BUSY`.
+- La cancelación detiene una autorización activa; el extorno revierte una venta que ya fue aprobada. No intercambies estos flujos.
 - El SCC no recibe PAN completo, CVV, PIN, PIN Block, pistas ni datos EMV sensibles.
 
 ## Contenido de esta guía
@@ -59,6 +62,9 @@ El contrato no requiere instalar una librería en el SCC. Debes implementar un c
   </Card>
   <Card title="Solicitud de autorización" icon="file-export" href="/procesamiento-fisico/alignet-transit/parametros-de-envio">
     Implementa `POST /authorize`, sus validaciones y ejemplos.
+  </Card>
+  <Card title="Cancelación y extorno" icon="rotate-left" href="/procesamiento-fisico/alignet-transit/extorno">
+    Usa `POST /reversals`; Pay-me PinPAD cancela o extorna según el estado actual.
   </Card>
   <Card title="Respuestas, consulta y códigos" icon="code" href="/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos">
     Interpreta estados de negocio, códigos HTTP y `GET /payments/{operationNumber}`.

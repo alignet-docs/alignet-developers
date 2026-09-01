@@ -40,7 +40,10 @@ Antes de ejecutar casos:
 | --- | --- | --- |
 | Pago aprobado | HTTP `200`, `APPROVED`, `00`, código de autorización y fecha final. | Confirmar y aplicar la regla de apertura. |
 | Pago rechazado | HTTP `200`, `DENIED` y código distinto de `00`. | No confirmar. |
-| Cancelación | HTTP `200`, `CANCELLED`. | No confirmar. |
+| Cancelación remota | `POST /reversals` sobre una autorización activa interrumpe el flujo y termina en `CANCELLED`. | No confirmar ni enviar un extorno adicional. |
+| Extorno aprobado | `POST /reversals` devuelve HTTP `200`, `REVERSED` y `00`. | Registrar la reversa y su código de autorización. |
+| Extorno pendiente | HTTP `202`, `PENDING`, `WAITING_RESULT`. | Consultar `GET /reversals/{operationNumber}`. |
+| Extorno denegado | HTTP `200`, `DENIED` y código distinto de `00`. | No registrar como extornado ni reintentar automáticamente. |
 | Espera agotada | HTTP `202`, `PENDING`, `WAITING_RESULT`. | Consultar, sin nuevo cobro. |
 | Terminal ocupado | Otra referencia durante un cobro activo devuelve `409 POS_BUSY`. | Esperar y reintentar cuando se libere. |
 | Terminal no listo | HTTP `503 POS_NOT_AVAILABLE`. | Recuperar disponibilidad antes de reintentar. |
@@ -84,7 +87,7 @@ Antes de ejecutar casos:
 </Check>
 
 <Check>
-  El SCC ejecuta satisfactoriamente los tres endpoints vigentes.
+  El SCC ejecuta satisfactoriamente autorización, consulta, extorno y consulta de extorno.
 </Check>
 
 <Check>

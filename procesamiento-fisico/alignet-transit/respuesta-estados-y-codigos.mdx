@@ -169,7 +169,7 @@ Respuesta de una operación inexistente:
 | --- | --- | --- | --- |
 | `APPROVED` | Sí | Pago aprobado. | Confirma solo si `resultCode` también es `"00"`. |
 | `DENIED` | Sí | Pago rechazado por el procesador. | No confirmes. Un nuevo intento requiere otro `operationNumber`. |
-| `CANCELLED` | Sí | Operación cancelada por el operador o usuario. | No confirmes. Un nuevo intento requiere otra referencia. |
+| `CANCELLED` | Sí | La autorización terminó cancelada; no equivale a un extorno. | No confirmes. Un nuevo intento requiere otra referencia. Revisa la [diferencia entre cancelación y extorno](/procesamiento-fisico/alignet-transit/extorno#cancelacion-y-extorno-no-son-sinonimos). |
 | `PENDING` | No | Venció la espera, pero el cobro puede continuar. | Consulta; no inicies otro cobro. |
 | `PROCESSING` | No | El cobro se está procesando. | Consulta; no inicies otro cobro. |
 | `UNKNOWN` | No | El resultado es incierto, por ejemplo después de un reinicio durante el proceso. | Mantén la operación abierta y consulta. |
@@ -189,6 +189,10 @@ Respuesta de una operación inexistente:
 
 <Note>
   No se ha confirmado el catálogo completo de códigos del procesador. Trata únicamente `APPROVED` junto con `"00"` como aprobación. Conserva cualquier código desconocido y escálalo sin asignarle un significado.
+</Note>
+
+<Note>
+  Los códigos `14` y `15` no están confirmados para el contrato HTTP vigente de Transit. No los uses para decidir una cancelación hasta validarlos contra la implementación ECR.
 </Note>
 
 ## Matriz de decisión

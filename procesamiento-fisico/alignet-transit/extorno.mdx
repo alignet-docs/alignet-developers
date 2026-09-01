@@ -1,0 +1,404 @@
+---
+title: "Cancelación y extorno"
+description: "Cancela una autorización en curso o extorna una venta aprobada mediante el mismo endpoint."
+icon: "rotate-left"
+---
+
+El API de cancelación y extorno permite detener o revertir una operación iniciada previamente mediante `POST /authorize`.
+
+Con `POST /reversals`, Pay-me PinPAD determina la acción a partir del estado actual de la operación:
+
+- si la autorización sigue en curso, **interrumpe el flujo activo** y la cancela;
+- si la venta ya fue aprobada, ejecuta un **extorno total**.
+
+En ambos casos, el SCC envía el mismo `operationNumber` utilizado en la autorización original.
+
+<ParamField path="POST /reversals" type="endpoint" />
+
+<Note>
+  El SCC no elige la acción mediante un parámetro. Pay-me PinPAD evalúa el estado que tenga la operación cuando procesa `POST /reversals` y aplica la transición correspondiente.
+</Note>
+
+## ¿Qué cubre esta operación?
+
+<CardGroup cols={2}>
+  <Card title="Cancelación" icon="ban">
+    Si `POST /authorize` todavía está en curso, Pay-me PinPAD corta el flujo activo de la transacción y devuelve un resultado final `CANCELLED`.
+  </Card>
+  <Card title="Extorno" icon="rotate-left">
+    Si la venta ya está `APPROVED`, Pay-me PinPAD busca la operación original y ejecuta una reversa total. El resultado aprobado es `REVERSED` con `resultCode: "00"`.
+  </Card>
+  <Card title="Misma referencia" icon="link">
+    Las dos acciones reutilizan exactamente el `operationNumber` enviado en `POST /authorize`.
+  </Card>
+  <Card title="Decisión por estado" icon="diagram-project">
+    El mismo endpoint puede cancelar o extornar. El resultado depende del estado real de la operación al procesar la solicitud.
+  </Card>
+</CardGroup>
+
+## Cancelación y extorno no son sinónimos
+
+| Aspecto | Cancelación | Extorno |
+| --- | --- | --- |
+| Estado al procesar la solicitud | Autorización todavía activa. | Venta finalizada como `APPROVED`. |
+| Acción de Pay-me PinPAD | Interrumpe el hilo de procesamiento de la autorización. | Busca la venta aprobada y ejecuta la reversa. |
+| Efecto financiero | Evita que el flujo activo continúe hacia una aprobación. | Revierte una venta que ya fue aprobada. |
+| Endpoint | `POST /reversals`. | `POST /reversals`. |
+| Resultado exitoso | `CANCELLED`. | `REVERSED` junto con `resultCode: "00"`. |
+| Consulta | `GET /reversals/{operationNumber}` confirma la solicitud y `GET /payments/{operationNumber}` confirma la autorización original. | `GET /reversals/{operationNumber}` confirma el resultado de la reversa. |
+
+<Info>
+  Este endpoint pertenece a la interfaz local SCC–Pay-me PinPAD. No corresponde a `DELETE /charges` del API de e-commerce.
+</Info>
+
+## Request
+
+```http
+POST /reversals
+Content-Type: application/json
+```
+
+URL completa:
+
+```text
+http://<IP_DEL_PINPAD>:<PUERTO>/reversals
+```
+
+### Body
+
+```json
+{
+  "operationNumber": "44992528"
+}
+```
+
+| Campo | Tipo | Obligatorio | Validación | Descripción |
+| --- | --- | --- | --- | --- |
+| `operationNumber` | String | Sí | Entre 1 y 64 caracteres, sin espacios. | Referencia original de `POST /authorize`. Identifica la operación que se cancelará o extornará. |
+
+No incluyas `amount`, `currency`, medio de pago ni datos de tarjeta. Cuando corresponde un extorno, este es total.
+
+### cURL
+
+```bash
+curl -X POST http://192.168.68.121:8080/reversals \
+  -H "Content-Type: application/json" \
+  --max-time 110 \
+  -d '{"operationNumber":"44992528"}'
+```
+
+Reemplaza la dirección y el puerto por los configurados en tu Wiseasy P5L. Usa exactamente el mismo `operationNumber` de la autorización.
+
+## Respuestas de `POST /reversals`
+
+Usa primero el código HTTP para identificar el tipo de respuesta. Después evalúa `status` y `resultCode`.
+
+| HTTP | Resultado | Significado | Acción del SCC |
+| --- | --- | --- | --- |
+| `200` | `CANCELLED` | Se interrumpió una autorización en curso. | No confirmes el cobro ni envíes otro extorno. |
+| `200` | `REVERSED` + `00` | Se extornó una venta aprobada. | Registra el extorno y conserva el código de autorización. |
+| `200` | `DENIED` | El procesador rechazó el extorno. | No lo registres como extornado ni reintentes automáticamente. |
+| `202` | `PENDING` | La cancelación o el extorno continúa. | Consulta el resultado y respeta `Retry-After`. |
+| `400` | `BAD_REQUEST` | La solicitud es inválida. | Corrige el body antes de reenviar. |
+| `404` | `NOT_FOUND` | No se encontró la operación original. | Verifica `operationNumber` y el terminal consultado. |
+| `409` | `POS_BUSY` | Otra referencia ocupa el terminal. | Espera a que el terminal se libere. |
+| `502` | `UNKNOWN` | No se pudo determinar el estado de la venta. | No reintentes en bucle; escala a Alignet. |
+| `503` | `POS_NOT_AVAILABLE` | El SDK de pagos no está disponible. | Restablece el terminal y reintenta cuando esté listo. |
+
+### Ejemplos de respuesta
+
+<AccordionGroup>
+  <Accordion title="Cancelación confirmada — 200 CANCELLED" defaultOpen icon="ban">
+
+Una autorización que todavía estaba en curso fue interrumpida:
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "CANCELLED",
+  "resultCode": null,
+  "resultMessage": "Operación cancelada",
+  "authorizationCode": null,
+  "completedAt": "2026-08-27T20:29:30Z"
+}
+```
+
+`CANCELLED` confirma que Pay-me PinPAD interrumpió la autorización antes de que terminara aprobada. No envíes un extorno adicional para esa operación.
+
+<Note>
+  El valor `null` de `resultCode` en este ejemplo es ilustrativo. Los códigos `14` y `15` todavía no están confirmados para la respuesta HTTP de Transit. Decide por `status: "CANCELLED"` y no programes lógica basada en esos códigos hasta validarlos con Alignet.
+</Note>
+
+  </Accordion>
+
+  <Accordion title="Extorno aprobado — 200 REVERSED" icon="rotate-left">
+
+La venta ya estaba aprobada y la reversa terminó correctamente:
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "REVERSED",
+  "resultCode": "00",
+  "resultMessage": "Extorno aprobado",
+  "authorizationCode": "123456",
+  "completedAt": "2026-08-27T20:30:00Z"
+}
+```
+
+Registra el extorno únicamente cuando se cumplan ambas condiciones:
+
+```text
+status = REVERSED
+resultCode = 00
+```
+
+  </Accordion>
+
+  <Accordion title="Extorno denegado — 200 DENIED" icon="circle-xmark">
+
+El endpoint respondió correctamente, pero el procesador no aprobó el extorno:
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "DENIED",
+  "resultCode": "01",
+  "resultMessage": "Extorno denegado",
+  "authorizationCode": null,
+  "completedAt": "2026-08-27T20:30:00Z"
+}
+```
+
+`DENIED` es un resultado de negocio. No lo interpretes como una falla HTTP ni reintentes automáticamente.
+
+  </Accordion>
+
+  <Accordion title="Resultado pendiente — 202 PENDING" icon="clock">
+
+La espera HTTP terminó, pero la operación puede continuar:
+
+```http
+Retry-After: 2
+```
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "PENDING",
+  "resultCode": "WAITING_RESULT",
+  "resultMessage": "Consulte el estado antes de reintentar",
+  "authorizationCode": null,
+  "completedAt": null
+}
+```
+
+Consulta la operación. No crees otra solicitud ni una nueva venta en paralelo.
+
+  </Accordion>
+
+  <Accordion title="Errores de solicitud — 400 y 404" icon="triangle-exclamation">
+
+#### Solicitud inválida — `400 Bad Request`
+
+```json
+{
+  "status": "ERROR",
+  "resultCode": "BAD_REQUEST",
+  "resultMessage": "operationNumber inválido o vacío"
+}
+```
+
+Corrige el body antes de reenviar. Este error no representa un rechazo financiero.
+
+#### Operación original no encontrada — `404 Not Found`
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "ERROR",
+  "resultCode": "NOT_FOUND",
+  "resultMessage": "Operación original no encontrada",
+  "authorizationCode": null,
+  "completedAt": null
+}
+```
+
+Verifica que el valor coincida exactamente con la autorización original. No asumas que otra venta fue extornada.
+
+  </Accordion>
+
+  <Accordion title="Terminal ocupado o no disponible — 409 y 503" icon="terminal">
+
+#### Terminal ocupado — `409 Conflict`
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "ERROR",
+  "resultCode": "POS_BUSY",
+  "resultMessage": "El Pinpad está procesando otra operación",
+  "authorizationCode": null,
+  "completedAt": null
+}
+```
+
+Este error corresponde a otra referencia que compite por el terminal. Una cancelación usa el mismo `operationNumber` de la autorización activa para dirigirse a ese flujo. Ante `POS_BUSY`, espera a que el terminal se libere antes de reintentar la solicitud que no fue aceptada.
+
+#### Terminal no disponible — `503 Service Unavailable`
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "ERROR",
+  "resultCode": "POS_NOT_AVAILABLE",
+  "resultMessage": "El SDK de pagos no está disponible",
+  "authorizationCode": null,
+  "completedAt": null
+}
+```
+
+Restablece la disponibilidad de Pay-me PinPAD y del SDK antes de reintentar.
+
+  </Accordion>
+
+  <Accordion title="Estado indeterminado — 502 UNKNOWN" icon="circle-question">
+
+Pay-me PinPAD no pudo determinar de forma inequívoca el estado de la venta original:
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "UNKNOWN",
+  "message": "No se pudo determinar el estado de la venta original"
+}
+```
+
+Esta respuesta usa un cuerpo compacto. Cuando `UNKNOWN` proviene de la búsqueda ambigua de la venta original, Pay-me PinPAD no inicia la reversa. No reintentes en bucle; conserva la evidencia y escala a Alignet.
+
+  </Accordion>
+</AccordionGroup>
+
+## Consultar el resultado final
+
+Después de HTTP `202`, un timeout o una conexión interrumpida, conserva la misma referencia y consulta:
+
+<Card title="Ir a Consulta de estado" icon="magnifying-glass" href="/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos#consulta-de-estado">
+  Consulta la autorización original mediante `GET /payments/{operationNumber}` y confirma su estado antes de iniciar otra venta.
+</Card>
+
+Para recuperar el resultado específico de la cancelación o el extorno, usa:
+
+```http
+GET /reversals/{operationNumber}
+```
+
+```bash
+curl -i http://192.168.68.121:8080/reversals/44992528
+```
+
+| Código HTTP | Significado | Acción del SCC |
+| --- | --- | --- |
+| `200 OK` | La solicitud tiene un resultado final como `CANCELLED`, `REVERSED` o `DENIED`. | Evalúa `status` y `resultCode`. |
+| `202 Accepted` | La cancelación o reversa continúa en curso. | Respeta `Retry-After` y vuelve a consultar. |
+| `404 Not Found` | No existe una solicitud registrada con esa referencia. | Verifica la referencia y el terminal. No asumas un resultado financiero. |
+| `502 Bad Gateway` | La operación quedó en `UNKNOWN` según la guía técnica. | No reintentes en bucle; escala con la evidencia disponible. |
+
+`GET /payments/{operationNumber}` consulta la **autorización original**. `GET /reversals/{operationNumber}` consulta la **solicitud de cancelación o extorno**. Usa ambas vistas para conciliar una operación incierta.
+
+## Estados
+
+| `status` | Final | Significado | Acción |
+| --- | --- | --- | --- |
+| `RECEIVED` | No | Solicitud recibida y validada. | Espera o consulta. |
+| `SEARCHING` | No | Pay-me PinPAD busca la venta original. | Espera o consulta. |
+| `PROCESSING` | No | La reversa está en ejecución. | Consulta; no reenvíes en paralelo. |
+| `PENDING` | No | Venció la espera HTTP, pero la cancelación o el extorno puede continuar. | Consulta y respeta `Retry-After`. |
+| `CANCELLED` | Sí | La autorización en curso fue interrumpida. | No confirmes el cobro ni envíes un extorno adicional. |
+| `REVERSED` | Sí | Extorno aprobado. | Confirma solo junto con `resultCode: "00"`. |
+| `DENIED` | Sí | Extorno rechazado por el procesador. | No confirmes ni reintentes automáticamente. |
+| `UNKNOWN` | Requiere revisión | La búsqueda no pudo identificar la venta o se perdió certeza sobre el flujo. | Aplica la regla específica descrita abajo y escala. |
+| `ERROR` | Depende de la causa | Error de validación u operación. | Trata el código HTTP y `resultCode`. |
+
+### Tratamiento de `UNKNOWN`
+
+La guía técnica confirma que un `502 UNKNOWN` originado durante la búsqueda de la venta significa que Pay-me PinPAD **no ejecutó** la reversa. La misma guía indica que un reinicio durante un extorno puede dejarlo en `UNKNOWN`, pero no define si el procesador llegó a recibir la reversa ni un mecanismo automático de conciliación.
+
+<Warning>
+  No generalices `UNKNOWN` como “extornado” ni como “no extornado”. Conserva el `operationNumber`, no repitas en bucle y solicita validación a Alignet. La semántica del reinicio durante `PROCESSING` debe confirmarse antes de producción.
+</Warning>
+
+## Códigos de resultado
+
+| `resultCode` | Contexto | Significado |
+| --- | --- | --- |
+| `00` | Financiero | Extorno aprobado cuando `status` es `REVERSED`. |
+| `01` | Financiero, ejemplo de la guía | Extorno denegado. El catálogo completo está pendiente. |
+| `WAITING_RESULT` | Operativo | El extorno sigue pendiente. |
+| `BAD_REQUEST` | Validación | Solicitud inválida. |
+| `NOT_FOUND` | Búsqueda | No se encontró la venta original. |
+| `POS_BUSY` | Concurrencia | El terminal atiende otra operación. |
+| `POS_NOT_AVAILABLE` | Disponibilidad | El SDK de pagos no está listo. |
+
+Trata `CANCELLED` como cancelación confirmada de una autorización en curso. Trata únicamente `REVERSED` junto con `"00"` como extorno aprobado. Conserva cualquier código desconocido y escálalo sin asignarle un significado.
+
+## Timeouts y reintentos
+
+La guía proporciona **90 segundos** como espera interna de referencia en desarrollo. Configura `POST /reversals` con al menos **100 a 110 segundos** para que el timeout del SCC sea mayor, tanto para cancelación como para extorno.
+
+<Warning>
+  El timeout del SCC describe la conexión, no el resultado de la cancelación o el extorno. Consulta `GET /reversals/{operationNumber}` antes de reenviar o tomar una decisión financiera.
+</Warning>
+
+Ante `202`, respeta `Retry-After`. Si el header no está presente, la guía propone aproximadamente 2 segundos como referencia inicial. El timeout definitivo, el backoff y el tiempo máximo de consulta deben acordarse antes de producción.
+
+## Idempotencia y concurrencia
+
+`operationNumber` es la clave de idempotencia de la solicitud:
+
+- si la misma cancelación o reversa está en proceso, Pay-me PinPAD devuelve HTTP `202` con su estado y no inicia otro flujo;
+- si ya finalizó, devuelve el resultado almacenado y no repite la acción;
+- si otro `operationNumber` ocupa el terminal, responde HTTP `409` con `POS_BUSY`;
+- la venta y el extorno se almacenan por separado aunque compartan la referencia.
+
+Usa una sola cola por terminal. Ante una respuesta perdida, consulta primero. Si tu política permite reenviar el `POST`, conserva exactamente el mismo body y `operationNumber`.
+
+## Flujo recomendado para el SCC
+
+<Steps>
+  <Step title="Conserva la referencia original">
+    Recupera el mismo `operationNumber` que utilizaste en `POST /authorize`. No generes una referencia nueva.
+  </Step>
+  <Step title="Solicita la cancelación o extorno">
+    Envía `POST /reversals` con el mismo `operationNumber` y un timeout HTTP mayor que la espera interna del terminal.
+  </Step>
+  <Step title="Interpreta la transición aplicada">
+    `CANCELLED` indica que se interrumpió una autorización activa. `REVERSED` junto con `00` indica que se extornó una venta que ya estaba aprobada.
+  </Step>
+  <Step title="Recupera un resultado incierto">
+    Ante HTTP `202`, timeout o pérdida de conexión, consulta `GET /reversals/{operationNumber}` y `GET /payments/{operationNumber}`. No inicies otra venta en paralelo.
+  </Step>
+  <Step title="Escala estados indeterminados">
+    Ante `UNKNOWN` o un límite de consulta agotado, conserva la referencia, evita reintentos en bucle y coordina la conciliación con Alignet.
+  </Step>
+</Steps>
+
+## Garantías y limitaciones
+
+- `CANCELLED` confirma que se detuvo el flujo activo de autorización. No lo declares exitoso hasta recibir ese estado final.
+- `REVERSED` junto con `resultCode: "00"` confirma que el procesador aprobó el extorno.
+- Si la venta se aprueba antes de que Pay-me PinPAD procese la solicitud, el mismo endpoint ejecuta el flujo de extorno en lugar de la cancelación.
+- Un extorno aprobado revierte una venta existente; no equivale a haber impedido la autorización original.
+- La guía no confirma cuándo se reflejará la reversa para el tarjetahabiente ni su efecto contable después del cierre o liquidación.
+- No está confirmada la ventana máxima para extornar, el tratamiento de ventas liquidadas ni la respuesta ante una venta ya extornada.
+- El catálogo completo de códigos del procesador y los códigos que permiten reintento están pendientes de confirmación.
+- El timeout definitivo de Pay-me PinPAD y el límite de consultas deben validarse en el ambiente objetivo.
+
+<CardGroup cols={2}>
+  <Card title="Solicitud de autorización" icon="file-export" href="/procesamiento-fisico/alignet-transit/parametros-de-envio">
+    Revisa `POST /authorize` y la creación del `operationNumber` original.
+  </Card>
+  <Card title="Operación y recuperación" icon="rotate" href="/procesamiento-fisico/alignet-transit/operacion-y-recuperacion">
+    Aplica las reglas generales de persistencia, timeout y recuperación del SCC.
+  </Card>
+</CardGroup>
