@@ -19,8 +19,8 @@ Esta página separa el contrato documentado de los parámetros que deben acordar
 | Cancelación o extorno | `POST /reversals`; interrumpe una autorización activa o extorna una venta aprobada según el estado actual. |
 | Consulta de cancelación o extorno | `GET /reversals/{operationNumber}`. |
 | Puerto | Configurable; valor predeterminado `8080`. |
-| Solicitud | `operationNumber` y `amount` obligatorios; `currency` y `additionalFields` opcionales. |
-| Moneda predeterminada | `604` (PEN). |
+| Solicitud | `operationNumber`, `amount`, `currency` y `paymentMethod` obligatorios; `additionalFields` opcional. |
+| Moneda para PEN | `"604"`. |
 | Aprobación | HTTP `200`, `status: "APPROVED"` y `resultCode: "00"`. |
 | Recuperación | Consultar la misma referencia ante `202`, timeout o pérdida de conexión. |
 | Idempotencia | Una referencia identifica una sola operación real de cobro. |
@@ -50,12 +50,12 @@ No copies la IP de ejemplo en un ambiente real.
 | Timeout del cliente | Al menos 100 a 110 segundos con la espera de referencia. | Valor definitivo, siempre superior al timeout del terminal. |
 | Frecuencia de consulta | `Retry-After`; aproximadamente 2 segundos como referencia. | Intervalo, backoff y tiempo máximo de consulta. |
 | Operación no resuelta | No iniciar otro cobro ante `PENDING` o `UNKNOWN`. | Escalamiento y regla operativa de la barrera. |
-| `operationNumber` | 1 a 64 caracteres, sin espacios y único por operación. | Convención operativa adicional si el procesador la requiere. |
+| `operationNumber` | String numérico de 1 a 64 dígitos y único por operación. | Restricciones adicionales, si el procesador las requiere. |
 | `additionalFields` | Objeto opcional con valores String. | Claves aceptadas y uso final de cada dato. |
 | Códigos del procesador | `00` aprobado; `01` es un ejemplo verificado de rechazo. | Catálogo completo de códigos no aprobados. |
 | Cancelación remota | Usa `POST /reversals` con el `operationNumber` original y termina en `CANCELLED`. | Significado y uso de los códigos `14` y `15` en la respuesta HTTP. |
 | Extorno | `POST /reversals` y consulta por la misma referencia. | Ventana temporal, ventas liquidadas, doble extorno y semántica de `UNKNOWN` tras un reinicio. |
-| Monedas y medios de pago | `604` es la moneda predeterminada. | Monedas y medios habilitados para el comercio. |
+| Monedas y medios de pago | Para PEN se debe enviar `"604"`. | Monedas y medios habilitados para el comercio. |
 
 ## Ambientes
 

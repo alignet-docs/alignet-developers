@@ -38,8 +38,9 @@ curl -X POST http://192.168.68.121:8080/authorize \
   --max-time 110 \
   -d '{
     "operationNumber": "44992528",
-    "amount": 100,
-    "currency": 604,
+    "amount": "100",
+    "currency": "604",
+    "paymentMethod": "QR",
     "additionalFields": {
       "plate": "ABC-123",
       "tollPointId": "PEAJE-01",
@@ -74,10 +75,11 @@ public final class PinpadClient {
     }
 
     public HttpResponse<String> authorize(
-            String operationNumber, long amountCents, int currency) throws Exception {
-        String json = """
-            {"operationNumber":"%s","amount":%d,"currency":%d}
-            """.formatted(operationNumber, amountCents, currency);
+            String operationNumber, String amount, String currency,
+            String paymentMethod) throws Exception {
+        String json = String.format(
+            "{\"operationNumber\":\"%s\",\"amount\":\"%s\",\"currency\":\"%s\",\"paymentMethod\":\"%s\"}",
+            operationNumber, amount, currency, paymentMethod);
 
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(baseUrl + "/authorize"))
@@ -120,13 +122,14 @@ public sealed class PinpadClient
     }
 
     public async Task<(int StatusCode, string Body)> AuthorizeAsync(
-        string operationNumber, long amountCents, int currency = 604)
+        string operationNumber, string amount, string currency, string paymentMethod)
     {
         var payload = new
         {
             operationNumber,
-            amount = amountCents,
-            currency
+            amount,
+            currency,
+            paymentMethod
         };
 
         using var response = await _http.PostAsJsonAsync("/authorize", payload);
@@ -149,11 +152,12 @@ import requests
 BASE_URL = "http://192.168.68.121:8080"
 
 
-def authorize(operation_number, amount_cents, currency=604):
+def authorize(operation_number, amount, currency, payment_method):
     payload = {
         "operationNumber": operation_number,
-        "amount": amount_cents,
+        "amount": amount,
         "currency": currency,
+        "paymentMethod": payment_method,
     }
     response = requests.post(
         f"{BASE_URL}/authorize",
@@ -171,7 +175,7 @@ def query_status(operation_number):
     return response.status_code, response.json(), response.headers.get("Retry-After")
 
 
-http_status, body = authorize("44992528", 100)
+http_status, body = authorize("44992528", "100", "604", "QR")
 if http_status == 200 and body.get("status") == "APPROVED" \
         and body.get("resultCode") == "00":
     print("Pago aprobado", body.get("authorizationCode"))
@@ -184,7 +188,7 @@ elif http_status == 202:
 ```javascript
 const BASE_URL = "http://192.168.68.121:8080";
 
-async function authorize(operationNumber, amountCents, currency = 604) {
+async function authorize(operationNumber, amount, currency, paymentMethod) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 110_000);
 
@@ -192,7 +196,7 @@ async function authorize(operationNumber, amountCents, currency = 604) {
     const response = await fetch(`${BASE_URL}/authorize`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ operationNumber, amount: amountCents, currency }),
+      body: JSON.stringify({ operationNumber, amount, currency, paymentMethod }),
       signal: controller.signal,
     });
 
@@ -219,6 +223,7 @@ async function queryStatus(operationNumber) {
 ## Reglas para cualquier lenguaje
 
 - Persiste `operationNumber` antes del `POST`.
+- Envía `operationNumber`, `amount` y `currency` como Strings numéricos, y un único `paymentMethod`: `CARD` o `QR`.
 - Configura al menos 100 a 110 segundos para la autorización.
 - Conserva por separado el código HTTP y el JSON.
 - Confirma únicamente `200` + `APPROVED` + `00`.

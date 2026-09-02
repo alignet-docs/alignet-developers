@@ -44,9 +44,10 @@ Respuesta esperada:
 
 Verifica:
 
-- `operationNumber`: String, entre 1 y 64 caracteres y sin espacios;
-- `amount`: número entero o cadena numérica, positivo, de 1 a 12 dígitos y en unidades menores;
-- `currency`: si se incluye, número o cadena de exactamente tres dígitos;
+- `operationNumber`: String numérico de 1 a 64 dígitos, sin letras, guiones ni otros caracteres;
+- `amount`: String numérico que representa un entero positivo de 1 a 12 dígitos en unidades menores;
+- `currency`: String numérico de exactamente tres dígitos;
+- `paymentMethod`: campo obligatorio; debe contener exactamente un valor, `CARD` o `QR`, en mayúsculas;
 - `additionalFields`: objeto opcional cuyos valores son únicamente String;
 - header `Content-Type: application/json`;
 - JSON bien formado.

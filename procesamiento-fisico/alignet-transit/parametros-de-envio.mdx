@@ -1,82 +1,97 @@
 ---
 title: "Solicitud de autorización"
-description: "Contrato, campos, validaciones y ejemplos de POST /authorize."
+description: "Parámetros, validaciones y ejemplos para iniciar un pago con POST /authorize."
 icon: "file-export"
 ---
 
-El SCC o sistema de caja inicia un cobro mediante Pay-me PinPAD y espera el resultado en la misma llamada.
+El SCC o sistema de caja inicia un pago mediante una solicitud HTTP a Pay-me PinPAD. `POST /authorize` es síncrono: la conexión permanece abierta mientras el terminal procesa la operación y devuelve el resultado.
 
 ```http
 POST /authorize
 Content-Type: application/json
 ```
 
-URL completa:
+Construye la URL con la dirección IP y el puerto configurados en el terminal:
 
 ```text
 http://<IP_DEL_PINPAD>:<PUERTO>/authorize
 ```
 
-## Cuerpo de la solicitud
+## Solicitud mínima
+
+Envía los cuatro campos obligatorios en el cuerpo JSON:
 
 ```json
 {
   "operationNumber": "44992528",
-  "amount": 100,
-  "currency": 604,
-  "additionalFields": {
-    "plate": "ABC-123",
-    "tollPointId": "PEAJE-01",
-    "laneId": "VIA-03"
-  }
+  "amount": "100",
+  "currency": "604",
+  "paymentMethod": "QR"
 }
 ```
 
-## Campos
+## Parámetros
 
-| Campo | Tipo JSON aceptado | Obligatorio | Validación | Descripción |
+| Campo | Tipo JSON | Obligatorio | Validación | Descripción |
 | --- | --- | --- | --- | --- |
-| `operationNumber` | String | Sí | Entre 1 y 64 caracteres, sin espacios. | Identificador único generado por el SCC. Funciona como clave de idempotencia y referencia de consulta. |
-| `amount` | Number o String | Sí | Entero positivo de 1 a 12 dígitos, expresado en unidades menores. | Monto total del cobro. `1500` o `"1500"` representan S/ 15.00. |
-| `currency` | Number o String | No | Código numérico ISO 4217 de exactamente 3 dígitos. | Moneda del cobro. Si se omite, Pay-me PinPAD utiliza `604` (PEN). |
-| `additionalFields` | Object | No | Todas las claves deben tener valores String. | Información complementaria asociada al cobro. |
+| `operationNumber` | String | Sí | Cadena numérica de 1 a 64 dígitos. | Identificador único generado por el SCC. Se utiliza como clave de idempotencia y referencia de consulta. |
+| `amount` | String | Sí | Cadena numérica que representa un entero positivo de 1 a 12 dígitos, expresado en unidades menores. | Importe total del pago. Por ejemplo, `"1500"` representa S/ 15.00. |
+| `currency` | String | Sí | Cadena numérica de exactamente 3 dígitos. | Código numérico ISO 4217 de la moneda. Para soles peruanos, envía `"604"`. |
+| `paymentMethod` | String | Sí | Debe contener un único valor: `CARD` o `QR`. | Método con el que Pay-me PinPAD procesará el pago. |
+| `additionalFields` | Object | No | Todos los valores deben ser String. | Información complementaria asociada al pago. |
 
-## Reglas de validación
+Respeta los nombres, los tipos JSON y el uso de mayúsculas de cada campo. Por ejemplo, envía `paymentMethod`, no `payment_method`.
+
+## Detalle de los parámetros
 
 ### `operationNumber`
 
-- Genéralo en el SCC antes de enviar la solicitud.
-- Persístelo antes del `POST` para poder recuperar el resultado.
-- Usa un valor nuevo para cada operación real de cobro.
-- No uses espacios ni excedas 64 caracteres.
-- Reutiliza exactamente el mismo valor si necesitas recuperar o reenviar una solicitud cuyo resultado no recibiste.
+Genera un `operationNumber` nuevo para cada pago y almacénalo antes de llamar a `POST /authorize`. El valor debe cumplir estas condiciones:
+
+- ser una cadena de entre 1 y 64 dígitos;
+- contener únicamente caracteres del `0` al `9`;
+- ser único para una operación real de pago;
+- permanecer asociado a la operación hasta obtener un resultado final.
+
+Si no recibes el resultado por un timeout o una pérdida de conexión, conserva la referencia original. Utilízala para consultar la operación o para reenviar exactamente la misma solicitud.
 
 <Warning>
-  No generes un nuevo `operationNumber` después de un timeout. La primera solicitud puede haber producido un cargo.
+  No generes otro `operationNumber` después de un timeout. La solicitud original puede haber producido un cargo.
 </Warning>
 
 ### `amount`
 
-El monto no admite decimales ni separadores. Convierte el importe a unidades menores:
+Expresa el importe en unidades menores, sin símbolo de moneda, separadores ni decimales:
 
 | Importe | Valor válido de `amount` |
 | --- | ---: |
-| S/ 1.00 | `100` |
-| S/ 8.50 | `850` |
-| S/ 15.00 | `1500` |
-| S/ 125.40 | `12540` |
+| S/ 1.00 | `"100"` |
+| S/ 8.50 | `"850"` |
+| S/ 15.00 | `"1500"` |
+| S/ 125.40 | `"12540"` |
 
-Pay-me PinPAD acepta el valor como número JSON o cadena numérica. Para simplificar el contrato de tu cliente, utiliza una representación de forma consistente.
+Envía `amount` como String. No utilices números JSON, valores decimales, signos, espacios ni separadores.
 
 ### `currency`
 
-Para soles peruanos utiliza `604` o `"604"`. Si omites el campo, la aplicación utiliza `604`.
+Envía `currency` como un String de tres dígitos que contenga el código numérico ISO 4217 de la moneda.
 
-La habilitación de monedas distintas de PEN debe confirmarse con Alignet antes de producción.
+Para pagos en soles peruanos, utiliza `"604"`. Confirma con Alignet cualquier moneda distinta de PEN antes de habilitarla en producción.
+
+### `paymentMethod`
+
+Envía exactamente uno de los siguientes valores en mayúsculas:
+
+| Valor | Método de pago |
+| --- | --- |
+| `CARD` | Tarjeta de crédito o débito. |
+| `QR` | Código QR. |
+
+Cada solicitud admite un solo método de pago. No envíes `CARD` y `QR` juntos, arreglos, valores combinados como `"CARD,QR"`, variantes como `card` o `qr`, ni valores diferentes de los documentados.
 
 ### `additionalFields`
 
-Todos los valores deben ser texto:
+Utiliza `additionalFields` para asociar información complementaria al pago. Cada valor del objeto debe ser una cadena:
 
 ```json
 {
@@ -88,30 +103,22 @@ Todos los valores deben ser texto:
 }
 ```
 
-No envíes números, booleanos, arreglos, objetos anidados ni valores `null` dentro de `additionalFields`.
+No envíes números, booleanos, arreglos, objetos anidados ni valores `null` dentro de `additionalFields`. Si no necesitas enviar información adicional, omite el objeto.
 
 <Note>
-  La versión vigente confirma que `additionalFields` admite pares clave/valor de texto, pero no confirma un catálogo obligatorio ni el uso final de claves como `plate`, `tollPointId` o `laneId` por el procesador. Acuerda las claves de negocio con Alignet. Si no las necesitas, omite el objeto.
+  El catálogo de claves admitidas y el uso de cada valor por el procesador están pendientes de validación con Alignet. Las claves del ejemplo son ilustrativas y no representan un catálogo obligatorio.
 </Note>
 
-## Ejemplo mínimo
+## Ejemplo con información adicional
+
+El siguiente ejemplo incluye `additionalFields` con valores String:
 
 ```json
 {
-  "operationNumber": "44992528",
-  "amount": 100
-}
-```
-
-En este ejemplo, Pay-me PinPAD aplica la moneda predeterminada `604`.
-
-## Ejemplo completo con cadenas numéricas
-
-```json
-{
-  "operationNumber": "PEAJE01-20260827-000001",
+  "operationNumber": "20260827000001",
   "amount": "1500",
   "currency": "604",
+  "paymentMethod": "QR",
   "additionalFields": {
     "plate": "ABC-123",
     "tollPointId": "PEAJE-01",
@@ -120,9 +127,27 @@ En este ejemplo, Pay-me PinPAD aplica la moneda predeterminada `604`.
 }
 ```
 
-## Solicitud inválida
+## Enviar la solicitud
 
-Una validación fallida devuelve HTTP `400` y no debe tratarse como un rechazo financiero:
+Este ejemplo envía una solicitud mínima:
+
+```bash
+curl --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/authorize" \
+  --header "Content-Type: application/json" \
+  --max-time 110 \
+  --data '{
+    "operationNumber": "44992528",
+    "amount": "100",
+    "currency": "604",
+    "paymentMethod": "QR"
+  }'
+```
+
+Reemplaza `<IP_DEL_PINPAD>` y `<PUERTO>` por los valores configurados en tu terminal.
+
+## Errores de validación
+
+Una solicitud con campos ausentes o valores inválidos devuelve HTTP `400` con `resultCode: "BAD_REQUEST"`. Este resultado indica un error en la solicitud y no un rechazo financiero.
 
 ```json
 {
@@ -132,30 +157,32 @@ Una validación fallida devuelve HTTP `400` y no debe tratarse como un rechazo f
 }
 ```
 
-Corrige el campo indicado antes de reenviar y registra el intento para mantener trazabilidad. La guía vigente no especifica el tratamiento de una misma referencia cuando cambia el payload; evita modificar monto o moneda para una referencia ya enviada.
+Corrige el campo indicado antes de reenviar la solicitud. Conserva el error y el intento en los registros del SCC para mantener la trazabilidad.
 
-## Antes de enviar
+## Aspectos pendientes de validación
 
-<Check>
-  `operationNumber` está persistido, es único, tiene de 1 a 64 caracteres y no contiene espacios.
-</Check>
+Confirma los siguientes puntos con Alignet antes de pasar a producción:
 
-<Check>
-  `amount` contiene un entero positivo de hasta 12 dígitos en unidades menores.
-</Check>
+- las monedas habilitadas para el comercio, si necesitas procesar una moneda distinta de PEN;
+- la disponibilidad de `CARD` y `QR` para el comercio y el ambiente;
+- el catálogo de claves permitido en `additionalFields` y el uso de cada valor;
+- el timeout definitivo de `POST /authorize`; el rango de 100 a 110 segundos corresponde a la referencia de desarrollo vigente;
+- el comportamiento ante un `operationNumber` reutilizado con un cuerpo diferente.
 
-<Check>
-  `currency`, si está presente, contiene exactamente tres dígitos.
-</Check>
+Hasta confirmar el último punto, reenvía exactamente el mismo cuerpo cuando no hayas recibido el resultado de una operación. Para consultar su estado, utiliza el `operationNumber` original.
 
-<Check>
-  Todos los valores de `additionalFields`, si está presente, son cadenas.
-</Check>
+## Lista de verificación
 
-<Check>
-  La solicitud usa `Content-Type: application/json` y un timeout HTTP de al menos 100 a 110 segundos.
-</Check>
+Antes de enviar la solicitud, verifica lo siguiente:
+
+- `operationNumber` está almacenado, es único y contiene únicamente entre 1 y 64 dígitos.
+- `amount` es un String numérico de hasta 12 dígitos que representa un entero positivo en unidades menores.
+- `currency` es un String numérico de exactamente tres dígitos.
+- `paymentMethod` está presente y contiene exactamente un valor: `CARD` o `QR`, en mayúsculas.
+- Todos los valores de `additionalFields`, si envías el objeto, son cadenas.
+- La solicitud utiliza `Content-Type: application/json`.
+- El timeout del cliente HTTP es el acordado para el ambiente.
 
 <Card title="Respuestas, consulta y códigos" icon="code" href="/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos">
-  Implementa los códigos HTTP, estados y la consulta de operaciones.
+  Implementa los códigos HTTP, los estados y la consulta de operaciones.
 </Card>

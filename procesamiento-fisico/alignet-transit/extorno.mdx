@@ -74,7 +74,7 @@ http://<IP_DEL_PINPAD>:<PUERTO>/reversals
 
 | Campo | Tipo | Obligatorio | Validación | Descripción |
 | --- | --- | --- | --- | --- |
-| `operationNumber` | String | Sí | Entre 1 y 64 caracteres, sin espacios. | Referencia original de `POST /authorize`. Identifica la operación que se cancelará o extornará. |
+| `operationNumber` | String | Sí | Cadena numérica de 1 a 64 dígitos. | Referencia original de `POST /authorize`. Identifica la operación que se cancelará o extornará. |
 
 No incluyas `amount`, `currency`, medio de pago ni datos de tarjeta. Cuando corresponde un extorno, este es total.
 

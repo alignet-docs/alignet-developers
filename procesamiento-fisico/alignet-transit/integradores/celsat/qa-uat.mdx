@@ -24,12 +24,20 @@ Antes de ejecutar casos:
 | Caso | Estímulo | Resultado esperado |
 | --- | --- | --- |
 | Disponibilidad | `GET /health` | HTTP `200`, `status: "UP"`, `service: "Alignet ECR"`. |
-| Solicitud mínima | `operationNumber` y `amount` válidos | Se acepta `currency` predeterminada `604`. |
-| Solicitud completa | Incluye moneda y `additionalFields` con valores String | La autorización se procesa sin error de validación. |
-| Monto como número | `amount: 100` | Se acepta como entero en unidades menores. |
-| Monto como cadena | `amount: "100"` | Se acepta como cadena numérica entera. |
-| Moneda como número o cadena | `604` y `"604"` | Ambas representaciones se aceptan. |
-| Referencia inválida | Vacía, con espacios o mayor de 64 caracteres | HTTP `400` con `BAD_REQUEST`. |
+| Solicitud mínima | `operationNumber`, `amount`, `currency` y `paymentMethod` válidos | La autorización se procesa sin error de validación. |
+| Solicitud completa | Incluye los campos obligatorios y `additionalFields` con valores String | La autorización se procesa sin error de validación. |
+| Referencia numérica | `operationNumber: "44992528"` | Se acepta como String numérico. |
+| Referencia con caracteres no numéricos | Incluye letras, guiones, espacios u otros caracteres | HTTP `400` con `BAD_REQUEST`. |
+| Monto como cadena | `amount: "100"` | Se acepta como String numérico en unidades menores. |
+| Monto como número JSON | `amount: 100` | HTTP `400` con `BAD_REQUEST`. |
+| Moneda como cadena | `currency: "604"` | Se acepta como String numérico de tres dígitos. |
+| Moneda como número JSON | `currency: 604` | HTTP `400` con `BAD_REQUEST`. |
+| Moneda ausente | No incluye `currency` | HTTP `400` con `BAD_REQUEST`. |
+| Método de pago | Ejecuta solicitudes independientes con `paymentMethod: "CARD"` y `paymentMethod: "QR"` | Cada valor se acepta por separado. |
+| Método de pago ausente | No incluye `paymentMethod` | HTTP `400` con `BAD_REQUEST`. |
+| Métodos de pago simultáneos | Envía `CARD` y `QR` juntos, como arreglo o valor combinado | HTTP `400` con `BAD_REQUEST`. |
+| Método de pago inválido | Envía un valor distinto de `CARD` o `QR` | HTTP `400` con `BAD_REQUEST`. |
+| Referencia inválida | Vacía, no numérica o mayor de 64 dígitos | HTTP `400` con `BAD_REQUEST`. |
 | Monto inválido | Cero, negativo, decimal, no numérico o mayor de 12 dígitos | HTTP `400` con `BAD_REQUEST`. |
 | Moneda inválida | No contiene exactamente tres dígitos | HTTP `400` con `BAD_REQUEST`. |
 | Campo adicional inválido | Valor que no es String | HTTP `400` con `BAD_REQUEST`. |

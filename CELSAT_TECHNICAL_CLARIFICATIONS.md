@@ -6,7 +6,7 @@ La guía del SDK entregado al cliente confirma los endpoints, los campos, los es
 2. Timeout definitivo del cliente HTTP del SCC, que debe superar la espera del terminal.
 3. Intervalo, backoff y tiempo máximo de consulta de operaciones pendientes.
 4. Política del carril y escalamiento ante `PENDING` o `UNKNOWN`.
-5. Convención adicional de `operationNumber` si el procesador impone restricciones aparte de 1 a 64 caracteres sin espacios.
+5. Restricciones adicionales de `operationNumber`, si el procesador impone condiciones aparte de ser un String numérico de 1 a 64 dígitos.
 6. Claves válidas y uso final de `additionalFields`.
 7. Catálogo completo de `resultCode` del procesador más allá de `00` y el ejemplo `01`.
 8. Monedas y medios de pago habilitados para el comercio.

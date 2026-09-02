@@ -13,7 +13,7 @@ El **SCC o sistema de caja** es el cliente HTTP. La aplicación **Pay-me PinPAD*
 | `POST` | `/authorize` | Iniciar un cobro síncrono. |
 | `GET` | `/payments/{operationNumber}` | Consultar una operación. |
 
-La solicitud de autorización incluye `operationNumber` y `amount` como campos obligatorios. `currency` y `additionalFields` son opcionales. La aprobación requiere HTTP `200`, `status: "APPROVED"` y `resultCode: "00"`.
+La solicitud de autorización incluye `operationNumber`, `amount`, `currency` y `paymentMethod` como campos obligatorios. `additionalFields` es opcional. La aprobación requiere HTTP `200`, `status: "APPROVED"` y `resultCode: "00"`.
 
 Ante HTTP `202`, timeout o pérdida de comunicación, el SCC conserva la referencia y consulta la operación. Pay-me PinPAD aplica idempotencia por `operationNumber` y procesa una operación a la vez.
 

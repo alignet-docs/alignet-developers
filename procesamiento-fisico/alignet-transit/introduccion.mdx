@@ -47,7 +47,7 @@ El contrato no requiere instalar una librería en el SCC. Debes implementar un c
 ## Principios de implementación
 
 - Una operación real de cobro utiliza un único `operationNumber`.
-- `amount` representa un entero positivo en unidades menores. Por ejemplo, `1500` equivale a S/ 15.00.
+- `amount` es un String numérico que representa un entero positivo en unidades menores. Por ejemplo, `"1500"` equivale a S/ 15.00.
 - El cobro es síncrono. `POST /authorize` permanece abierto mientras el usuario presenta la tarjeta e ingresa el PIN cuando corresponde.
 - `PENDING` y `UNKNOWN` no significan rechazo. Debes consultar antes de tomar una decisión o iniciar otro cobro.
 - Pay-me PinPAD procesa una operación a la vez. Una referencia diferente recibida durante un cobro activo obtiene `409 POS_BUSY`.
