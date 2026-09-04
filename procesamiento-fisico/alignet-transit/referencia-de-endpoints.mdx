@@ -1,0 +1,77 @@
+---
+title: "Referencia de endpoints"
+description: "Métodos, rutas y códigos HTTP de la interfaz local de Pay-me Transit PinPAD."
+icon: "code"
+---
+
+El sistema central consume la interfaz HTTP/JSON que expone Pay-me PinPAD en el Wiseasy P5L. Construye todas las solicitudes a partir de la URL configurada para cada terminal:
+
+```text
+http://<IP_DEL_PINPAD>:<PUERTO>
+```
+
+El puerto predeterminado es `8080`. Confirma la IP y el puerto de cada terminal antes de integrar.
+
+## Endpoints disponibles
+
+| Método | Ruta | Uso | Respuestas documentadas |
+| --- | --- | --- | --- |
+| `GET` | `/health` | Verificar que Pay-me PinPAD esté accesible. | `200` |
+| `POST` | `/authorize` | Iniciar un cobro síncrono. | `200`, `202`, `400`, `409`, `503` |
+| `GET` | `/payments/{operationNumber}` | Recuperar el estado de una autorización. | `200`, `202`, `404` |
+| `POST` | `/reversals` | Cancelar una autorización activa o extornar una venta aprobada. | `200`, `202`, `400`, `404`, `409`, `502`, `503` |
+| `GET` | `/reversals/{operationNumber}` | Recuperar el estado de una cancelación o extorno. | `200`, `202`, `404`, `502` |
+
+<Note>
+  `POST /reversals` decide la acción según el estado actual de la operación. No recibe un parámetro para elegir entre cancelación y extorno.
+</Note>
+
+## Verificar disponibilidad
+
+```http
+GET /health
+```
+
+```bash
+curl "http://<IP_DEL_PINPAD>:<PUERTO>/health"
+```
+
+Respuesta esperada:
+
+```json
+{
+  "status": "UP",
+  "service": "Alignet ECR"
+}
+```
+
+Usa `GET /health` al configurar el terminal y antes de iniciar operaciones cuando necesites comprobar disponibilidad. Una respuesta satisfactoria confirma la aplicación local; no confirma por sí sola que el procesador aprobará pagos.
+
+## Autorizar y consultar un pago
+
+`POST /authorize` requiere un cuerpo JSON. Consulta [Solicitud de autorización](/procesamiento-fisico/alignet-transit/parametros-de-envio) para conocer los campos, las validaciones y los ejemplos.
+
+`GET /payments/{operationNumber}` no lleva cuerpo. Usa exactamente la referencia enviada en la autorización:
+
+```bash
+curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528"
+```
+
+## Cancelar o extornar y consultar el resultado
+
+`POST /reversals` requiere el `operationNumber` de la autorización original. Consulta [Cancelación y extorno](/procesamiento-fisico/alignet-transit/extorno) para revisar el contrato completo.
+
+`GET /reversals/{operationNumber}` recupera la solicitud de cancelación o extorno. No lo confundas con `GET /payments/{operationNumber}`, que recupera la autorización original.
+
+## Rutas fuera del contrato vigente
+
+No uses `/payment`, `/api/v1/payments`, `/api/v1/payments/{operationNumber}` ni `DELETE /charges` para esta integración. Tampoco diseñes el cliente alrededor de una respuesta anidada en `result.state`, los códigos locales `P01–P21` o campos como `transactionID`: pertenecen a especificaciones anteriores o a otros productos.
+
+<CardGroup cols={2}>
+  <Card title="Solicitud de autorización" icon="file-export" href="/procesamiento-fisico/alignet-transit/parametros-de-envio">
+    Implementa el payload de `POST /authorize`.
+  </Card>
+  <Card title="Respuestas y códigos" icon="list-check" href="/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos">
+    Interpreta códigos HTTP y estados transaccionales.
+  </Card>
+</CardGroup>

@@ -1,25 +1,25 @@
 ---
-title: "Información para la habilitación"
-description: "Datos que el integrador y Alignet deben intercambiar para preparar pruebas y producción."
+title: "Habilitación y soporte"
+description: "Información que el comercio, el integrador y Alignet deben intercambiar para pruebas y producción."
 icon: "clipboard-list"
 ---
 
 Completa esta información antes de ejecutar las pruebas conjuntas. Evita incluir credenciales o datos sensibles en documentos de coordinación sin protección.
 
-## Información del integrador
+## Información del comercio o integrador
 
-### SCC y despliegue
+### Sistema central y despliegue
 
 - nombre y versión del componente que realizará las llamadas HTTP;
 - sistema operativo, runtime y biblioteca HTTP;
-- relación entre instancias del SCC, carriles y terminales;
+- relación entre instancias del sistema central, puntos de atención y terminales;
 - estrategia de persistencia de operaciones abiertas;
 - mecanismo de serialización de cobros por terminal;
 - procedimiento de recuperación después de un reinicio.
 
 ### Red
 
-- subred y dirección IP del SCC;
+- subred y dirección IP del sistema central;
 - reglas de firewall aplicables;
 - confirmación de que AP/Client Isolation está desactivado;
 - reserva DHCP o mecanismo de IP estática del Wiseasy P5L;
@@ -31,12 +31,12 @@ Completa esta información antes de ejecutar las pruebas conjuntas. Evita inclui
 - regla que garantiza unicidad por operación real;
 - montos y referencias de prueba;
 - claves y valores de `additionalFields` requeridos por el negocio, si aplica;
-- acción del carril para `APPROVED`, `DENIED`, `CANCELLED`, `PENDING`, `PROCESSING`, `UNKNOWN` y `ERROR`;
+- decisión de negocio para `APPROVED`, `DENIED`, `CANCELLED`, `PENDING`, `PROCESSING`, `UNKNOWN` y `ERROR`;
 - formato de comprobante y datos de conciliación.
 
 ### Observabilidad y soporte
 
-- evidencia técnica disponible en el SCC;
+- evidencia técnica disponible en el sistema central;
 - retención y protección de logs;
 - responsables de desarrollo, QA, redes y operación;
 - procedimiento para inmovilizar una operación incierta y escalarla.
@@ -48,26 +48,28 @@ Alignet debe confirmar antes de la salida a producción:
 - Wiseasy P5L y versión de Pay-me PinPAD asignados;
 - IP y puerto configurados para cada terminal;
 - espera interna definitiva de Pay-me PinPAD;
-- recomendación definitiva de timeout del SCC;
+- recomendación definitiva de timeout del sistema central;
 - intervalo, backoff y límite de consulta;
 - catálogo aplicable de códigos del procesador;
 - monedas y medios de pago habilitados;
 - claves admitidas en `additionalFields` y su finalidad;
 - contactos, horarios y procedimiento de soporte.
 
+El registro completo, incluida la semántica pendiente de extornos y referencias reutilizadas, está en [Datos por validar](/procesamiento-fisico/alignet-transit/datos-por-validar).
+
 ## Ficha por terminal
 
 | Campo | Valor |
 | --- | --- |
 | Ambiente | Por completar |
-| Carril o caja | Por completar |
+| Punto de atención | Por completar |
 | Identificador del Wiseasy P5L | Por completar |
 | Versión de Pay-me PinPAD | Por completar |
 | IP | Por completar |
 | Puerto | `8080` por defecto; confirmar |
-| SCC autorizado | Por completar |
+| Sistema central autorizado | Por completar |
 | Fecha de `GET /health` exitoso | Por completar |
-| Timeout del SCC | Por completar |
+| Timeout del sistema central | Por completar |
 | Política de consulta | Por completar |
 | Contacto de soporte | Por completar |
 
@@ -75,7 +77,7 @@ Alignet debe confirmar antes de la salida a producción:
 
 - identificador y descripción del caso;
 - fecha, hora y ambiente;
-- terminal y SCC utilizados;
+- terminal y sistema central utilizados;
 - `operationNumber`;
 - solicitud y respuesta sanitizadas;
 - código HTTP y header `Retry-After`, cuando corresponda;
@@ -89,10 +91,10 @@ No incluyas PAN completo, CVV, PIN, PIN Block, pistas ni datos EMV sensibles.
 
 <CardGroup cols={2}>
   <Card title="Ficha de terminal" icon="sliders">
-    Asociación SCC–carril–Wiseasy P5L, IP, puerto, versión y timeouts.
+    Asociación entre sistema central, punto de atención y Wiseasy P5L, IP, puerto, versión y timeouts.
   </Card>
   <Card title="Matriz de decisiones" icon="table-list">
-    Acción del SCC para cada código HTTP y estado transaccional.
+    Acción del sistema central para cada código HTTP y estado transaccional.
   </Card>
   <Card title="Evidencias de certificación" icon="flask-vial">
     Casos normales, errores, concurrencia, timeout y recuperación.

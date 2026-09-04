@@ -417,36 +417,52 @@
             "pages": [
               {
                 "group": "Pay-me Transit PinPAD",
+                "public": true,
                 "icon": "road",
                 "pages": [
                   "procesamiento-fisico/alignet-transit/introduccion",
                   {
-                    "group": "Integración técnica",
-                    "icon": "diagram-project",
+                    "group": "Primeros pasos",
+                    "icon": "shoe-prints",
                     "pages": [
                       "procesamiento-fisico/alignet-transit/arquitectura-y-trazabilidad",
+                      "procesamiento-fisico/alignet-transit/requisitos-y-responsabilidades",
+                      "procesamiento-fisico/alignet-transit/configuracion",
+                      "procesamiento-fisico/alignet-transit/autenticacion"
+                    ]
+                  },
+                  {
+                    "group": "Endpoints y contratos",
+                    "icon": "code",
+                    "pages": [
+                      "procesamiento-fisico/alignet-transit/referencia-de-endpoints",
                       "procesamiento-fisico/alignet-transit/parametros-de-envio",
-                      "procesamiento-fisico/alignet-transit/extorno",
-                      "procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos",
+                      "procesamiento-fisico/alignet-transit/extorno"
+                    ]
+                  },
+                  {
+                    "group": "Flujos y ejemplos",
+                    "icon": "arrows-rotate",
+                    "pages": [
                       "procesamiento-fisico/alignet-transit/operacion-y-recuperacion",
+                      "procesamiento-fisico/alignet-transit/ejemplos-de-integracion"
+                    ]
+                  },
+                  {
+                    "group": "Respuestas y errores",
+                    "icon": "triangle-exclamation",
+                    "pages": [
+                      "procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos",
                       "procesamiento-fisico/alignet-transit/solucion-de-problemas"
                     ]
                   },
                   {
-                    "group": "Integradores",
-                    "icon": "people-arrows",
+                    "group": "Recomendaciones y certificación",
+                    "icon": "flask-vial",
                     "pages": [
-                      {
-                        "group": "SCC / CELSAT",
-                        "icon": "road-barrier",
-                        "pages": [
-                          "procesamiento-fisico/alignet-transit/integradores/celsat/interfaz-scc-p5l",
-                          "procesamiento-fisico/alignet-transit/integradores/celsat/responsabilidades-y-preparacion",
-                          "procesamiento-fisico/alignet-transit/integradores/celsat/configuracion-y-coordinacion",
-                          "procesamiento-fisico/alignet-transit/integradores/celsat/qa-uat",
-                          "procesamiento-fisico/alignet-transit/integradores/celsat/informacion-requerida"
-                        ]
-                      }
+                      "procesamiento-fisico/alignet-transit/pruebas-y-salida-a-produccion",
+                      "procesamiento-fisico/alignet-transit/habilitacion-y-soporte",
+                      "procesamiento-fisico/alignet-transit/datos-por-validar"
                     ]
                   }
                 ]
@@ -508,6 +524,26 @@
     }
   },
   "redirects": [
+    {
+      "source": "/procesamiento-fisico/alignet-transit/integradores/celsat/interfaz-scc-p5l",
+      "destination": "/procesamiento-fisico/alignet-transit/ejemplos-de-integracion"
+    },
+    {
+      "source": "/procesamiento-fisico/alignet-transit/integradores/celsat/responsabilidades-y-preparacion",
+      "destination": "/procesamiento-fisico/alignet-transit/requisitos-y-responsabilidades"
+    },
+    {
+      "source": "/procesamiento-fisico/alignet-transit/integradores/celsat/configuracion-y-coordinacion",
+      "destination": "/procesamiento-fisico/alignet-transit/configuracion"
+    },
+    {
+      "source": "/procesamiento-fisico/alignet-transit/integradores/celsat/qa-uat",
+      "destination": "/procesamiento-fisico/alignet-transit/pruebas-y-salida-a-produccion"
+    },
+    {
+      "source": "/procesamiento-fisico/alignet-transit/integradores/celsat/informacion-requerida",
+      "destination": "/procesamiento-fisico/alignet-transit/habilitacion-y-soporte"
+    },
     {
       "source": "/procesamiento-fisico/alignet-transit/contrato-funcional",
       "destination": "/procesamiento-fisico/alignet-transit/parametros-de-envio"

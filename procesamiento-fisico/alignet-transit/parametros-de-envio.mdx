@@ -4,7 +4,7 @@ description: "Parámetros, validaciones y ejemplos para iniciar un pago con POST
 icon: "file-export"
 ---
 
-El SCC o sistema de caja inicia un pago mediante una solicitud HTTP a Pay-me PinPAD. `POST /authorize` es síncrono: la conexión permanece abierta mientras el terminal procesa la operación y devuelve el resultado.
+El sistema central del comercio inicia un pago mediante una solicitud HTTP a Pay-me PinPAD. `POST /authorize` es síncrono: la conexión permanece abierta mientras el terminal procesa la operación y devuelve el resultado.
 
 ```http
 POST /authorize
@@ -34,7 +34,7 @@ Envía los cuatro campos obligatorios en el cuerpo JSON:
 
 | Campo | Tipo JSON | Obligatorio | Validación | Descripción |
 | --- | --- | --- | --- | --- |
-| `operationNumber` | String | Sí | Cadena numérica de 1 a 64 dígitos. | Identificador único generado por el SCC. Se utiliza como clave de idempotencia y referencia de consulta. |
+| `operationNumber` | String | Sí | Cadena numérica de 1 a 64 dígitos. | Identificador único generado por el sistema central. Se utiliza como clave de idempotencia y referencia de consulta. |
 | `amount` | String | Sí | Cadena numérica que representa un entero positivo de 1 a 12 dígitos, expresado en unidades menores. | Importe total del pago. Por ejemplo, `"1500"` representa S/ 15.00. |
 | `currency` | String | Sí | Cadena numérica de exactamente 3 dígitos. | Código numérico ISO 4217 de la moneda. Para soles peruanos, envía `"604"`. |
 | `paymentMethod` | String | Sí | Debe contener un único valor: `CARD` o `QR`. | Método con el que Pay-me PinPAD procesará el pago. |
@@ -157,19 +157,13 @@ Una solicitud con campos ausentes o valores inválidos devuelve HTTP `400` con `
 }
 ```
 
-Corrige el campo indicado antes de reenviar la solicitud. Conserva el error y el intento en los registros del SCC para mantener la trazabilidad.
+Corrige el campo indicado antes de reenviar la solicitud. Conserva el error y el intento en los registros del sistema central para mantener la trazabilidad.
 
-## Aspectos pendientes de validación
+## Antes de producción
 
-Confirma los siguientes puntos con Alignet antes de pasar a producción:
+Confirma las monedas y medios de pago habilitados, el catálogo de `additionalFields`, el timeout definitivo y el comportamiento de una referencia reutilizada con otro body. Consulta el registro centralizado de [Datos por validar](/procesamiento-fisico/alignet-transit/datos-por-validar).
 
-- las monedas habilitadas para el comercio, si necesitas procesar una moneda distinta de PEN;
-- la disponibilidad de `CARD` y `QR` para el comercio y el ambiente;
-- el catálogo de claves permitido en `additionalFields` y el uso de cada valor;
-- el timeout definitivo de `POST /authorize`; el rango de 100 a 110 segundos corresponde a la referencia de desarrollo vigente;
-- el comportamiento ante un `operationNumber` reutilizado con un cuerpo diferente.
-
-Hasta confirmar el último punto, reenvía exactamente el mismo cuerpo cuando no hayas recibido el resultado de una operación. Para consultar su estado, utiliza el `operationNumber` original.
+Hasta confirmar el último punto, reenvía exactamente el mismo cuerpo cuando no hayas recibido el resultado. Para consultar su estado, utiliza el `operationNumber` original.
 
 ## Lista de verificación
 

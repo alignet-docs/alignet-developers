@@ -4,16 +4,16 @@ description: "Casos de prueba, evidencias y checklist de certificación para Pay
 icon: "flask-vial"
 ---
 
-La certificación debe validar el contrato HTTP, la interacción física con el Wiseasy P5L, la decisión del carril y la recuperación sin doble cobro.
+La certificación debe validar el contrato HTTP, la interacción física con el Wiseasy P5L, la decisión de negocio y la recuperación sin doble cobro.
 
 ## Preparación
 
 Antes de ejecutar casos:
 
 - registra la versión de Pay-me PinPAD instalada;
-- confirma la asociación entre SCC, carril y Wiseasy P5L;
+- confirma la asociación entre sistema central, punto de atención y Wiseasy P5L;
 - configura una IP estable y el puerto del terminal;
-- ejecuta `GET /health` desde el SCC;
+- ejecuta `GET /health` desde el sistema central;
 - completa la verificación de llaves en el terminal;
 - configura el timeout de autorización en al menos 100 a 110 segundos para las pruebas;
 - habilita persistencia y logs sanitizados;
@@ -44,7 +44,7 @@ Antes de ejecutar casos:
 
 ## Casos transaccionales
 
-| Caso | Resultado esperado | Decisión del SCC |
+| Caso | Resultado esperado | Decisión del sistema central |
 | --- | --- | --- |
 | Pago aprobado | HTTP `200`, `APPROVED`, `00`, código de autorización y fecha final. | Confirmar y aplicar la regla de apertura. |
 | Pago rechazado | HTTP `200`, `DENIED` y código distinto de `00`. | No confirmar. |
@@ -64,11 +64,11 @@ Antes de ejecutar casos:
 | Misma referencia durante el proceso | El segundo envío no inicia otro cobro y devuelve `202` con el estado actual. |
 | Misma referencia finalizada | Devuelve `200` con el resultado guardado sin otro cargo. |
 | Otra referencia concurrente | Devuelve `409 POS_BUSY`. |
-| Timeout del SCC | El SCC consulta la referencia original antes de aceptar otro intento. |
-| Pérdida de red | Al reconectar, el SCC consulta las operaciones abiertas. |
-| Reinicio del SCC | Recupera desde persistencia y consulta cada referencia no final. |
-| Reinicio del P5L durante el cobro | La operación queda `UNKNOWN`; el SCC no confirma ni rechaza automáticamente. |
-| `202` repetido | El SCC respeta `Retry-After` y aplica el límite de consulta acordado. |
+| Timeout del sistema central | El sistema central consulta la referencia original antes de aceptar otro intento. |
+| Pérdida de red | Al reconectar, el sistema central consulta las operaciones abiertas. |
+| Reinicio del sistema central | Recupera desde persistencia y consulta cada referencia no final. |
+| Reinicio del P5L durante el cobro | La operación queda `UNKNOWN`; el sistema central no confirma ni rechaza automáticamente. |
+| `202` repetido | El sistema central respeta `Retry-After` y aplica el límite de consulta acordado. |
 
 ## Verificaciones de seguridad
 
@@ -88,18 +88,18 @@ Antes de ejecutar casos:
   El acceso y la retención de logs están controlados.
 </Check>
 
-## Checklist de salida a producción
+## Lista de verificación para producción
 
 <Check>
   Cada Wiseasy P5L tiene IP fija o reserva DHCP y puerto documentado.
 </Check>
 
 <Check>
-  El SCC ejecuta satisfactoriamente autorización, consulta, extorno y consulta de extorno.
+  El sistema central ejecuta satisfactoriamente autorización, consulta, extorno y consulta de extorno.
 </Check>
 
 <Check>
-  El timeout definitivo del SCC es mayor que la espera interna confirmada de Pay-me PinPAD.
+  El timeout definitivo del sistema central es mayor que la espera interna confirmada de Pay-me PinPAD.
 </Check>
 
 <Check>
@@ -107,7 +107,7 @@ Antes de ejecutar casos:
 </Check>
 
 <Check>
-  El SCC confirma únicamente `200` + `APPROVED` + `00`.
+  El sistema central confirma únicamente `200` + `APPROVED` + `00`.
 </Check>
 
 <Check>
@@ -115,7 +115,7 @@ Antes de ejecutar casos:
 </Check>
 
 <Check>
-  La política del carril para `PENDING` y `UNKNOWN` está aprobada.
+  La decisión de negocio para `PENDING` y `UNKNOWN` está aprobada.
 </Check>
 
 <Check>

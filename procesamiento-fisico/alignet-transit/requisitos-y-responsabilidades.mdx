@@ -1,22 +1,22 @@
 ---
-title: "Responsabilidades y preparación"
-description: "Responsabilidades del SCC, Pay-me PinPAD y Alignet antes de iniciar la integración."
+title: "Requisitos y responsabilidades"
+description: "Requisitos y responsabilidades del comercio, el integrador, Pay-me PinPAD y Alignet."
 icon: "people-arrows"
 ---
 
 ## Matriz de responsabilidades
 
-| Área | SCC o sistema de caja | Pay-me PinPAD / Alignet | Validación conjunta |
+| Área | Comercio o integrador — sistema central | Pay-me PinPAD / Alignet | Validación conjunta |
 | --- | --- | --- | --- |
-| Red local | Alcanzar la IP y el puerto del terminal; configurar firewall y timeout. | Exponer el servidor HTTP en el Wiseasy P5L. | Ejecutar `GET /health` desde el SCC. |
-| Operación | Calcular el monto, generar y persistir `operationNumber` y aplicar la decisión del carril. | Validar la solicitud; ejecutar el cobro, cancelación o extorno; y devolver el resultado. | Probar aprobación, rechazo, cancelación, extorno y recuperación. |
+| Red local | Alcanzar la IP y el puerto del terminal; configurar firewall y timeout. | Exponer el servidor HTTP en el Wiseasy P5L. | Ejecutar `GET /health` desde el sistema central. |
+| Operación | Calcular el monto, generar y persistir `operationNumber` y aplicar la decisión de negocio. | Validar la solicitud; ejecutar el cobro, cancelación o extorno; y devolver el resultado. | Probar aprobación, rechazo, cancelación, extorno y recuperación. |
 | Idempotencia | Mantener una sola referencia por operación real y consultar ante incertidumbre. | Evitar un segundo cargo para la misma referencia y conservar el resultado. | Simular timeout, reenvío y consulta. |
 | Concurrencia | Serializar solicitudes destinadas al mismo terminal. | Procesar una operación a la vez y devolver `409 POS_BUSY` a otra referencia. | Enviar solicitudes concurrentes controladas. |
-| Configuración | Registrar IP, puerto y asociación entre SCC, carril y terminal. | Instalar la aplicación, configurar IP/puerto y verificar llaves. | Confirmar el estado **Listo para el siguiente vehículo**. |
+| Configuración | Registrar IP, puerto y asociación entre sistema central, punto de atención y terminal. | Instalar la aplicación, configurar IP/puerto y verificar llaves. | Confirmar el estado operativo que muestra Pay-me PinPAD. |
 | Seguridad | Proteger la red, los logs y los datos de conciliación. | No exponer datos sensibles de tarjeta en la respuesta. | Revisar evidencias sanitizadas. |
 | Soporte | Conservar solicitudes, respuestas, códigos HTTP y marcas de tiempo. | Correlacionar la operación y apoyar el diagnóstico. | Definir responsables y escalamiento. |
 
-## Preparación del SCC
+## Requisitos del sistema central
 
 ### Cliente HTTP
 
@@ -32,12 +32,12 @@ icon: "people-arrows"
 - Persiste la referencia y los datos del cobro antes del envío.
 - Confirma solo `status: "APPROVED"` junto con `resultCode: "00"`.
 - Conserva como abiertas las operaciones `PENDING`, `PROCESSING` o `UNKNOWN`.
-- Recupera las operaciones abiertas después de un reinicio del SCC.
+- Recupera las operaciones abiertas después de un reinicio del sistema central.
 - No conviertas un timeout o `404` de consulta en rechazo financiero.
 
-### Operación del carril
+### Decisión de negocio
 
-- Define cuándo abrir la barrera y cómo informar rechazo o cancelación.
+- Define la acción que ejecutará el comercio después de una aprobación —por ejemplo, confirmar una venta o abrir una barrera— y cómo informará un rechazo o una cancelación.
 - Define el límite de espera y el escalamiento de una operación no resuelta.
 - Crea un nuevo `operationNumber` para un nuevo intento después de un resultado final `DENIED` o `CANCELLED`.
 - Conserva `authorizationCode` y `operationNumber` para el comprobante y la conciliación.
@@ -49,15 +49,15 @@ Alignet y el operador deben:
 - instalar la versión de Pay-me PinPAD correspondiente al package `com.alignet.pinpad.ecr`;
 - conectar el terminal a la red local y asignarle una IP estable;
 - configurar la IP y el puerto de escucha, cuyo valor predeterminado es `8080`;
-- confirmar la llamada real de `GET /health` desde el SCC;
+- confirmar la llamada real de `GET /health` desde el sistema central;
 - completar la verificación de inyección de llaves;
 - dejar la aplicación en **Listo para el siguiente vehículo**;
 - confirmar que el terminal dispone de la conectividad necesaria para procesar el pago.
 
-## Checklist de inicio
+## Lista de verificación inicial
 
 <Check>
-  El SCC y el Wiseasy P5L están en la misma red local y sin aislamiento entre clientes.
+  El sistema central y el Wiseasy P5L están en la misma red local y sin aislamiento entre clientes.
 </Check>
 
 <Check>
@@ -65,11 +65,11 @@ Alignet y el operador deben:
 </Check>
 
 <Check>
-  `GET /health` responde HTTP `200` desde el equipo donde se ejecuta el SCC.
+  `GET /health` responde HTTP `200` desde el equipo donde se ejecuta el sistema central.
 </Check>
 
 <Check>
-  El SCC genera y persiste un `operationNumber` válido y único por cobro.
+  El sistema central genera y persiste un `operationNumber` válido y único por cobro.
 </Check>
 
 <Check>
@@ -81,7 +81,7 @@ Alignet y el operador deben:
 </Check>
 
 <Check>
-  La política del carril está definida para todos los estados finales y no finales.
+  La decisión de negocio está definida para todos los estados finales y no finales.
 </Check>
 
 <Check>

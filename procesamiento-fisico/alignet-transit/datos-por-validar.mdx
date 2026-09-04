@@ -1,0 +1,62 @@
+---
+title: "Datos por validar"
+description: "Decisiones abiertas y datos que deben confirmarse con Alignet antes de habilitar producción."
+icon: "clipboard-question"
+---
+
+Esta página reúne la información ambigua, incompleta o dependiente de cada implementación. Los valores de referencia sirven para desarrollo y pruebas; no los conviertas en reglas de producción hasta recibir confirmación.
+
+<Warning>
+  Estos pendientes no cambian los endpoints ni los contratos documentados. Si una definición futura modifica rutas, campos, tipos o semántica, trata el cambio como una nueva versión de integración.
+</Warning>
+
+## Parámetros operativos
+
+| Punto | Referencia disponible | Validación requerida |
+| --- | --- | --- |
+| Espera interna de Pay-me PinPAD | `90` segundos en desarrollo. | Valor definitivo por ambiente. |
+| Timeout del cliente HTTP | Al menos `100–110` segundos con la espera de referencia. | Valor definitivo, siempre superior a la espera del terminal. |
+| Frecuencia de consulta | Header `Retry-After`; aproximadamente `2` segundos si no está presente. | Intervalo, backoff y tiempo máximo de consulta. |
+| Operación no resuelta | No iniciar otro cobro ante `PENDING`, `PROCESSING` o `UNKNOWN`. | Procedimiento de inmovilización, escalamiento y decisión de negocio. |
+| Reinicio durante un extorno | Puede producir `UNKNOWN`. | Confirmar si el procesador recibió la reversa y cómo conciliarla. |
+
+## Contrato y habilitación
+
+| Punto | Referencia disponible | Validación requerida |
+| --- | --- | --- |
+| `operationNumber` | String numérico único de `1–64` dígitos. | Restricciones adicionales que pueda imponer el procesador. |
+| Referencia reutilizada con otro body | No está documentado. | Comportamiento de Pay-me PinPAD; hasta entonces, reenvía exactamente el mismo payload. |
+| `additionalFields` | Objeto opcional; todos sus valores son String. | Catálogo de claves y uso final de cada dato. |
+| Monedas | PEN usa `currency: "604"`. | Otras monedas habilitadas para el comercio y el ambiente. |
+| Métodos de pago | El contrato admite `CARD` y `QR`, uno por solicitud. | Métodos efectivamente habilitados para el comercio y el ambiente. |
+| Códigos financieros | `00` es aprobación; `01` aparece como ejemplo verificado de rechazo. | Catálogo completo y clasificación de códigos reintentables. |
+| Códigos `14` y `15` | No están confirmados en la respuesta HTTP de Transit. | Significado y uso, especialmente para cancelación. |
+
+## Extornos
+
+Confirma con Alignet:
+
+- la ventana máxima para solicitar un extorno;
+- el tratamiento de ventas cerradas o liquidadas;
+- la respuesta de una venta que ya fue extornada;
+- cuándo se refleja la reversa para el tarjetahabiente y cuál es su efecto contable;
+- la semántica y el procedimiento de conciliación de `UNKNOWN` después de un reinicio;
+- los códigos del procesador que permiten reintentar una reversa.
+
+## Infraestructura y soporte
+
+Completa por ambiente:
+
+- la IP, el puerto y la asociación entre sistema central y Wiseasy P5L;
+- la versión aprobada de Pay-me PinPAD;
+- los contactos, horarios, severidades y procedimiento de soporte;
+- los responsables de la decisión operativa ante estados no finales;
+- cualquier requisito adicional de seguridad de red.
+
+## Registro de decisión
+
+Por cada punto, registra responsable, definición aprobada, ambiente, fecha de vigencia y evidencia. Conserva este registro junto con la versión de Pay-me PinPAD certificada.
+
+<Card title="Certificación y salida a producción" icon="flask-vial" href="/procesamiento-fisico/alignet-transit/pruebas-y-salida-a-produccion">
+  Convierte las definiciones aprobadas en criterios verificables antes de habilitar cobros reales.
+</Card>

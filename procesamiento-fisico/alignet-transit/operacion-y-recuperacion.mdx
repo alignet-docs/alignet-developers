@@ -8,17 +8,17 @@ icon: "rotate"
 
 ```mermaid
 sequenceDiagram
-    participant SCC as SCC o sistema de caja
+    participant CENTRAL as Sistema central del comercio
     participant PINPAD as Pay-me PinPAD / Wiseasy P5L
     participant BANK as Procesador o banco
 
-    SCC->>SCC: Generar y persistir operationNumber
-    SCC->>PINPAD: POST /authorize
+    CENTRAL->>CENTRAL: Generar y persistir operationNumber
+    CENTRAL->>PINPAD: POST /authorize
     PINPAD->>PINPAD: Mostrar pago y leer tarjeta/PIN
     PINPAD->>BANK: Procesar autorización
     BANK-->>PINPAD: Aprobar o rechazar
-    PINPAD-->>SCC: 200 con resultado final
-    SCC->>SCC: Evaluar status y resultCode
+    PINPAD-->>CENTRAL: 200 con resultado final
+    CENTRAL->>CENTRAL: Evaluar status y resultCode
 ```
 
 `POST /authorize` es síncrono. La misma llamada permanece abierta mientras el usuario presenta su tarjeta e ingresa el PIN cuando corresponde.
@@ -31,16 +31,16 @@ Configura el timeout de lectura del cliente HTTP por encima de la espera del ter
 
 ```text
 Espera interna de Pay-me PinPAD: 90 s, referencia de desarrollo
-Timeout HTTP del SCC:          al menos 100–110 s
+Timeout HTTP del sistema central: al menos 100–110 s
 ```
 
 Un cobro puede tomar decenas de segundos. No uses el mismo timeout corto que aplicarías a una API convencional.
 
 <Warning>
-  Si el timeout del SCC vence antes que el del terminal, el pago puede continuar aunque la caja haya perdido la conexión. Un timeout de red nunca equivale a rechazo.
+  Si el timeout del sistema central vence antes que el del terminal, el pago puede continuar aunque el comercio haya perdido la conexión. Un timeout de red nunca equivale a rechazo.
 </Warning>
 
-El valor definitivo de la espera interna, el timeout del SCC y el tiempo máximo de recuperación deben validarse con Alignet antes de producción.
+El valor definitivo de la espera interna, el timeout del sistema central y el tiempo máximo de recuperación deben validarse con Alignet antes de producción.
 
 ## Recuperación de una operación incierta
 
@@ -49,7 +49,7 @@ Consulta cuando ocurra cualquiera de estos casos:
 - `POST /authorize` devuelve HTTP `202` con `status: "PENDING"`;
 - el timeout del cliente HTTP vence sin recibir respuesta;
 - la conexión se interrumpe durante el cobro;
-- el SCC se reinicia con una operación abierta;
+- el sistema central se reinicia con una operación abierta;
 - el estado recuperado es `PROCESSING` o `UNKNOWN`.
 
 ```mermaid
@@ -68,8 +68,8 @@ flowchart TD
 Procedimiento:
 
 1. Conserva el `operationNumber` original.
-2. Mantén la operación como no resuelta en el SCC.
-3. No abras la barrera ni marques rechazo definitivo.
+2. Mantén la operación como no resuelta en el sistema central.
+3. No ejecutes la acción de negocio asociada ni marques un rechazo definitivo.
 4. Ejecuta `GET /payments/{operationNumber}`.
 5. Si recibes `202`, respeta `Retry-After`; si el header no está disponible, usa aproximadamente 2 segundos como referencia inicial.
 6. Continúa hasta recibir un resultado final o alcanzar el límite operativo acordado.
@@ -83,8 +83,8 @@ Procedimiento:
 | --- | --- |
 | Misma referencia mientras se procesa | No se inicia un segundo cobro. Pay-me PinPAD responde HTTP `202` con el estado actual. |
 | Misma referencia ya finalizada | No se inicia un segundo cobro. Pay-me PinPAD responde HTTP `200` con el resultado almacenado. |
-| Resultado perdido por el SCC | El SCC puede consultar o reenviar la misma referencia para recuperar el resultado existente. |
-| Nueva operación real | El SCC debe generar una referencia nueva. |
+| Resultado perdido por el sistema central | El sistema central puede consultar o reenviar la misma referencia para recuperar el resultado existente. |
+| Nueva operación real | El sistema central debe generar una referencia nueva. |
 
 ```text
 1 operación real de cobro = 1 operationNumber
@@ -98,14 +98,14 @@ Pay-me PinPAD procesa una sola operación a la vez:
 
 - Si llega el mismo `operationNumber`, aplica la regla de idempotencia.
 - Si llega otro `operationNumber` mientras existe un cobro activo, responde HTTP `409` con `POS_BUSY`.
-- El SCC debe serializar los cobros destinados al mismo terminal.
+- El sistema central debe serializar los cobros destinados al mismo terminal.
 - Después de `POS_BUSY`, espera a que el terminal se libere antes de reintentar la solicitud que no fue aceptada.
 
-Si varios procesos pueden enviar pagos al mismo Wiseasy P5L, coordínalos mediante una cola o bloqueo único en el SCC.
+Si varios procesos pueden enviar pagos al mismo Wiseasy P5L, coordínalos mediante una cola o bloqueo único en el sistema central.
 
 ## Reinicios
 
-### Reinicio del SCC
+### Reinicio del sistema central
 
 Al iniciar, recupera de almacenamiento persistente todas las operaciones sin resultado final y consulta cada `operationNumber` antes de aceptar una decisión financiera.
 
@@ -113,7 +113,7 @@ Al iniciar, recupera de almacenamiento persistente todas las operaciones sin res
 
 La operación en curso queda en `UNKNOWN`. No la marques como aprobada ni rechazada. Consulta la referencia y aplica el procedimiento de escalamiento si no alcanza un estado final.
 
-## Flujo recomendado del SCC
+## Flujo recomendado del sistema central
 
 ```text
 1. GET /health para confirmar disponibilidad.
@@ -126,9 +126,9 @@ La operación en curso queda en `UNKNOWN`. No la marques como aprobada ni rechaz
    con un operationNumber nuevo y después de la decisión del usuario.
 ```
 
-## Regla de la barrera
+## Decisión de negocio
 
-Define antes de producción qué hará el carril ante resultados no finales. La regla segura es no abrir hasta confirmar `APPROVED` con `resultCode: "00"`.
+Define antes de producción qué hará el comercio ante resultados no finales. La regla segura es no confirmar la venta ni ejecutar una acción irreversible —por ejemplo, abrir una barrera— hasta recibir `APPROVED` con `resultCode: "00"`.
 
 La política final para `PENDING` y `UNKNOWN`, incluido el escalamiento manual, requiere acuerdo entre el integrador y Alignet.
 

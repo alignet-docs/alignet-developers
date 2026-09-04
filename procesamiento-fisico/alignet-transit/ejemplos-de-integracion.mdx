@@ -1,25 +1,15 @@
 ---
-title: "Implementación del cliente HTTP"
-description: "Ejemplos para conectar el SCC o sistema de caja con Pay-me PinPAD."
+title: "Ejemplos de integración"
+description: "Ejemplos en cURL, Java, C#, Python y Node.js para consumir Pay-me PinPAD."
 icon: "ethernet"
 ---
 
-El SCC o sistema de caja actúa como **cliente HTTP**. La aplicación Pay-me PinPAD instalada en el Wiseasy P5L actúa como **servidor HTTP** sobre la red local.
+El sistema central del comercio actúa como **cliente HTTP**. La aplicación Pay-me PinPAD instalada en el Wiseasy P5L actúa como **servidor HTTP** sobre la red local.
 
 En los ejemplos, reemplaza `192.168.68.121` y `8080` por la IP y el puerto configurados en tu terminal.
 
-## Referencia rápida
-
-| Método | Ruta | Uso | Respuestas documentadas |
-| --- | --- | --- | --- |
-| `GET` | `/health` | Verificar disponibilidad. | `200` |
-| `POST` | `/authorize` | Iniciar un cobro síncrono. | `200`, `202`, `400`, `409`, `503` |
-| `GET` | `/payments/{operationNumber}` | Consultar una operación. | `200`, `202`, `404` |
-| `POST` | `/reversals` | Cancelar una autorización en curso o extornar una venta aprobada. | `200`, `202`, `400`, `404`, `409`, `502`, `503` |
-| `GET` | `/reversals/{operationNumber}` | Consultar una cancelación o extorno. | `200`, `202`, `404`, `502` |
-
 <Info>
-  `POST /reversals` decide la acción según el estado actual: corta una autorización activa o extorna una venta aprobada. No corresponde a `DELETE /charges` del API de e-commerce.
+  Consulta la [referencia de endpoints](/procesamiento-fisico/alignet-transit/referencia-de-endpoints) y el contrato de cada operación antes de adaptar estos ejemplos.
 </Info>
 
 ## cURL
@@ -27,16 +17,16 @@ En los ejemplos, reemplaza `192.168.68.121` y `8080` por la IP y el puerto confi
 ### Disponibilidad
 
 ```bash
-curl http://192.168.68.121:8080/health
+curl "http://192.168.68.121:8080/health"
 ```
 
 ### Autorización
 
 ```bash
-curl -X POST http://192.168.68.121:8080/authorize \
-  -H "Content-Type: application/json" \
+curl --request POST "http://192.168.68.121:8080/authorize" \
+  --header "Content-Type: application/json" \
   --max-time 110 \
-  -d '{
+  --data '{
     "operationNumber": "44992528",
     "amount": "100",
     "currency": "604",
@@ -49,10 +39,12 @@ curl -X POST http://192.168.68.121:8080/authorize \
   }'
 ```
 
+Las claves de `additionalFields` son ilustrativas. Confirma con Alignet el catálogo admitido para tu implementación.
+
 ### Consulta
 
 ```bash
-curl -i http://192.168.68.121:8080/payments/44992528
+curl -i "http://192.168.68.121:8080/payments/44992528"
 ```
 
 Usa `-i` durante las pruebas para comprobar `Retry-After` en una respuesta `202`.
@@ -235,5 +227,5 @@ async function queryStatus(operationNumber) {
 Los ejemplos de extorno y su recuperación están en [Extorno de una venta aprobada](/procesamiento-fisico/alignet-transit/extorno).
 
 <Warning>
-  Los ejemplos se concentran en el contrato HTTP. En producción, serializa JSON con la biblioteca estándar del lenguaje, valida las respuestas y persiste el estado antes de ejecutar acciones irreversibles como abrir la barrera.
+  Los ejemplos se concentran en el contrato HTTP. En producción, serializa JSON con la biblioteca estándar del lenguaje, valida las respuestas y persiste el estado antes de ejecutar una acción de negocio irreversible.
 </Warning>

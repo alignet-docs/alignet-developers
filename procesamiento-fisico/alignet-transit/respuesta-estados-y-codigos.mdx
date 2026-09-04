@@ -25,7 +25,7 @@ Pay-me PinPAD diferencia los **resultados de negocio** de los **errores operativ
 
 | Campo | Tipo | Descripción |
 | --- | --- | --- |
-| `operationNumber` | String | Referencia recibida desde el SCC. Puede faltar en errores de validación donde no fue posible identificarla. |
+| `operationNumber` | String | Referencia recibida desde el sistema central. Puede faltar en errores de validación donde no fue posible identificarla. |
 | `status` | String | Estado transaccional u operativo. |
 | `resultCode` | String o null | Código financiero u operativo. `"00"` es el único código documentado como aprobación. |
 | `resultMessage` | String | Mensaje legible asociado al resultado. Úsalo para diagnóstico, no para lógica de decisión. |
@@ -47,7 +47,7 @@ Pay-me PinPAD diferencia los **resultados de negocio** de los **errores operativ
 }
 ```
 
-Abre la barrera o confirma la venta únicamente cuando se cumplan ambas condiciones:
+Confirma la venta —y ejecuta la acción de negocio asociada— únicamente cuando se cumplan ambas condiciones:
 
 ```text
 status = APPROVED
@@ -144,7 +144,7 @@ Ejemplo:
 GET http://192.168.68.121:8080/payments/44992528
 ```
 
-| Código HTTP | Significado | Acción del SCC |
+| Código HTTP | Significado | Acción del sistema central |
 | --- | --- | --- |
 | `200 OK` | La operación tiene un resultado final. | Evalúa `status` y `resultCode`. |
 | `202 Accepted` | La operación todavía está en curso o pendiente. | Consulta nuevamente y respeta `Retry-After` si está presente. |

@@ -1,0 +1,70 @@
+---
+title: "Configuración por ambiente"
+description: "Configura Pay-me PinPAD y registra la asociación entre el sistema central y cada terminal."
+icon: "sliders"
+---
+
+Configura cada Wiseasy P5L antes de probar los endpoints. No copies las direcciones de los ejemplos en un ambiente real.
+
+## Configurar Pay-me PinPAD
+
+Al iniciar Pay-me PinPAD por primera vez, el operador verá un asistente con tres etapas: **Bienvenida**, **Conexión** y **Verificación**.
+
+<Frame>
+  ![Asistente de configuración inicial de Pay-me PinPAD con las etapas Bienvenida, Conexión y Verificación](/images/Pay-mePOS.png)
+</Frame>
+
+<Note>
+  La dirección `192.168.20.50` mostrada en la imagen es ilustrativa. Ingresa la IP asignada al Wiseasy P5L. El puerto predeterminado es `8080`; confirma el valor de cada terminal.
+</Note>
+
+<Steps>
+  <Step title="Iniciar el asistente">
+    En **Bienvenida**, selecciona **Empezar**.
+  </Step>
+  <Step title="Configurar la conexión">
+    Ingresa la **Dirección IP** del propio Wiseasy P5L y el **Puerto** en el que escuchará Pay-me PinPAD. El sistema central usará ambos valores para construir `http://<IP_DEL_PINPAD>:<PUERTO>`.
+  </Step>
+  <Step title="Verificar el terminal">
+    La pantalla final valida **Conexión disponible** e **Inyección de llaves**. Envía un `GET /health` real desde el sistema central. Pay-me PinPAD verifica las llaves de seguridad en el terminal. Cuando ambos indicadores estén en verde, selecciona **Continuar**.
+  </Step>
+</Steps>
+
+Pay-me PinPAD mostrará **Listo para el siguiente vehículo** cuando termine la configuración. Este es el texto actual de la interfaz del producto; no obliga a que el sistema integrador sea un SCC. El sistema central no inyecta llaves ni inicializa directamente el SDK de pagos.
+
+## Configuración por terminal
+
+Registra para cada Wiseasy P5L:
+
+| Parámetro | Ejemplo | Responsable |
+| --- | --- | --- |
+| Identificador interno del terminal | `P5L-PUNTO-03` | Comercio / Alignet |
+| Punto de atención asociado | `PUNTO-03` | Comercio o integrador |
+| Dirección IP | `192.168.68.121` | Administración de red |
+| Puerto TCP | `8080` | Alignet / administración de red |
+| Dirección MAC, si se reserva DHCP | Valor del terminal | Administración de red |
+| Ambiente | Integración, UAT o producción | Alignet / comercio o integrador |
+| Versión de Pay-me PinPAD | Versión entregada | Alignet |
+
+No copies la IP de ejemplo en un ambiente real.
+
+## Ambientes
+
+| Ambiente | Objetivo | Salida esperada |
+| --- | --- | --- |
+| Integración | Validar red, contrato JSON y control de errores. | Cliente compatible con los endpoints y códigos HTTP. |
+| UAT | Validar el flujo físico y la decisión de negocio. | Evidencias aprobadas de escenarios normales y de recuperación. |
+| Producción | Procesar cobros reales. | Parámetros definitivos registrados, monitoreo y soporte habilitados. |
+
+## Control de cambios
+
+Registra la versión de Pay-me PinPAD y la fecha de vigencia junto con la configuración de cada terminal. Un cambio en rutas, campos, tipos, estados, timeouts o semántica requiere revisar el cliente antes del despliegue.
+
+<CardGroup cols={2}>
+  <Card title="Datos por validar" icon="clipboard-question" href="/procesamiento-fisico/alignet-transit/datos-por-validar">
+    Confirma timeouts, políticas de consulta, códigos y habilitaciones antes de producción.
+  </Card>
+  <Card title="Referencia de endpoints" icon="code" href="/procesamiento-fisico/alignet-transit/referencia-de-endpoints">
+    Implementa únicamente las rutas del contrato vigente.
+  </Card>
+</CardGroup>

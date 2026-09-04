@@ -1,34 +1,28 @@
 ---
 title: "Introducción a Pay-me Transit PinPAD"
-description: "Referencia técnica para integrar un SCC o sistema de caja con Pay-me PinPAD en el Wiseasy P5L."
+description: "Integra el sistema central de un comercio con Pay-me PinPAD en un terminal Wiseasy P5L."
 icon: "road"
 ---
 
-**Pay-me Transit PinPAD** permite iniciar y recuperar pagos desde un **Sistema de Control de Carril (SCC)** o sistema de caja. La integración utiliza HTTP/JSON sobre la red local.
+**Pay-me Transit PinPAD** permite que el sistema de un comercio inicie, consulte, cancele y extorne pagos procesados en un terminal físico. La integración utiliza HTTP/JSON sobre la red local.
 
 Esta documentación corresponde a la aplicación **Pay-me PinPAD** con package `com.alignet.pinpad.ecr`, instalada en el terminal **Wiseasy P5L**.
 
 <Info>
-  En esta integración, el **cliente HTTP** es el SCC o sistema de caja. El **servidor HTTP** es la aplicación Pay-me PinPAD instalada en el Wiseasy P5L.
+  En esta guía, **sistema central** identifica al cliente HTTP del comercio o integrador. Puede ser un punto de venta, un sistema de caja, un backend o un Sistema de Control de Carril (SCC). El servidor HTTP es Pay-me PinPAD en el Wiseasy P5L.
 </Info>
 
-## Qué debes implementar
+## Alcance de la integración
 
-| Operación | Método y ruta | Finalidad |
-| --- | --- | --- |
-| Verificar disponibilidad | `GET /health` | Confirmar que la aplicación está abierta y accesible. |
-| Autorizar un pago | `POST /authorize` | Iniciar un cobro y esperar su resultado en la misma conexión. |
-| Consultar una operación | `GET /payments/{operationNumber}` | Recuperar el resultado después de un estado pendiente, timeout o pérdida de conexión. |
-| Cancelar o extornar | `POST /reversals` | Interrumpir una autorización en curso o revertir totalmente una venta aprobada, según su estado actual. |
-| Consultar una cancelación o extorno | `GET /reversals/{operationNumber}` | Recuperar el resultado de la solicitud pendiente o incierta. |
+La interfaz local expone cinco operaciones: comprobar disponibilidad, autorizar y consultar pagos, y solicitar y consultar cancelaciones o extornos. Consulta la [referencia de endpoints](/procesamiento-fisico/alignet-transit/referencia-de-endpoints) para ver métodos, rutas y respuestas HTTP.
 
-El contrato no requiere instalar una librería en el SCC. Debes implementar un cliente HTTP capaz de enviar y recibir JSON, mantener abierta la solicitud de autorización y recuperar operaciones inciertas.
+El contrato no requiere instalar una librería en el sistema central. Debes implementar un cliente HTTP capaz de enviar y recibir JSON, mantener abierta una solicitud síncrona y recuperar operaciones inciertas.
 
 ## Flujo en cinco pasos
 
 <Steps>
   <Step title="Comprobar conectividad">
-    Ejecuta `GET /health`. Durante la configuración inicial, esta llamada también permite que Pay-me PinPAD confirme que el SCC alcanza el terminal.
+    Ejecuta `GET /health`. Durante la configuración inicial, esta llamada también permite que Pay-me PinPAD confirme que el sistema central alcanza el terminal.
   </Step>
   <Step title="Crear la referencia">
     Genera y persiste un `operationNumber` único antes de iniciar el cobro.
@@ -52,13 +46,25 @@ El contrato no requiere instalar una librería en el SCC. Debes implementar un c
 - `PENDING` y `UNKNOWN` no significan rechazo. Debes consultar antes de tomar una decisión o iniciar otro cobro.
 - Pay-me PinPAD procesa una operación a la vez. Una referencia diferente recibida durante un cobro activo obtiene `409 POS_BUSY`.
 - La cancelación detiene una autorización activa; el extorno revierte una venta que ya fue aprobada. No intercambies estos flujos.
-- El SCC no recibe PAN completo, CVV, PIN, PIN Block, pistas ni datos EMV sensibles.
+- El sistema central no recibe PAN completo, CVV, PIN, PIN Block, pistas ni datos EMV sensibles.
 
 ## Contenido de esta guía
 
 <CardGroup cols={2}>
   <Card title="Arquitectura, red y seguridad" icon="diagram-project" href="/procesamiento-fisico/alignet-transit/arquitectura-y-trazabilidad">
-    Revisa componentes, responsabilidades, IP, puerto, configuración inicial y protección de datos.
+    Comprende los componentes, la red local y la protección de datos.
+  </Card>
+  <Card title="Requisitos y responsabilidades" icon="list-check" href="/procesamiento-fisico/alignet-transit/requisitos-y-responsabilidades">
+    Prepara al comercio, al integrador y al terminal.
+  </Card>
+  <Card title="Configuración" icon="sliders" href="/procesamiento-fisico/alignet-transit/configuracion">
+    Registra los parámetros de cada ambiente y terminal.
+  </Card>
+  <Card title="Autenticación" icon="shield-halved" href="/procesamiento-fisico/alignet-transit/autenticacion">
+    Aplica los controles de acceso admitidos por la interfaz local.
+  </Card>
+  <Card title="Referencia de endpoints" icon="code" href="/procesamiento-fisico/alignet-transit/referencia-de-endpoints">
+    Revisa métodos, rutas y respuestas disponibles.
   </Card>
   <Card title="Solicitud de autorización" icon="file-export" href="/procesamiento-fisico/alignet-transit/parametros-de-envio">
     Implementa `POST /authorize`, sus validaciones y ejemplos.
@@ -75,10 +81,13 @@ El contrato no requiere instalar una librería en el SCC. Debes implementar un c
   <Card title="Solución de problemas" icon="screwdriver-wrench" href="/procesamiento-fisico/alignet-transit/solucion-de-problemas">
     Diagnostica conectividad, errores operativos y resultados inciertos.
   </Card>
-  <Card title="Implementación del cliente HTTP" icon="ethernet" href="/procesamiento-fisico/alignet-transit/integradores/celsat/interfaz-scc-p5l">
+  <Card title="Ejemplos de integración" icon="ethernet" href="/procesamiento-fisico/alignet-transit/ejemplos-de-integracion">
     Usa ejemplos completos de cURL, Java, C#, Python y Node.js.
   </Card>
-  <Card title="Certificación y producción" icon="flask-vial" href="/procesamiento-fisico/alignet-transit/integradores/celsat/qa-uat">
+  <Card title="Certificación y producción" icon="flask-vial" href="/procesamiento-fisico/alignet-transit/pruebas-y-salida-a-produccion">
     Valida escenarios, evidencias y criterios de salida.
+  </Card>
+  <Card title="Datos por validar" icon="clipboard-question" href="/procesamiento-fisico/alignet-transit/datos-por-validar">
+    Revisa decisiones abiertas sin asumir valores no confirmados.
   </Card>
 </CardGroup>

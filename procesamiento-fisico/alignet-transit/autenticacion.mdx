@@ -1,0 +1,38 @@
+---
+title: "Autenticación y control de acceso"
+description: "Controles de acceso aplicables a la interfaz local entre el sistema central y Pay-me PinPAD."
+icon: "shield-halved"
+---
+
+La interfaz vigente de Pay-me Transit PinPAD opera mediante HTTP dentro de la red local. El contrato documentado **no define credenciales, tokens, certificados de cliente ni headers de autenticación** para las solicitudes entre el sistema central y Pay-me PinPAD.
+
+No envíes un header `Authorization` ni agregues un esquema de firma por iniciativa propia. Un control no previsto por Pay-me PinPAD puede hacer que la integración no sea compatible.
+
+<Warning>
+  La ausencia de autenticación a nivel de aplicación no convierte el endpoint en un servicio público. No expongas la IP ni el puerto del terminal a Internet o a redes no autorizadas.
+</Warning>
+
+## Controles requeridos en la red
+
+- Ubica el sistema central y el Wiseasy P5L en una red local controlada.
+- Restringe el puerto TCP del terminal a los orígenes autorizados mediante segmentación y reglas de firewall.
+- Desactiva **AP Isolation** o **Client Isolation** únicamente cuando impida la comunicación requerida entre los equipos autorizados.
+- Mantén una IP estable para el terminal mediante reserva DHCP o configuración estática.
+- Protege los logs y los datos de conciliación de acuerdo con la política de acceso y retención del comercio.
+- No registres PAN completo, CVV, PIN, PIN Block, pistas ni datos EMV sensibles.
+
+## Headers de la interfaz
+
+| Header | Operación | Uso |
+| --- | --- | --- |
+| `Content-Type: application/json` | `POST /authorize` y `POST /reversals` | Obligatorio para enviar el cuerpo JSON. |
+| `Retry-After` | Respuestas HTTP `202`, cuando esté presente | Indica cuánto esperar antes de consultar nuevamente. |
+| `Authorization` | Todas | No forma parte del contrato vigente. |
+
+## Controles adicionales
+
+Si la política de seguridad del comercio exige TLS, autenticación de red, VPN, proxy o filtrado adicional, coordina el diseño con Alignet antes de implementarlo. La documentación disponible no define HTTPS ni autenticación mutua en el Wiseasy P5L y no permite asegurar que un intermediario sea compatible sin validación.
+
+<Card title="Referencia de endpoints" icon="code" href="/procesamiento-fisico/alignet-transit/referencia-de-endpoints">
+  Revisa los métodos, rutas, cuerpos y respuestas disponibles.
+</Card>

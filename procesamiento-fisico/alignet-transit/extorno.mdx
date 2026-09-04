@@ -4,19 +4,19 @@ description: "Cancela una autorización en curso o extorna una venta aprobada me
 icon: "rotate-left"
 ---
 
-El API de cancelación y extorno permite detener o revertir una operación iniciada previamente mediante `POST /authorize`.
+La API de cancelación y extorno permite detener o revertir una operación iniciada previamente mediante `POST /authorize`.
 
 Con `POST /reversals`, Pay-me PinPAD determina la acción a partir del estado actual de la operación:
 
 - si la autorización sigue en curso, **interrumpe el flujo activo** y la cancela;
 - si la venta ya fue aprobada, ejecuta un **extorno total**.
 
-En ambos casos, el SCC envía el mismo `operationNumber` utilizado en la autorización original.
+En ambos casos, el sistema central envía el mismo `operationNumber` utilizado en la autorización original.
 
 <ParamField path="POST /reversals" type="endpoint" />
 
 <Note>
-  El SCC no elige la acción mediante un parámetro. Pay-me PinPAD evalúa el estado que tenga la operación cuando procesa `POST /reversals` y aplica la transición correspondiente.
+  El sistema central no elige la acción mediante un parámetro. Pay-me PinPAD evalúa el estado que tenga la operación cuando procesa `POST /reversals` y aplica la transición correspondiente.
 </Note>
 
 ## ¿Qué cubre esta operación?
@@ -48,10 +48,10 @@ En ambos casos, el SCC envía el mismo `operationNumber` utilizado en la autoriz
 | Consulta | `GET /reversals/{operationNumber}` confirma la solicitud y `GET /payments/{operationNumber}` confirma la autorización original. | `GET /reversals/{operationNumber}` confirma el resultado de la reversa. |
 
 <Info>
-  Este endpoint pertenece a la interfaz local SCC–Pay-me PinPAD. No corresponde a `DELETE /charges` del API de e-commerce.
+  Este endpoint pertenece a la interfaz local entre el sistema central y Pay-me PinPAD. No corresponde a `DELETE /charges` de la API de e-commerce.
 </Info>
 
-## Request
+## Solicitud
 
 ```http
 POST /reversals
@@ -64,7 +64,7 @@ URL completa:
 http://<IP_DEL_PINPAD>:<PUERTO>/reversals
 ```
 
-### Body
+### Cuerpo JSON
 
 ```json
 {
@@ -81,10 +81,10 @@ No incluyas `amount`, `currency`, medio de pago ni datos de tarjeta. Cuando corr
 ### cURL
 
 ```bash
-curl -X POST http://192.168.68.121:8080/reversals \
-  -H "Content-Type: application/json" \
+curl --request POST "http://192.168.68.121:8080/reversals" \
+  --header "Content-Type: application/json" \
   --max-time 110 \
-  -d '{"operationNumber":"44992528"}'
+  --data '{"operationNumber":"44992528"}'
 ```
 
 Reemplaza la dirección y el puerto por los configurados en tu Wiseasy P5L. Usa exactamente el mismo `operationNumber` de la autorización.
@@ -93,7 +93,7 @@ Reemplaza la dirección y el puerto por los configurados en tu Wiseasy P5L. Usa 
 
 Usa primero el código HTTP para identificar el tipo de respuesta. Después evalúa `status` y `resultCode`.
 
-| HTTP | Resultado | Significado | Acción del SCC |
+| HTTP | Resultado | Significado | Acción del sistema central |
 | --- | --- | --- | --- |
 | `200` | `CANCELLED` | Se interrumpió una autorización en curso. | No confirmes el cobro ni envíes otro extorno. |
 | `200` | `REVERSED` + `00` | Se extornó una venta aprobada. | Registra el extorno y conserva el código de autorización. |
@@ -294,10 +294,10 @@ GET /reversals/{operationNumber}
 ```
 
 ```bash
-curl -i http://192.168.68.121:8080/reversals/44992528
+curl -i "http://192.168.68.121:8080/reversals/44992528"
 ```
 
-| Código HTTP | Significado | Acción del SCC |
+| Código HTTP | Significado | Acción del sistema central |
 | --- | --- | --- |
 | `200 OK` | La solicitud tiene un resultado final como `CANCELLED`, `REVERSED` o `DENIED`. | Evalúa `status` y `resultCode`. |
 | `202 Accepted` | La cancelación o reversa continúa en curso. | Respeta `Retry-After` y vuelve a consultar. |
@@ -344,10 +344,10 @@ Trata `CANCELLED` como cancelación confirmada de una autorización en curso. Tr
 
 ## Timeouts y reintentos
 
-La guía proporciona **90 segundos** como espera interna de referencia en desarrollo. Configura `POST /reversals` con al menos **100 a 110 segundos** para que el timeout del SCC sea mayor, tanto para cancelación como para extorno.
+La guía proporciona **90 segundos** como espera interna de referencia en desarrollo. Configura `POST /reversals` con al menos **100 a 110 segundos** para que el timeout del sistema central sea mayor, tanto para cancelación como para extorno.
 
 <Warning>
-  El timeout del SCC describe la conexión, no el resultado de la cancelación o el extorno. Consulta `GET /reversals/{operationNumber}` antes de reenviar o tomar una decisión financiera.
+  El timeout del sistema central describe la conexión, no el resultado de la cancelación o el extorno. Consulta `GET /reversals/{operationNumber}` antes de reenviar o tomar una decisión financiera.
 </Warning>
 
 Ante `202`, respeta `Retry-After`. Si el header no está presente, la guía propone aproximadamente 2 segundos como referencia inicial. El timeout definitivo, el backoff y el tiempo máximo de consulta deben acordarse antes de producción.
@@ -363,7 +363,7 @@ Ante `202`, respeta `Retry-After`. Si el header no está presente, la guía prop
 
 Usa una sola cola por terminal. Ante una respuesta perdida, consulta primero. Si tu política permite reenviar el `POST`, conserva exactamente el mismo body y `operationNumber`.
 
-## Flujo recomendado para el SCC
+## Flujo recomendado para el sistema central
 
 <Steps>
   <Step title="Conserva la referencia original">
@@ -399,6 +399,6 @@ Usa una sola cola por terminal. Ante una respuesta perdida, consulta primero. Si
     Revisa `POST /authorize` y la creación del `operationNumber` original.
   </Card>
   <Card title="Operación y recuperación" icon="rotate" href="/procesamiento-fisico/alignet-transit/operacion-y-recuperacion">
-    Aplica las reglas generales de persistencia, timeout y recuperación del SCC.
+    Aplica las reglas generales de persistencia, timeout y recuperación del sistema central.
   </Card>
 </CardGroup>
