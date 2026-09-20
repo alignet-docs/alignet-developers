@@ -8,311 +8,384 @@
     "dark": "#1a4a6a"
   },
   "navigation": {
-    "products": [
+    "languages": [
       {
-        "product": "Pagos Virtuales",
-        "icon": "cart-shopping",
-        "tabs": [
+        "language": "es",
+        "default": true,
+        "products": [
           {
-            "tab": "Guía",
-            "groups": [
+            "product": "Pagos Virtuales",
+            "icon": "cart-shopping",
+            "tabs": [
               {
-                "group": "Primeros pasos",
-                "public": true,
-                "icon": "shoe-prints",
-                "pages": [
-                  "index",
-                  "primeros-pasos/metodos-de-integracion",
-                  "primeros-pasos/inicio-rapido"
-                ]
-              },
-              {
-                "group": "Integración",
-                "public": true,
-                "icon": "wrench",
-                "pages": [
+                "tab": "Guía",
+                "groups": [
                   {
-                    "group": "E-commerce",
-                    "icon": "store",
+                    "group": "Primeros pasos",
+                    "public": true,
+                    "icon": "shoe-prints",
                     "pages": [
-                      "e-commerce/introduccion",
-                      "e-commerce/checklist-de-integracion",
-                      "e-commerce/buenas-practicas",
-                      {
-                        "group": "WooCommerce",
-                        "pages": [
-                          "wordpress-woocommerce/introduccion",
-                          "wordpress-woocommerce/instalacion-y-activacion",
-                          "wordpress-woocommerce/configuracion-y-llaves",
-                          "wordpress-woocommerce/experiencia-del-checkout",
-                          "wordpress-woocommerce/gestion-de-pedidos-y-transacciones",
-                          "wordpress-woocommerce/pruebas-y-certificacion",
-                          "wordpress-woocommerce/solucion-de-problemas"
-                        ]
-                      },
-                      {
-                        "group": "Prestashop",
-                        "pages": [
-                          "prestashop/introduccion",
-                          "prestashop/instalacion-y-activacion",
-                          "prestashop/configuracion-del-modulo",
-                          "prestashop/experiencia-del-cliente",
-                          "prestashop/gestion-de-pedidos-y-transacciones",
-                          "prestashop/pruebas-y-certificacion",
-                          "prestashop/solucion-de-problemas"
-                        ]
-                      },
-                      {
-                        "group": "VTEX",
-                        "pages": [
-                          "vtex/introduccion",
-                          {
-                            "group": "Instalación VTEX",
-                            "pages": [
-                              "vtex/instalacion",
-                              "vtex/configuracion",
-                              "vtex/configuracion-de-credenciales-y-metodos-de-pago",
-                              "vtex/configuracion-de-condiciones-de-pago"
-                            ]
-                          },
-                          "vtex/flujo-de-pago",
-                          "vtex/pruebas-y-troubleshooting"
-                        ]
-                      }
+                      "index",
+                      "primeros-pasos/metodos-de-integracion",
+                      "primeros-pasos/inicio-rapido"
                     ]
                   },
                   {
-                    "group": "Checkout Web",
-                    "icon": "globe",
+                    "group": "Integración",
+                    "public": true,
+                    "icon": "wrench",
                     "pages": [
-                      "checkout-web/introduccion",
-                      "checkout-web/checklist-de-integracion",
-                      "checkout-web/buenas-practicas",
-                      "checkout-web/requisitos-de-negocio",
                       {
-                        "group": "Flex",
+                        "group": "E-commerce",
+                        "icon": "store",
                         "pages": [
-                          "checkout-web/flex/introduccion",
-                          "checkout-web/flex/ultimas-mejoras",
-                          "api-de-pagos/autenticacion",
+                          "e-commerce/introduccion",
+                          "e-commerce/checklist-de-integracion",
+                          "e-commerce/buenas-practicas",
                           {
-                            "group": "Inicializar Pay Me Flex",
+                            "group": "WooCommerce",
                             "pages": [
-                              "checkout-web/flex/api-nonce",
-                              "checkout-web/flex/libreria-y-estilos-basicos",
+                              "wordpress-woocommerce/introduccion",
+                              "wordpress-woocommerce/instalacion-y-activacion",
+                              "wordpress-woocommerce/configuracion-y-llaves",
+                              "wordpress-woocommerce/experiencia-del-checkout",
+                              "wordpress-woocommerce/gestion-de-pedidos-y-transacciones",
+                              "wordpress-woocommerce/pruebas-y-certificacion",
+                              "wordpress-woocommerce/solucion-de-problemas"
+                            ]
+                          },
+                          {
+                            "group": "Prestashop",
+                            "pages": [
+                              "prestashop/introduccion",
+                              "prestashop/instalacion-y-activacion",
+                              "prestashop/configuracion-del-modulo",
+                              "prestashop/experiencia-del-cliente",
+                              "prestashop/gestion-de-pedidos-y-transacciones",
+                              "prestashop/pruebas-y-certificacion",
+                              "prestashop/solucion-de-problemas"
+                            ]
+                          },
+                          {
+                            "group": "VTEX",
+                            "pages": [
+                              "vtex/introduccion",
                               {
-                                "group": "Funcionalidad de cobros",
+                                "group": "Instalación VTEX",
                                 "pages": [
-                                  "checkout-web/flex/funcionalidad-de-cobros",
-                                  "checkout-web/flex/construccion-del-payload",
-                                  "checkout-web/flex/inicializar-el-componente",
-                                  "checkout-web/flex/capturar-funciones-callback"
+                                  "vtex/instalacion",
+                                  "vtex/configuracion",
+                                  "vtex/configuracion-de-credenciales-y-metodos-de-pago",
+                                  "vtex/configuracion-de-condiciones-de-pago"
                                 ]
                               },
-                              "checkout-web/flex/funcionalidad-debito-automatica"
+                              "vtex/flujo-de-pago",
+                              "vtex/pruebas-y-troubleshooting"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "group": "Checkout Web",
+                        "icon": "globe",
+                        "pages": [
+                          "checkout-web/introduccion",
+                          "checkout-web/checklist-de-integracion",
+                          "checkout-web/buenas-practicas",
+                          "checkout-web/requisitos-de-negocio",
+                          {
+                            "group": "Flex",
+                            "pages": [
+                              "checkout-web/flex/introduccion",
+                              "checkout-web/flex/ultimas-mejoras",
+                              "api-de-pagos/autenticacion",
+                              {
+                                "group": "Inicializar Pay Me Flex",
+                                "pages": [
+                                  "checkout-web/flex/api-nonce",
+                                  "checkout-web/flex/libreria-y-estilos-basicos",
+                                  {
+                                    "group": "Funcionalidad de cobros",
+                                    "pages": [
+                                      "checkout-web/flex/funcionalidad-de-cobros",
+                                      "checkout-web/flex/construccion-del-payload",
+                                      "checkout-web/flex/inicializar-el-componente",
+                                      "checkout-web/flex/capturar-funciones-callback"
+                                    ]
+                                  },
+                                  "checkout-web/flex/funcionalidad-debito-automatica"
+                                ]
+                              },
+                              "pagos/datos-de-prueba"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "group": "SDK Mobile",
+                        "icon": "mobile-screen",
+                        "pages": [
+                          "sdk-mobile/introduccion",
+                          "sdk-mobile/checklist-de-integracion",
+                          "sdk-mobile/buenas-practicas",
+                          {
+                            "group": "SDK Android",
+                            "pages": [
+                              "sdk-mobile/android/introduccion",
+                              "sdk-mobile/android/requisitos",
+                              "sdk-mobile/android/instalacion",
+                              {
+                                "group": "Flujo de cobro",
+                                "pages": [
+                                  "sdk-mobile/android/flujo-de-cobro/inicializar-pay-me-sdk-android",
+                                  "sdk-mobile/android/flujo-de-cobro/parametros-de-pay-me-sdk-android",
+                                  "sdk-mobile/android/flujo-de-cobro/mensajes-de-errores"
+                                ]
+                              },
+                              {
+                                "group": "Función de afiliaciones",
+                                "pages": [
+                                  "sdk-mobile/android/afiliaciones/inicializar-sdk-android",
+                                  "sdk-mobile/android/afiliaciones/parametros-de-sdk-android",
+                                  "sdk-mobile/android/afiliaciones/mensajes-de-errores"
+                                ]
+                              },
+                              "pagos/datos-de-prueba"
                             ]
                           },
-                          "pagos/datos-de-prueba"
+                          {
+                            "group": "SDK IOS",
+                            "pages": [
+                              "sdk-mobile/ios/introduccion",
+                              "sdk-mobile/ios/requisitos",
+                              "sdk-mobile/ios/instalacion",
+                              {
+                                "group": "Flujo de cobro",
+                                "pages": [
+                                  "sdk-mobile/ios/flujo-de-cobro/inicializar-pay-me-sdk-ios",
+                                  "sdk-mobile/ios/flujo-de-cobro/parametros-de-pay-me-sdk-ios",
+                                  "sdk-mobile/ios/flujo-de-cobro/mensajes-de-errores"
+                                ]
+                              },
+                              {
+                                "group": "Función de afiliaciones",
+                                "pages": [
+                                  "sdk-mobile/ios/afiliaciones/inicializar-sdk-ios",
+                                  "sdk-mobile/ios/afiliaciones/parametros-de-sdk-ios",
+                                  "sdk-mobile/ios/afiliaciones/mensajes-de-errores"
+                                ]
+                              },
+                              "pagos/datos-de-prueba"
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "group": "API de Pagos",
+                        "icon": "credit-card-front",
+                        "pages": [
+                          "api-de-pagos/introduccion",
+                          "api-de-pagos/checklist-de-integracion",
+                          "api-de-pagos/buenas-practicas",
+                          "api-de-pagos/autenticacion",
+                          {
+                            "group": "PayIn",
+                            "pages": [
+                              "payin/introduccion",
+                              {
+                                "group": "API de Autorización - ecommerce",
+                                "pages": [
+                                  "payin/autorizacion",
+                                  "payin/autorizacion-tarjeta",
+                                  "payin/autorizacion-yape",
+                                  "payin/autorizacion-transferencia-bancaria",
+                                  "payin/autorizacion-qr",
+                                  "payin/autorizacion-cuotealo",
+                                  "payin/autorizacion-pagoefectivo",
+                                  "payin/autorizacion-metodos-con-redirect"
+                                ]
+                              },
+                              {
+                                "group": "API de Consulta",
+                                "pages": [
+                                  "payin/consulta",
+                                  "payin/consulta-tarjeta",
+                                  "payin/consulta-yape",
+                                  "payin/consulta-transferencia-bancaria",
+                                  "payin/consulta-qr",
+                                  "payin/consulta-cuotealo",
+                                  "payin/consulta-pagoefectivo"
+                                ]
+                              },
+                              "payin/cancelacion",
+                              "payin/notificaciones",
+                              "payin/referencia"
+                            ]
+                          },
+                          {
+                            "group": "Pagos Recurrentes",
+                            "pages": [
+                              "pagos-recurrentes/introduccion",
+                              "pagos-recurrentes/afiliaciones",
+                              "pagos-recurrentes/cobros",
+                              "pagos-recurrentes/codigos-de-respuesta"
+                            ]
+                          },
+                          {
+                            "group": "Devoluciones",
+                            "pages": [
+                              "devoluciones/introduccion",
+                              "devoluciones/api-de-devoluciones",
+                              "devoluciones/consulta-unitaria",
+                              "devoluciones/consulta-masiva",
+                              "devoluciones/codigos-de-respuesta"
+                            ]
+                          },
+                          {
+                            "group": "Onboarding de Comercios",
+                            "pages": [
+                              "onboarding/introduccion",
+                              "onboarding/registro-individual",
+                              "onboarding/registro-masivo"
+                            ]
+                          }
                         ]
                       }
                     ]
                   },
                   {
-                    "group": "SDK Mobile",
-                    "icon": "mobile-screen",
+                    "group": "Seguridad",
+                    "icon": "shield-check",
                     "pages": [
-                      "sdk-mobile/introduccion",
-                      "sdk-mobile/checklist-de-integracion",
-                      "sdk-mobile/buenas-practicas",
+                      "primeros-pasos/buenas-practicas"
+                    ]
+                  },
+                  {
+                    "group": "Pruebas y producción",
+                    "icon": "clipboard-check",
+                    "pages": [
+                      "primeros-pasos/checklist-de-certificacion"
+                    ]
+                  },
+                  {
+                    "group": "Pagos",
+                    "public": true,
+                    "icon": "credit-card",
+                    "pages": [
                       {
-                        "group": "SDK Android",
+                        "group": "Conceptos Fundamentales",
+                        "icon": "lightbulb",
                         "pages": [
-                          "sdk-mobile/android/introduccion",
-                          "sdk-mobile/android/requisitos",
-                          "sdk-mobile/android/instalacion",
-                          {
-                            "group": "Flujo de cobro",
-                            "pages": [
-                              "sdk-mobile/android/flujo-de-cobro/inicializar-pay-me-sdk-android",
-                              "sdk-mobile/android/flujo-de-cobro/parametros-de-pay-me-sdk-android",
-                              "sdk-mobile/android/flujo-de-cobro/mensajes-de-errores"
-                            ]
-                          },
-                          {
-                            "group": "Función de afiliaciones",
-                            "pages": [
-                              "sdk-mobile/android/afiliaciones/inicializar-sdk-android",
-                              "sdk-mobile/android/afiliaciones/parametros-de-sdk-android",
-                              "sdk-mobile/android/afiliaciones/mensajes-de-errores"
-                            ]
-                          },
-                          "pagos/datos-de-prueba"
+                          "pagos/operaciones-inteligentes",
+                          "pagos/estados-de-transaccion"
                         ]
                       },
                       {
-                        "group": "SDK IOS",
+                        "group": "Sandbox y pruebas",
+                        "icon": "flask",
                         "pages": [
-                          "sdk-mobile/ios/introduccion",
-                          "sdk-mobile/ios/requisitos",
-                          "sdk-mobile/ios/instalacion",
-                          {
-                            "group": "Flujo de cobro",
-                            "pages": [
-                              "sdk-mobile/ios/flujo-de-cobro/inicializar-pay-me-sdk-ios",
-                              "sdk-mobile/ios/flujo-de-cobro/parametros-de-pay-me-sdk-ios",
-                              "sdk-mobile/ios/flujo-de-cobro/mensajes-de-errores"
-                            ]
-                          },
-                          {
-                            "group": "Función de afiliaciones",
-                            "pages": [
-                              "sdk-mobile/ios/afiliaciones/inicializar-sdk-ios",
-                              "sdk-mobile/ios/afiliaciones/parametros-de-sdk-ios",
-                              "sdk-mobile/ios/afiliaciones/mensajes-de-errores"
-                            ]
-                          },
-                          "pagos/datos-de-prueba"
+                          "pagos/datos-de-prueba",
+                          "pagos/codigos-de-retorno"
                         ]
                       }
                     ]
                   },
                   {
-                    "group": "API de Pagos",
-                    "icon": "credit-card-front",
+                    "group": "Gestión y Operaciones",
+                    "public": true,
+                    "icon": "clipboard-user",
                     "pages": [
-                      "api-de-pagos/introduccion",
-                      "api-de-pagos/checklist-de-integracion",
-                      "api-de-pagos/buenas-practicas",
-                      "api-de-pagos/autenticacion",
                       {
-                        "group": "PayIn",
+                        "group": "Dashboard",
+                        "icon": "table-columns",
                         "pages": [
-                          "payin/introduccion",
-                          {
-                            "group": "API de Autorización - ecommerce",
-                            "pages": [
-                              "payin/autorizacion",
-                              "payin/autorizacion-tarjeta",
-                              "payin/autorizacion-yape",
-                              "payin/autorizacion-transferencia-bancaria",
-                              "payin/autorizacion-qr",
-                              "payin/autorizacion-cuotealo",
-                              "payin/autorizacion-pagoefectivo",
-                              "payin/autorizacion-metodos-con-redirect"
-                            ]
-                          },
-                          {
-                            "group": "API de Consulta",
-                            "pages": [
-                              "payin/consulta",
-                              "payin/consulta-tarjeta",
-                              "payin/consulta-yape",
-                              "payin/consulta-transferencia-bancaria",
-                              "payin/consulta-qr",
-                              "payin/consulta-cuotealo",
-                              "payin/consulta-pagoefectivo"
-                            ]
-                          },
-                          "payin/cancelacion",
-                          "payin/notificaciones",
-                          "payin/referencia"
+                          "dashboard/introduccion",
+                          "dashboard/consulta-operaciones",
+                          "dashboard/estados-de-transaccion",
+                          "dashboard/reporte-y-exportacion",
+                          "dashboard/extornos",
+                          "dashboard/devoluciones",
+                          "dashboard/recuperacion-de-contrasena"
                         ]
                       },
                       {
-                        "group": "Pagos Recurrentes",
+                        "group": "Gestión de devoluciones",
+                        "icon": "rotate-left",
                         "pages": [
-                          "pagos-recurrentes/introduccion",
-                          "pagos-recurrentes/afiliaciones",
-                          "pagos-recurrentes/cobros",
-                          "pagos-recurrentes/codigos-de-respuesta"
-                        ]
-                      },
-                      {
-                        "group": "Devoluciones",
-                        "pages": [
-                          "devoluciones/introduccion",
-                          "devoluciones/api-de-devoluciones",
+                          "gestion-de-devoluciones/introduccion",
+                          "gestion-de-devoluciones/api-de-devoluciones",
                           "devoluciones/consulta-unitaria",
                           "devoluciones/consulta-masiva",
                           "devoluciones/codigos-de-respuesta"
                         ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "tab": "API Docs",
+                "groups": [
+                  {
+                    "group": "Referencia API",
+                    "public": true,
+                    "openapi": "openapi.json"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "product": "Pagos Fisicos",
+            "icon": "credit-card",
+            "pages": [
+              {
+                "group": "Guía",
+                "public": true,
+                "icon": "folder-bookmark",
+                "pages": [
+                  {
+                    "group": "PaymePOS",
+                    "icon": "credit-card-front",
+                    "pages": [
+                      "paymepos/configuracion-inicial",
+                      "paymepos/operaciones-de-venta",
+                      "paymepos/administracion-y-control",
+                      "paymepos/centro-de-ayuda-y-soporte"
+                    ]
+                  },
+                  {
+                    "group": "PaymePOS SDK",
+                    "icon": "tablet-android",
+                    "pages": [
+                      "introduccion-sdk-para-pos",
+                      {
+                        "group": "Parametros",
+                        "icon": "align-left",
+                        "pages": [
+                          "parametros-para-autorizacion",
+                          "parametros-para-consulta-y-extorno",
+                          "parametros-para-la-impresion"
+                        ]
                       },
                       {
-                        "group": "Onboarding de Comercios",
+                        "group": "Integración del SDK",
+                        "icon": "arrow-progress",
                         "pages": [
-                          "onboarding/introduccion",
-                          "onboarding/registro-individual",
-                          "onboarding/registro-masivo"
+                          "dependencias",
+                          "inicializar-el-sdk",
+                          {
+                            "group": "Invocación al SDK",
+                            "icon": "arrow-up-left-from-circle",
+                            "pages": [
+                              "autorizacion",
+                              "consulta",
+                              "extorno",
+                              "impresion-de-voucher"
+                            ]
+                          }
                         ]
                       }
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "Seguridad",
-                "icon": "shield-check",
-                "pages": [
-                  "primeros-pasos/buenas-practicas"
-                ]
-              },
-              {
-                "group": "Pruebas y producción",
-                "icon": "clipboard-check",
-                "pages": [
-                  "primeros-pasos/checklist-de-certificacion"
-                ]
-              },
-              {
-                "group": "Pagos",
-                "public": true,
-                "icon": "credit-card",
-                "pages": [
-                  {
-                    "group": "Conceptos Fundamentales",
-                    "icon": "lightbulb",
-                    "pages": [
-                      "pagos/operaciones-inteligentes",
-                      "pagos/estados-de-transaccion"
-                    ]
-                  },
-                  {
-                    "group": "Sandbox y pruebas",
-                    "icon": "flask",
-                    "pages": [
-                      "pagos/datos-de-prueba",
-                      "pagos/codigos-de-retorno"
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "Gestión y Operaciones",
-                "public": true,
-                "icon": "clipboard-user",
-                "pages": [
-                  {
-                    "group": "Dashboard",
-                    "icon": "table-columns",
-                    "pages": [
-                      "dashboard/introduccion",
-                      "dashboard/consulta-operaciones",
-                      "dashboard/estados-de-transaccion",
-                      "dashboard/reporte-y-exportacion",
-                      "dashboard/extornos",
-                      "dashboard/devoluciones",
-                      "dashboard/recuperacion-de-contrasena"
-                    ]
-                  },
-                  {
-                    "group": "Gestión de devoluciones",
-                    "icon": "rotate-left",
-                    "pages": [
-                      "gestion-de-devoluciones/introduccion",
-                      "gestion-de-devoluciones/api-de-devoluciones",
-                      "devoluciones/consulta-unitaria",
-                      "devoluciones/consulta-masiva",
-                      "devoluciones/codigos-de-respuesta"
                     ]
                   }
                 ]
@@ -320,160 +393,93 @@
             ]
           },
           {
-            "tab": "API Docs",
+            "product": "Procesamiento",
+            "icon": "coins",
             "groups": [
               {
-                "group": "Referencia API",
+                "group": "Guía",
                 "public": true,
-                "openapi": "openapi.json"
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "product": "Pagos Fisicos",
-        "icon": "credit-card",
-        "pages": [
-          {
-            "group": "Guía",
-            "public": true,
-            "icon": "folder-bookmark",
-            "pages": [
-              {
-                "group": "PaymePOS",
-                "icon": "credit-card-front",
                 "pages": [
-                  "paymepos/configuracion-inicial",
-                  "paymepos/operaciones-de-venta",
-                  "paymepos/administracion-y-control",
-                  "paymepos/centro-de-ayuda-y-soporte"
-                ]
-              },
-              {
-                "group": "PaymePOS SDK",
-                "icon": "tablet-android",
-                "pages": [
-                  "introduccion-sdk-para-pos",
                   {
-                    "group": "Parametros",
-                    "icon": "align-left",
+                    "group": "Procesamiento Adquirente",
                     "pages": [
-                      "parametros-para-autorizacion",
-                      "parametros-para-consulta-y-extorno",
-                      "parametros-para-la-impresion"
-                    ]
+                      "introduccion-procesamiento",
+                      "consideraciones-previas"
+                    ],
+                    "icon": "credit-card-front"
                   },
                   {
-                    "group": "Integración del SDK",
-                    "icon": "arrow-progress",
+                    "group": "Guìa de Integración",
+                    "icon": "book-bookmark",
                     "pages": [
-                      "dependencias",
-                      "inicializar-el-sdk",
                       {
-                        "group": "Invocación al SDK",
-                        "icon": "arrow-up-left-from-circle",
+                        "group": "Autorización",
+                        "icon": "credit-card-alt",
                         "pages": [
-                          "autorizacion",
-                          "consulta",
-                          "extorno",
-                          "impresion-de-voucher"
+                          "ecommerce-post-authorize",
+                          "pos",
+                          "response",
+                          "consideraciones-generales"
                         ]
                       }
                     ]
                   }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "product": "Procesamiento",
-        "icon": "coins",
-        "groups": [
-          {
-            "group": "Guía",
-            "public": true,
-            "pages": [
-              {
-                "group": "Procesamiento Adquirente",
-                "pages": [
-                  "introduccion-procesamiento",
-                  "consideraciones-previas"
                 ],
-                "icon": "credit-card-front"
+                "icon": "folder-bookmark"
               },
               {
-                "group": "Guìa de Integración",
-                "icon": "book-bookmark",
+                "group": "Integraciones",
+                "icon": "people-arrows",
                 "pages": [
                   {
-                    "group": "Autorización",
-                    "icon": "credit-card-alt",
+                    "group": "Pay-me Transit PinPAD",
+                    "public": true,
+                    "icon": "road",
                     "pages": [
-                      "ecommerce-post-authorize",
-                      "pos",
-                      "response",
-                      "consideraciones-generales"
-                    ]
-                  }
-                ]
-              }
-            ],
-            "icon": "folder-bookmark"
-          },
-          {
-            "group": "Integraciones",
-            "icon": "people-arrows",
-            "pages": [
-              {
-                "group": "Pay-me Transit PinPAD",
-                "public": true,
-                "icon": "road",
-                "pages": [
-                  {
-                    "group": "Primeros pasos",
-                    "icon": "shoe-prints",
-                    "pages": [
-                      "procesamiento-fisico/alignet-transit/arquitectura-y-trazabilidad",
-                      "procesamiento-fisico/alignet-transit/requisitos-y-responsabilidades",
-                      "procesamiento-fisico/alignet-transit/configuracion",
-                      "procesamiento-fisico/alignet-transit/autenticacion"
-                    ]
-                  },
-                  {
-                    "group": "Endpoints y contratos",
-                    "icon": "code",
-                    "pages": [
-                      "procesamiento-fisico/alignet-transit/referencia-de-endpoints",
-                      "procesamiento-fisico/alignet-transit/parametros-de-envio",
-                      "procesamiento-fisico/alignet-transit/extorno"
-                    ]
-                  },
-                  {
-                    "group": "Flujos y ejemplos",
-                    "icon": "arrows-rotate",
-                    "pages": [
-                      "procesamiento-fisico/alignet-transit/operacion-y-recuperacion",
-                      "procesamiento-fisico/alignet-transit/ejemplos-de-integracion"
-                    ]
-                  },
-                  {
-                    "group": "Respuestas y errores",
-                    "icon": "triangle-exclamation",
-                    "pages": [
-                      "procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos",
-                      "procesamiento-fisico/alignet-transit/solucion-de-problemas"
-                    ]
-                  },
-                  {
-                    "group": "Recomendaciones y certificación",
-                    "icon": "flask-vial",
-                    "pages": [
-                      "procesamiento-fisico/alignet-transit/pruebas-y-salida-a-produccion",
-                      "procesamiento-fisico/alignet-transit/habilitacion-y-soporte",
-                      "procesamiento-fisico/alignet-transit/datos-por-validar"
+                      {
+                        "group": "Primeros pasos",
+                        "icon": "shoe-prints",
+                        "pages": [
+                          "procesamiento-fisico/alignet-transit/arquitectura-y-trazabilidad",
+                          "procesamiento-fisico/alignet-transit/requisitos-y-responsabilidades",
+                          "procesamiento-fisico/alignet-transit/configuracion",
+                          "procesamiento-fisico/alignet-transit/autenticacion"
+                        ]
+                      },
+                      {
+                        "group": "Endpoints y contratos",
+                        "icon": "code",
+                        "pages": [
+                          "procesamiento-fisico/alignet-transit/referencia-de-endpoints",
+                          "procesamiento-fisico/alignet-transit/parametros-de-envio",
+                          "procesamiento-fisico/alignet-transit/extorno"
+                        ]
+                      },
+                      {
+                        "group": "Flujos y ejemplos",
+                        "icon": "arrows-rotate",
+                        "pages": [
+                          "procesamiento-fisico/alignet-transit/operacion-y-recuperacion",
+                          "procesamiento-fisico/alignet-transit/ejemplos-de-integracion"
+                        ]
+                      },
+                      {
+                        "group": "Respuestas y errores",
+                        "icon": "triangle-exclamation",
+                        "pages": [
+                          "procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos",
+                          "procesamiento-fisico/alignet-transit/solucion-de-problemas"
+                        ]
+                      },
+                      {
+                        "group": "Recomendaciones y certificación",
+                        "icon": "flask-vial",
+                        "pages": [
+                          "procesamiento-fisico/alignet-transit/pruebas-y-salida-a-produccion",
+                          "procesamiento-fisico/alignet-transit/habilitacion-y-soporte",
+                          "procesamiento-fisico/alignet-transit/datos-por-validar"
+                        ]
+                      }
                     ]
                   }
                 ]
@@ -1094,10 +1100,11 @@
     "href": "https://docs.pay-me.com"
   },
   "search": {
-    "prompt": "Haz una pregunta"
+    "prompt": "Buscar en la guía…"
   },
   "favicon": {
     "light": "/icon/IconoOscuroPayMe.png",
     "dark": "/icon/IconoClaroPayMe.png"
   }
 }
+
