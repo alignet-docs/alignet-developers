@@ -20,7 +20,7 @@ export const MigrationCheckout = ({ locale = "es" }) => {
   const amex = /^3[47]/.test(digits);
   const visa = /^4/.test(digits);
   const activeBrand = amex ? "amex" : visa ? "visa" : mastercard ? "mastercard" : "";
-  const amount = "USD 140.50";
+  const amount = "S/ 140.50";
   const maskedNumber = digits ? formatNumber(digits).replace(/\d(?=(?:\D*\d){4})/g, "*") : "**** **** **** ****";
   useEffect(() => {
     Object.values(cardBrandAssets).forEach(src => {
@@ -126,4 +126,5 @@ export const MigrationCheckout = ({ locale = "es" }) => {
     <p className="mig-demo-note">{t("Prueba Tarjeta, G Pay, QR o Yape. No ingreses datos reales.", "Try Card, G Pay, QR or Yape. Do not enter real data.")}<br />{t("Esta demo no envía ni guarda tus datos.", "This demo does not send or save your data.")}</p>
   </div>;
 };
+
 
