@@ -1,66 +1,32 @@
 ---
-title: "Estados de Transacción"
-description: "Comprende el ciclo de vida de un pago y los diferentes estados por los que transita."
+title: "Estados de transacción"
+description: "Comprende los nueve estados y el recorrido de un intento de pago con un diagrama interactivo."
 ---
+import { PaymentStateMap } from "/snippets/payment-state-map.jsx"
 
-### Flujo de Vida del Pago
+<div className="pc-intro not-prose"><span>EL RECORRIDO DE UN PAGO</span><h2>Un intento.<br /><em>Un estado a la vez.</em></h2><p>Una operación es la sesión de compra. Dentro de ella puede haber varios intentos de pago, y cada transacción conserva su propio estado.</p></div>
 
-Este es el camino estándar que sigue una transacción exitosa versus una que no se completa.
+<div className="psm-context not-prose"><strong>Una operación · Una compra</strong><span>Intento 1: Denegado</span><span>Intento 2: Autorizado</span><small>Dos intentos, no dos compras. Cambiar de estado tampoco crea otra transacción.</small></div>
 
-<Steps>
-  <Step title="Pendiente (PENDING)" icon="hourglass-half">
-    La transacción ha sido iniciada. En métodos como transferencias o billeteras, estamos a la espera de la confirmación del usuario.
-  </Step>
-  <Step title="Autorizado (AUTHORIZED)" icon="shield-check">
-    El emisor ha aprobado el pago. Los fondos están reservados en la cuenta del cliente pero aún no han sido transferidos a tu cuenta.
-  </Step>
-  <Step title="Liquidado (SETTLED)" icon="money-bill-transfer">
-    ¡Éxito! El dinero ha sido procesado e incluido en el ciclo de liquidación para ser depositado en tu cuenta bancaria.
-  </Step>
-</Steps>
+## Así cambia el estado
 
----
+Empieza con un pago aprobado. Después, compara qué cambia cuando el intento se deniega, se cancela o vence. Puedes seleccionar cada paso o reproducir el recorrido.
 
-### Glosario de Estados
+<PaymentStateMap />
 
-Utiliza estos estados para mapear la lógica en tus webhooks y base de datos.
+## Tres diferencias importantes
 
-#### Estados de Éxito
+<AccordionGroup>
+  <Accordion title="Autorizado no significa liquidado ni abonado">
+    **Autorizado:** el pago fue aprobado. **Liquidado:** la operación se presenta a la marca para su procesamiento en BASE2. La liquidación no confirma, por sí sola, un depósito en la cuenta del comercio.
+  </Accordion>
+  <Accordion title="Cancelado no es lo mismo que extornado">
+    **Cancelado:** el usuario cancela antes de la autorización. **Extornado:** se anula una operación autorizada, durante el primer día y antes de su liquidación. El importe a restituir considera los gastos administrativos aplicables.
+  </Accordion>
+  <Accordion title="Denegado, inválido y expirado no significan lo mismo">
+    **Denegado:** el emisor rechazó el pago. **Inválido:** una regla, validación o error impidió continuar. **Expirado:** venció el plazo sin respuesta del cliente, según el método de pago. En los tres casos el intento no se autorizó, pero la causa es distinta.
+  </Accordion>
+</AccordionGroup>
 
-| Estado | Etiqueta | Descripción |
-| :-- | :-- | :-- |
-| **AUTHORIZED** | <ResponseField name="Autorizado" type="success">                     </ResponseField> | Aprobada por la marca. Fondos retenidos. |
-| **SETTLED** | <ResponseField name="Liquidado" type="success">                     </ResponseField> | Transacción completada y procesada para pago. |
+[Entender operaciones e intentos](/pagos/operaciones-inteligentes) · [Consultar una transacción en la API](/payin/consulta)
 
-### Estados Finales de Error
-
-| Estado | Etiqueta | Descripción |
-| :-- | :-- | :-- |
-| **DECLINED** | <ResponseField name="Denegado" type="error">                     </ResponseField> | Rechazada por el banco emisor o reglas del sistema. |
-| **INVALID** | <ResponseField name="Inválido" type="error">                     </ResponseField> | Error de procesamiento, fallo de autenticación o bloqueo por prevención de fraude. **Siempre muestra el detalle del motivo.** |
-| **EXPIRED** | <ResponseField name="Expirado" type="warning">                     </ResponseField> | El tiempo límite de pago (TTL) ha caducado. |
-| **CANCELLED** | <ResponseField name="Cancelado" type="neutral">                     </ResponseField> | El usuario o el sistema decidieron cancelar la operación. |
-
-### Estados Post-Venta
-
-| Estado | Etiqueta | Descripción |
-| :-- | :-- | :-- |
-| **VOIDED** | <ResponseField name="Extornado" type="info">                     </ResponseField> | Anulación de una transacción autorizada (antes de liquidar). |
-| **REFUNDED** | <ResponseField name="Devuelto" type="info">                     </ResponseField> | Devolución total o parcial de una transacción ya liquidada. |
-
-### Flujo de estados
-
-Este es el flujo de estados que recorre una transacción en la plataforma:
-
-- **Inicio**: Toda operación comienza como **Registrado** y pasa a **Pendiente** mientras se procesa.
-- **Resolución**: Desde pendiente, el pago puede ser **Autorizado** (éxito), **Denegado** (rechazo), **Cancelado/Expirado**(abandono) o **Invalido** (error de datos).
-- **Cierre**: Una vez autorizado, el flujo avanza a **Liquidado** (captura de fondos) y finaliza en **Abonado**.
-- **Post-venta**: Permite aplicar un **Extornado** (anulación antes de liquidar) o **Devuelto** (reembolso tras la liquidación).
-
-<img
-  src="/images/image-25.png"
-  alt="Image"
-  title="Image"
-  className="mx-auto"
-  style={{ width:"80%" }}
-/>
