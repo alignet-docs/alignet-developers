@@ -430,3 +430,33 @@ img.nav-logo {
   background-image: radial-gradient(49.63% 57.02% at 58.99% -7.2%, rgba(25, 137, 96, .10) 39.4%, transparent 100%) !important;
 }
 
+
+/* Floating checkout: retain its layout and interactions, remove the outer panel. */
+.ao-demo-intro .mig-checkout-stage {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.ao-demo-intro .mig-checkout {
+  box-shadow: 0 28px 60px -22px rgba(16, 66, 49, .28),
+              0 8px 22px -12px rgba(25, 43, 65, .18);
+  border-color: rgba(156, 177, 199, .34);
+  transform: translateY(0);
+  transition: transform .35s ease, box-shadow .35s ease;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ao-demo-intro .mig-checkout:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 34px 68px -24px rgba(16, 66, 49, .32),
+                0 10px 25px -12px rgba(25, 43, 65, .20);
+  }
+}
+.dark .ao-demo-intro .mig-checkout {
+  border-color: rgba(157, 187, 176, .26);
+  box-shadow: 0 30px 64px -20px rgba(0, 0, 0, .65),
+              0 0 28px -12px rgba(113, 216, 178, .13);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ao-demo-intro .mig-checkout { transition: none; }
+}
+
