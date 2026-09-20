@@ -420,7 +420,6 @@
                 "public": true,
                 "icon": "road",
                 "pages": [
-                  "procesamiento-fisico/alignet-transit/introduccion",
                   {
                     "group": "Primeros pasos",
                     "icon": "shoe-prints",

@@ -1,160 +1,94 @@
 ---
-title: "Inicio rápido"
-description: "Configura tu integración y realiza tu primera transacción con Pay-me."
+title: "Prepara tu integración"
+description: "Reúne tus accesos, configura el entorno de pruebas y continúa con la guía técnica de tu canal."
 icon: "rabbit-running"
 ---
 
-### Pasos a seguir
+Prepara primero lo que comparten todas las integraciones. El código y el procedimiento para tu **primer pago** están en la guía específica de tu canal.
 
-Una vez completado el proceso comercial (firma de contrato), sigue este flujo para comenzar a aceptar pagos.
+<Note>
+  ¿Todavía no has elegido una alternativa? Revisa [Elige tu integración](/primeros-pasos/metodos-de-integracion) antes de comenzar.
+</Note>
 
-## Flujo general
+## Antes de comenzar
 
-<CardGroup cols={3}>
-  <Card title="1. Credenciales" icon="key">
-    Obtén tus accesos para comenzar la integración.
-  </Card>
+- Confirma la habilitación de tu comercio con el equipo de integraciones, una vez completado el proceso comercial.
+- Identifica el canal que vas a implementar y los medios de pago habilitados.
+- Define quién configurará la integración y quién validará los resultados de las pruebas.
 
-  <Card title="2. Método de integración" icon="shuffle">
-    Elige cómo integrar pagos según tu canal
-  </Card>
-
-  <Card title="3. Configuración" icon="code">
-    Configura tu integración y parámetros de pago
-  </Card>
-
-  <Card title="4. Pruebas (Sandbox)" icon="flask-round-potion">
-    Valida tu integración en ambiente sandbox
-  </Card>
-
-  <Card title="5. Preproducción" icon="vial-circle-check">
-    Valida el flujo completo con credenciales productivas.
-  </Card>
-
-  <Card title="6. Producción" icon="rocket-launch">
-    Activa pagos en vivo y comienza a operar.
-  </Card>
-</CardGroup>
-
-## Flujo de integración
+## Prepara tu entorno
 
 <Steps>
-  <Step title="Obtén tus credenciales">
-    Obtén tus credenciales de acceso (Client ID, Client Secret y Merchant ID).\
-    El equipo de integraciones se contactará contigo para enviarlas de forma segura.
+  <Step title="Obtén tus accesos">
+    Coordina la entrega segura de las credenciales con el equipo de integraciones. Revisa los identificadores y secretos que necesita tu canal, como **Client ID**, **Client Secret** y **Merchant ID**.
 
-    Con estas credenciales podrás:
-
-    - Autenticar tus solicitudes a la API
-    - Identificar tu comercio en las transacciones
-    - Configurar tu entorno de integración **(SANDBOX y PRODUCCIÓN)**
-
-    Con tus credenciales podrás operar en los siguientes entornos:
-
-    - **Sandbox:**\
-      Utilizado para pruebas y validación de la integración sin impacto en transacciones reales.
-    - **Producción:**\
-      Entorno en vivo para el procesamiento de transacciones reales.
+    Confirma a qué comercio y entorno corresponden antes de utilizarlos.
   </Step>
-  <Step title="Elige tu método de integración">
-    Selecciona el método de integración que mejor se adapte a tu negocio (Web, Mobile, API, CMS o POS).\
-    Define también los medios de pago que deseas habilitar.
+  <Step title="Separa sandbox y producción">
+    Mantén configuraciones y credenciales separadas. Empieza en **sandbox** y comprueba que los endpoints y datos utilizados correspondan a ese entorno.
 
-    Considera lo siguiente:
-
-    - Canal de venta (web, app, presencial)
-    - Nivel de personalización requerido
-    - Recursos técnicos disponibles
+    No mezcles credenciales productivas con ejemplos de prueba.
   </Step>
-  <Step title="Configura tu método de integración">
-    Configura tu método de integración siguiendo la guía técnica correspondiente.\
-    Implementa autenticación, parámetros de transacción y componentes necesarios.
+  <Step title="Configura tu canal">
+    Abre la guía técnica correspondiente. Sigue sus instrucciones de autenticación, configuración del componente o módulo y creación del pago.
 
-    Durante la configuración deberás:
-
-    - Configurar autenticación (API Key / tokens)
-    - Definir parámetros de la transacción (amount, currency,    merchant_operation_number, etc.)
-    - Configurar URLs de retorno y notificaciones (webhooks/S2S)
-    - Integrar componentes frontend o SDK (si aplica)
+    Usa los nombres y formatos de parámetros de esa referencia. Configura las URLs de retorno y notificaciones cuando el flujo las requiera.
   </Step>
-  <Step title="Realiza pruebas">
-    Ejecuta transacciones en ambiente sandbox y valida el comportamiento del sistema.\
-    Verifica estados de pago, respuestas y manejo de errores.
+  <Step title="Prepara la validación del resultado">
+    Relaciona tu pedido con el identificador de la operación. Define cómo confirmarás su estado desde backend y cómo registrarás la evidencia de prueba, sin exponer secretos ni datos sensibles.
 
-    <Tip>
-    Valida escenarios aprobados y rechazados, y verifica la correcta recepción de notificaciones (webhooks/S2S).
-    </Tip>
-
-    Para más detalle sobre el lifecycle y estados de una transacción, revisa la sección de [Estados de transacción](/dashboard/estados-de-transaccion).
-  </Step>
-  <Step title="Valida en preproducción">
-    Una vez completadas las pruebas en sandbox:
-
-    El equipo de integraciones validará tu implementación y, de ser conforme, te compartirá las **credenciales de producción**.
-
-    Con estas credenciales deberás:
-
-    - Ejecutar pruebas en entorno productivo controlado
-    - Validar el flujo end-to-end (incluyendo notificaciones)
-    - Confirmar que las transacciones se procesen correctamente
-
-    Antes de pasar a producción, asegúrate de cumplir con todos los criterios definidos en el [Checklist de certificación técnica](/primeros-pasos/checklist-de-certificacion).
-  </Step>
-  <Step title="Activa en producción">
-    Una vez validadas las pruebas en producción:
-
-    - Activa tu integración en vivo
-    - Procesa transacciones reales
-    - Monitorea el comportamiento y logs del sistema
+    Una pantalla de éxito no debe ser la única confirmación de que un pedido está pagado.
   </Step>
 </Steps>
 
-Para asegurar una implementación segura y robusta, revisa nuestras [Buenas prácticas de integración](https://alignet.mintlify.app/buenas-practicas).
-
-## Ejecuta tu primera transacción
-
-Selecciona tu método de integración para realizar una transacción de prueba:
-
-### Integración directa
-
-Para comercios que integran directamente y desean probar el flujo de pagos desde su propia implementación.
+## Comprende los entornos
 
 <CardGroup cols={2}>
-  <Card title="SDK Mobile (iOS / Android)" icon="mobile-screen-button" horizontal href="/sdk-mobile/introduccion">
-    Prueba el flujo de pago desde una aplicación móvil.
+  <Card title="Sandbox" icon="flask-round-potion">
+    Entorno para desarrollar y validar tu integración. Utiliza los datos y escenarios de prueba indicados en la documentación de tu canal.
   </Card>
 
-  <Card title="Checkout Web (Flex)" icon="globe" horizontal href="/checkout-web/flex/introduccion">
-    Realiza una transacción usando el checkout alojado.
-  </Card>
-
-  <Card title="Checkout Modal" icon="window-maximize" horizontal href="/checkout-web/modal/introduccion">
-    Ejecuta una prueba con el checkout embebido.
-  </Card>
-
-  <Card title="API de Pagos (Orquestador)" icon="server" horizontal href="/api-de-pagos/introduccion">
-    Crea una transacción de prueba desde tu backend.
+  <Card title="Producción" icon="rocket-launch">
+    Entorno para procesar pagos reales. Su habilitación y las pruebas controladas se coordinan con el equipo de integraciones.
   </Card>
 </CardGroup>
 
-### E-commerce (CMS)
+<Warning>
+  Las pruebas controladas con credenciales de producción pueden generar operaciones reales. No son un tercer entorno de sandbox: ejecútalas únicamente con la habilitación y coordinación correspondientes.
+</Warning>
 
-Para comercios que utilizan plataformas ecommerce y buscan una integración rápida.
+## Continúa con tu primer pago
 
-<Card title="Introducción E-commerce" horizontal href="/e-commerce/introduccion">
-  Entra por esta guía si primero quieres ver el panorama general de WooCommerce, PrestaShop y VTEX.
-</Card>
+Selecciona la guía de tu canal para implementar su flujo y ejecutar una transacción de prueba.
 
-<CardGroup cols={3}>
-  <Card title="WooCommerce" icon="shopping-cart" href="/wordpress-woocommerce/introduccion">
-    Configura el plugin y realiza una compra de prueba.
+<CardGroup cols={2}>
+  <Card title="E-commerce" icon="store" href="/e-commerce/introduccion">
+    Configura tu plataforma y valida una compra de prueba.
   </Card>
 
-  <Card title="Prestashop" icon="store" href="/prestashop/introduccion">
-    Activa el módulo y ejecuta una transacción de prueba.
+  <Card title="Checkout Web" icon="globe" href="/checkout-web/introduccion">
+    Revisa la modalidad de checkout y conecta tu flujo web.
   </Card>
 
-  <Card title="VTEX" icon="shopping-bag" href="/vtex/introduccion">
-    Integra y valida una compra en tu ecommerce.
+  <Card title="SDK Mobile" icon="mobile" href="/sdk-mobile/introduccion">
+    Integra el SDK y prueba el recorrido en tu aplicación.
+  </Card>
+
+  <Card title="API de pagos" icon="server" href="/api-de-pagos/introduccion">
+    Implementa la autenticación y las solicitudes desde tu backend.
+  </Card>
+</CardGroup>
+
+## Antes de operar en vivo
+
+Conserva las evidencias de tus pruebas y revisa los criterios que corresponden a tu integración. El equipo de integraciones confirma la validación y los pasos para habilitar producción.
+
+<CardGroup cols={2}>
+  <Card title="Buenas prácticas" icon="shield-check" href="/primeros-pasos/buenas-practicas">
+    Revisa seguridad, validación de operaciones y trazabilidad.
+  </Card>
+
+  <Card title="Checklist de certificación" icon="clipboard-check" href="/primeros-pasos/checklist-de-certificacion">
+    Comprueba los requisitos antes de coordinar la salida a producción.
   </Card>
 </CardGroup>
