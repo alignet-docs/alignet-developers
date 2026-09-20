@@ -413,3 +413,20 @@ img.nav-logo {
 
 @media(max-width:700px){.ao-connection-section{grid-template-columns:1fr;gap:26px;padding:24px 0 36px;}.ao-demo-intro>.ao-hero>.ao-hero-copy{padding-top:0;}.mig-checkout-stage{padding:20px 15px 12px;}}
 
+
+/* Continue Mintlify's green wash through both navigation rows.
+   Keep the sticky surface translucent so content remains readable on scroll. */
+#navbar #navbar-transition {
+  background-color: rgba(255, 255, 255, .72) !important;
+  background-image: radial-gradient(49.63% 57.02% at 58.99% -7.2%, rgba(13, 112, 76, .10) 39.4%, transparent 100%) !important;
+  background-size: 100vw 64rem;
+  background-position: center top;
+  background-repeat: no-repeat;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+.dark #navbar #navbar-transition {
+  background-color: rgba(21, 23, 22, .78) !important;
+  background-image: radial-gradient(49.63% 57.02% at 58.99% -7.2%, rgba(25, 137, 96, .10) 39.4%, transparent 100%) !important;
+}
+
