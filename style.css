@@ -101,3 +101,34 @@ img.nav-logo {
 @media (max-width:480px) { .pm-diagram {padding:20px 16px;border-radius:16px;} .pm-flow-pair {gap:8px;} .pm-channel-row>span {padding:8px 12px;} }
 
 .pm-diagram strong { color:#f0f6f3 !important; }
+
+/* Side-by-side editorial illustrations: distinct security and test concepts. */
+.pm-split-hero { display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:center;margin:12px 0 42px; }
+.pm-split-hero .pm-guide {padding:0;min-width:0;}
+.pm-split-hero .pm-heading {font-size:clamp(27px,2.5vw,38px);letter-spacing:-1.1px;}
+.pm-split-hero .pm-intro {font-size:14px;line-height:1.85;}
+.pm-split-hero .pm-kicker {font-size:9px;letter-spacing:1.3px;}
+.pm-visual {min-width:0;padding:22px 18px;border-radius:17px;border:1px solid #40534d;background:radial-gradient(ellipse at 90% 0%,rgba(90,177,136,.16),transparent 70%),#202b2b;color:#edf5f0;box-shadow:0 15px 35px rgba(17,42,31,.12);font-family:Arial,Helvetica,sans-serif;}
+.pm-visual .pm-visual-eyebrow {font-size:8px;line-height:1.8;letter-spacing:1.4px;color:#bad4c6;margin:0 0 19px;}
+.pm-visual strong,.pm-visual b {color:#edf5f0!important;}
+.pm-shield-scene {position:relative;height:130px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+.pm-shield-ring {position:absolute;width:118px;height:118px;border:1px solid rgba(138,221,178,.22);border-radius:50%;box-shadow:0 0 0 14px rgba(138,221,178,.025);}
+.pm-shield {width:72px;height:85px;clip-path:polygon(50% 0,95% 18%,90% 67%,75% 85%,50% 100%,25% 85%,10% 67%,5% 18%);background:linear-gradient(140deg,#a5ecc9,#3a9c72);display:flex;align-items:center;justify-content:center;color:#173e2d;font-size:32px;}
+.pm-orbit-dot {position:absolute;top:7px;left:calc(50% - 3px);width:6px;height:6px;border-radius:50%;background:#e4bd83;box-shadow:0 0 15px rgba(228,189,131,.4);animation:pm-beacon 2s ease-in-out 2;}
+.pm-control-line {display:flex;align-items:center;gap:10px;border-top:1px solid #41564b;padding:13px 0;}
+.pm-control-line>span {font-size:9px;color:#8bbaa2;}
+.pm-control-line strong {font-size:12px;display:block;line-height:1.5;}
+.pm-control-line small {display:block;color:#b6c9bf;font-size:10px;line-height:1.65;}
+.pm-control-line i {width:4px;height:4px;border-radius:50%;background:#8cd9b3;margin-left:auto;}
+.pm-visual .pm-visual-note {border-top:1px solid #41564b;margin:13px 0 0;padding-top:15px;color:#b6c9bf;font-size:10px;line-height:1.8;}
+.pm-test-grid {display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.pm-test-grid>div {border:1px solid #465e51;background:rgba(128,191,154,.035);border-radius:10px;padding:12px 8px;animation:pm-reveal .7s ease-out both;}
+.pm-test-grid>div:nth-child(2){animation-delay:.15s;}.pm-test-grid>div:nth-child(3){animation-delay:.3s;}.pm-test-grid>div:nth-child(4){animation-delay:.45s;}
+.pm-test-symbol {display:flex;width:25px;height:25px;align-items:center;justify-content:center;border-radius:7px;background:rgba(145,228,189,.12);color:#a7ebca;font-size:20px;margin-bottom:12px;}
+.pm-test-symbol.pm-amber {color:#e4bd83;background:rgba(228,189,131,.1);}.pm-test-symbol.pm-blue{color:#9acbd6;background:rgba(154,203,214,.1);}
+.pm-test-grid strong {display:block;font-size:11px;line-height:1.6;overflow-wrap:anywhere;}.pm-test-grid small {display:block;font-size:9px;color:#b6c9bf;line-height:1.7;margin-top:4px;}
+.pm-evidence-link {display:flex;align-items:center;gap:8px;margin:23px 0;font-size:9px;text-align:center;}.pm-evidence-link>span{height:1px;background:#597e69;flex:1;}
+.pm-proof {border-left:2px solid #90d6b1;padding:0 0 0 12px;}.pm-proof span{display:block;font-size:7px;letter-spacing:1.4px;color:#a1bcad;margin:12px 0 5px;}.pm-proof b{display:block;font-size:11px;font-weight:400;}
+@keyframes pm-beacon {0%,100%{opacity:.45;}50%{opacity:1;box-shadow:0 0 20px rgba(228,189,131,.6);}}
+@media(max-width:600px){.pm-split-hero{grid-template-columns:1fr;gap:24px;}.pm-split-hero .pm-heading{font-size:34px;}.pm-visual{width:100%;box-sizing:border-box;}.pm-test-grid>div{padding:16px;}}
+@media(prefers-reduced-motion:reduce){.pm-visual *{animation:none!important;}}
