@@ -1,197 +1,108 @@
 ---
 title: "Checklist de certificación"
-description: "Validaciones requeridas para aprobar la integración y pasar a producción con Pay-me."
+description: "Prueba tu integración, reúne evidencias y coordina la validación antes de operar en producción con Pay-me."
 icon: "clipboard-check"
 ---
 
-### Validación de integración
+<div className="pm-editorial pm-guide"><p className="pm-kicker">PRUEBAS Y PRODUCCIÓN / CERTIFICACIÓN</p><h1 className="pm-heading">Prueba con criterio.<em>Lanza con confianza.</em></h1><p className="pm-intro">Valida el recorrido completo del pago y prepara las evidencias para la revisión técnica. Esta es tu ruta; los requisitos específicos están en la guía de tu canal.</p></div>
 
-Antes de pasar a producción, asegúrate de cumplir con los siguientes criterios técnicos.
+<div className="pm-diagram" role="img" aria-label="Ruta de certificación: probar en sandbox, reunir evidencias, revisión técnica y producción coordinada"><div className="pm-diagram-label">DE LAS PRUEBAS A PRODUCCIÓN <span aria-hidden="true">↗</span></div><ol className="pm-route"><li><span>01</span><div><strong>Prueba en sandbox</strong><small>Flujo completo y escenarios de error.</small></div></li><li><span>02</span><div><strong>Reúne las evidencias</strong><small>Resultados e identificadores, sin secretos.</small></div></li><li><span>03</span><div><strong>Coordina la revisión</strong><small>El equipo valida los criterios de tu canal.</small></div></li><li><span>04</span><div><strong>Valida la salida</strong><small>Producción controlada, previa habilitación.</small></div></li></ol><p className="pm-caption">Completar esta guía no habilita producción automáticamente. La aprobación la confirma el equipo de integraciones.</p></div>
 
-<Info>
-  Este checklist es utilizado por el equipo de integraciones para validar que tu implementación cumple con los estándares requeridos.
-</Info>
+## Elige tu checklist técnico
+
+Completa los criterios específicos del canal que implementaste, además de las verificaciones generales de esta página.
 
 <CardGroup cols={2}>
   <Card title="E-commerce" icon="store" href="/e-commerce/checklist-de-integracion">
-    Checklist para WooCommerce, PrestaShop y VTEX.
+    WooCommerce, PrestaShop y VTEX.
   </Card>
 
   <Card title="Checkout Web" icon="globe" href="/checkout-web/checklist-de-integracion">
-    Checklist para Flex y Modal.
+    Flujos de Flex y Modal.
   </Card>
 
   <Card title="SDK Mobile" icon="mobile-screen" href="/sdk-mobile/checklist-de-integracion">
-    Checklist para Android e iOS.
+    Aplicaciones Android e iOS.
   </Card>
 
   <Card title="API de Pagos" icon="server" href="/api-de-pagos/checklist-de-integracion">
-    Checklist para integraciones server-to-server.
+    Integración de servidor a servidor.
   </Card>
 </CardGroup>
 
----
+## 01 · Valida en sandbox
 
-## Validaciones por etapa
+| Qué comprobar | Evidencia que debes conservar |
+| --- | --- |
+| Pago aprobado de principio a fin | Pedido, identificador de operación y estado confirmado en backend. |
+| Rechazo y errores controlados | Respuesta recibida, mensaje al cliente y estado correcto del pedido. |
+| Pendiente o expiración, cuando aplique | Transiciones de estado y tratamiento del pedido sin confirmar antes de tiempo. |
+| Cada medio de pago habilitado | Resultado de los escenarios que correspondan a tu comercio. |
+| Retorno, cancelación o interrupción del flujo | Comportamiento del canal y recuperación de un resultado incierto. |
 
-<CardGroup cols={2}>
-  <Card title="Sandbox" icon="flask-round-potion">
-    Pruebas iniciales de integración
-  </Card>
+<Info>
+  Utiliza los datos y escenarios de prueba documentados para tu integración. Si un caso no está disponible en sandbox, coordina su validación con el equipo de integraciones.
+</Info>
 
-  <Card title="Notificaciones" icon="bell">
-    Validación de webhooks y eventos
-  </Card>
-
-  <Card title="Integración técnica" icon="code">
-    Configuración y lógica de implementación
-  </Card>
-
-  <Card title="Producción controlada" icon="shield-check">
-    Validación en entorno productivo
-  </Card>
-</CardGroup>
-
----
-
-## Validaciones en Sandbox
+## 02 · Revisa la implementación
 
 <AccordionGroup>
-  <Accordion title="Pruebas de transacciones" icon="credit-card">
-    - Ejecución de transacciones exitosas
-    - Simulación de transacciones rechazadas
-    - Validación de estados (aprobado, pendiente, rechazado)
+  <Accordion title="Credenciales, parámetros y endpoints" icon="key">
+    - Configuración de autenticación y renovación de tokens según el canal.
+    - Separación de credenciales y endpoints por entorno.
+    - Identificadores de pedido, importe, moneda y demás parámetros válidos según la API utilizada.
+    - URLs de retorno y notificación configuradas cuando correspondan.
+    - HTTPS y protección de endpoints críticos; secretos fuera del frontend.
   </Accordion>
 
-  <Accordion title="Flujo de integración" icon="code-branch">
-    - Validación del flujo completo de pago
-    - Manejo correcto de respuestas
-    - Validación de errores y excepciones
+  <Accordion title="Notificaciones y consistencia de estados" icon="bell">
+    - Recepción de los eventos previstos por tu integración, cuando aplique.
+    - Validación de autenticidad según el mecanismo documentado.
+    - Procesamiento idempotente: un evento duplicado no duplica acciones.
+    - Manejo de eventos fuera de orden y actualización consistente del pedido.
+    - Verificación del resultado desde backend antes de confirmar la venta.
+  </Accordion>
+
+  <Accordion title="Errores, trazabilidad y operación" icon="list-check">
+    - Manejo de respuestas inesperadas, timeouts y excepciones.
+    - Consulta o reconciliación de operaciones con resultado incierto antes de reintentarlas.
+    - Relación trazable entre pedido y operación de Pay-me.
+    - Registros y alertas suficientes para investigar incidencias, sin secretos ni datos sensibles de tarjeta.
   </Accordion>
 </AccordionGroup>
 
----
+## 03 · Prepara las evidencias
 
-## Validación de notificaciones
-
-<AccordionGroup>
-  <Accordion title="Recepción de eventos" icon="bell">
-    - Endpoint accesible y operativo
-    - Recepción correcta de eventos
-  </Accordion>
-
-  <Accordion title="Procesamiento" icon="repeat">
-    - Procesamiento idempotente
-    - Manejo de eventos duplicados o fuera de orden
-  </Accordion>
-
-  <Accordion title="Consistencia" icon="database">
-    - Actualización del estado de la orden
-    - Sincronización con tu sistema interno
-  </Accordion>
-</AccordionGroup>
-
----
-
-## Validación de integración técnica
-
-<CardGroup cols={2}>
-  <Card title="Autenticación" icon="key">
-    Configuración correcta de credenciales y tokens.
-  </Card>
-
-  <Card title="Parámetros de transacción" icon="list-check">
-    Uso de identificadores únicos (order\_id) y datos válidos.
-  </Card>
-
-  <Card title="URLs y callbacks" icon="link">
-    Configuración correcta de return\_url y notificaciones.
-  </Card>
-
-  <Card title="Logs y monitoreo" icon="monitor-waveform">
-    Implementación de logs para debugging y seguimiento.
-  </Card>
-</CardGroup>
-
----
-
-## Validaciones en producción controlada
+<div className="pm-evidence"><p className="pm-kicker">UN CASO, UN RESULTADO COMPROBABLE</p><h3>Haz que la revisión sea clara.</h3><p>Por cada escenario, reúne el entorno y la fecha, el canal y versión, el identificador del pedido y de la operación, el resultado esperado y el obtenido. Añade registros o capturas enmascarados cuando ayuden a explicar el comportamiento.</p><p><strong>Si una prueba falla:</strong> registra el hallazgo, corrige la causa y vuelve a ejecutar el escenario antes de presentarlo como completado.</p></div>
 
 <Warning>
-  Estas pruebas deben realizarse únicamente después de recibir credenciales productivas.
+  No compartas Client Secret, tokens sensibles, CVV ni números completos de tarjeta. La evidencia debe permitir revisar el caso sin exponer credenciales o datos de pago.
 </Warning>
 
-<AccordionGroup>
-  <Accordion title="Pruebas en producción" icon="rocket">
-    - Ejecución de transacciones reales controladas
-    - Validación del flujo end-to-end
-  </Accordion>
+Coordina con el equipo de integraciones los escenarios exigidos y el formato de entrega. Esta página no sustituye la revisión técnica ni representa una aprobación automática.
 
-  <Accordion title="Notificaciones en producción" icon="bell">
-    - Confirmación de recepción de webhooks
-    - Validación de consistencia de estados
-  </Accordion>
+## 04 · Coordina la salida a producción
 
-  <Accordion title="Medios de pago" icon="credit-card">
-    - Validación de todos los métodos habilitados
-  </Accordion>
-</AccordionGroup>
+<Warning>
+  Las pruebas en producción pueden generar cargos reales. Ejecútalas únicamente tras recibir la habilitación y credenciales correspondientes, y con el alcance acordado con el equipo de integraciones.
+</Warning>
 
----
+Antes de la salida, confirma:
 
-## Seguridad
+- Configuración productiva revisada, sin datos ni credenciales de sandbox.
+- Flujo completo validado según el plan de pruebas controladas acordado.
+- Notificaciones y consistencia del pedido comprobadas, cuando apliquen.
+- Medios de pago habilitados revisados y monitoreo operativo preparado.
+- Confirmación de aprobación y pasos de activación por parte del equipo de integraciones.
+
+## Continúa con apoyo
 
 <CardGroup cols={2}>
-  <Card title="Protección de credenciales" icon="shield">
-    No expongas credenciales en frontend.
+  <Card title="Revisa la base de seguridad" icon="shield-check" href="/primeros-pasos/buenas-practicas">
+    Protección de accesos, validación y trazabilidad.
   </Card>
 
-  <Card title="Transmisión segura" icon="lock">
-    Uso obligatorio de HTTPS.
-  </Card>
-
-  <Card title="Protección de endpoints" icon="server">
-    Asegura endpoints críticos.
-  </Card>
-
-  <Card title="Integridad de datos" icon="check-circle">
-    Valida consistencia de transacciones.
-  </Card>
-</CardGroup>
-
----
-
-## Estado de certificación
-
-<Steps>
-  <Step title="Pruebas en sandbox completadas">
-    Validación inicial del flujo de integración.
-  </Step>
-  <Step title="Validación técnica aprobada">
-    Cumplimiento de requisitos de integración.
-  </Step>
-  <Step title="Pruebas en producción controlada">
-    Validación en entorno productivo.
-  </Step>
-  <Step title="Aprobación final">
-    Integración lista para Go-Live.
-  </Step>
-</Steps>
-
----
-
-## Resultado esperado
-
-<CardGroup cols={3}>
-  <Card title="Integración validada" icon="check">
-    Flujo completo funcionando correctamente.
-  </Card>
-
-  <Card title="Consistencia de datos" icon="database">
-    Estados alineados entre sistemas.
-  </Card>
-
-  <Card title="Listo para producción" icon="rocket">
-    Habilitado para procesar pagos en vivo.
+  <Card title="Coordina tu revisión" icon="messages" href="mailto:equipo.integraciones@pay-me.com">
+    Comparte tu canal y el estado de las pruebas, sin enviar secretos.
   </Card>
 </CardGroup>

@@ -1,82 +1,73 @@
 ---
 title: "Buenas prácticas generales"
-description: "Principios base para preparar una integración segura con Pay-me y ubicar las recomendaciones específicas por tipo de integración."
+description: "Protege los accesos, verifica las operaciones y conserva la trazabilidad de tu integración con Pay-me."
 icon: "shield-check"
 ---
 
-Esta guía reúne los criterios generales que aplican a cualquier integración con Pay-me. Además de estos lineamientos, cada tipo de integración cuenta con sus propias recomendaciones técnicas, operativas y de seguridad.
+<div className="pm-editorial pm-guide"><p className="pm-kicker">SEGURIDAD / BUENAS PRÁCTICAS</p><h1 className="pm-heading">La confianza también<em>se integra.</em></h1><p className="pm-intro">Protege cada acceso. Confirma cada operación. Diseña una integración que puedas entender y acompañar cuando algo no salga como esperas.</p></div>
 
-<Info>
-  Usa esta página como punto de partida. Luego revisa las buenas prácticas específicas según el canal que vas a implementar: E-commerce, Checkout Web, SDK Mobile o API de Pagos.
-</Info>
+<div className="pm-diagram" role="img" aria-label="Flujo conceptual: canal de compra, backend del comercio, Pay-me y confirmación del pedido"><div className="pm-diagram-label">EL PAGO, BAJO CONTROL <span aria-hidden="true">↗</span></div><div className="pm-channel-row"><span>Tienda</span><span>Web</span><span>App</span></div><div className="pm-connector" aria-hidden="true" /><div className="pm-core"><span className="pm-node-icon" aria-hidden="true">◇</span><strong>Tu backend</strong><small>Protege los secretos · Relaciona el pedido</small></div><div className="pm-connector" aria-hidden="true" /><div className="pm-flow-pair"><div><strong>Pay-me</strong><small>Procesa la operación</small></div><span aria-hidden="true">↔</span><div><strong>Tu sistema</strong><small>Verifica y actualiza</small></div></div><p className="pm-caption">La pantalla informa. Tu backend verifica el estado antes de confirmar la venta.</p></div>
 
-## Principios transversales
+## Tres principios para empezar
+
+<div className="pm-principles"><div><span>01 / PROTEGE</span><h3>Secretos en el servidor.</h3><p>Las credenciales privadas nunca forman parte del navegador, la app ni el repositorio.</p></div><div><span>02 / VERIFICA</span><h3>El estado, desde backend.</h3><p>La respuesta visual no basta para confirmar una venta o entregar un pedido.</p></div><div><span>03 / REGISTRA</span><h3>Trazabilidad sin exponer.</h3><p>Relaciona pedido y operación. Registra lo necesario, no los datos sensibles.</p></div></div>
+
+## Aplica los controles
 
 <AccordionGroup>
-  <Accordion title="Seguridad de credenciales" icon="key">
-    - No expongas credenciales, Client Secret, API keys o tokens en el frontend.
-    - Ejecuta operaciones sensibles desde tu backend mediante HTTPS.
-    - Usa variables de entorno o un gestor seguro de secretos para almacenar llaves.
+  <Accordion title="Protege credenciales y accesos" icon="key">
+    - Guarda Client Secret, llaves privadas y tokens sensibles en variables de entorno o un gestor de secretos del servidor.
+    - Mantén separadas las configuraciones de sandbox y producción.
+    - Ejecuta las operaciones sensibles desde backend mediante HTTPS y limita el acceso a las credenciales.
+    - No incluyas secretos en URLs, capturas, mensajes de soporte ni registros. Ante una exposición, coordina su revocación o rotación.
   </Accordion>
 
-  <Accordion title="Validación de operaciones" icon="badge-check">
-    - No confirmes una venta solo con la respuesta visual del checkout, SDK o navegador.
-    - Valida el estado final desde backend usando los identificadores de operación.
-    - Guarda la relación entre tu pedido interno y el identificador devuelto por Pay-me.
+  <Accordion title="Confirma la operación, no solo la pantalla" icon="badge-check">
+    - Relaciona el identificador de tu pedido con el de la operación de Pay-me.
+    - Verifica desde backend el estado mediante el mecanismo documentado para tu integración.
+    - Comprueba la correspondencia del pedido, importe y moneda antes de actualizar tu sistema.
+    - Trata los estados pendientes o inciertos como tales. Un timeout no demuestra que un pago haya sido rechazado.
   </Accordion>
 
-  <Accordion title="Pruebas antes de producción" icon="vial">
-    - Completa pruebas por cada método de pago habilitado para tu comercio.
-    - Valida escenarios aprobados, denegados, pendientes, expirados y errores controlados.
-    - Solicita apoyo del equipo de integraciones cuando necesites validar simuladoras o flujos especiales.
+  <Accordion title="Controla notificaciones y reintentos" icon="repeat">
+    - Cuando tu flujo utilice notificaciones, valida su autenticidad según la guía específica del canal.
+    - Evita procesar dos veces un mismo evento o ejecutar dos veces la entrega de un pedido.
+    - Contempla eventos duplicados o fuera de orden, y conserva estados coherentes en tu sistema.
+    - Antes de repetir una operación con resultado incierto, consulta o reconcilia su estado según el flujo documentado.
   </Accordion>
 
-  <Accordion title="Monitoreo y soporte" icon="chart-line">
-    - Registra errores, códigos de respuesta y payloads relevantes para trazabilidad.
-    - Conserva evidencias de pruebas para facilitar la certificación.
-    - Implementa alertas para rechazos inusuales, timeouts o fallas repetitivas.
+  <Accordion title="Registra, monitorea y prueba" icon="chart-line">
+    - Conserva identificadores, fecha, entorno, código de respuesta y resultado esperado para investigar incidencias.
+    - Enmascara los datos personales necesarios. No registres CVV, números completos de tarjeta, secretos ni tokens sensibles.
+    - Define alertas para errores repetidos, timeouts o variaciones inusuales en los resultados.
+    - Prueba los medios de pago habilitados y los escenarios aplicables: aprobación, rechazo, pendiente, expiración y error controlado.
   </Accordion>
 </AccordionGroup>
 
-## Consejos por tipo de integración
+## Aterrízalo en tu canal
+
+Esta base es transversal. Los mecanismos concretos, parámetros y responsabilidades dependen de tu integración.
 
 <CardGroup cols={2}>
   <Card title="E-commerce" icon="store" href="/e-commerce/buenas-practicas">
-    Recomendaciones para plugins, plataformas de comercio, gestión de pedidos y operación diaria.
+    Plugins, pedidos y operación de tu tienda.
   </Card>
 
   <Card title="Checkout Web" icon="globe" href="/checkout-web/buenas-practicas">
-    Consejos para integrar Pay-me Flex, manejar `nonce`, callbacks, estilos y experiencia de pago web.
+    Flex, callbacks y experiencia de pago web.
   </Card>
 
   <Card title="SDK Mobile" icon="mobile-screen" href="/sdk-mobile/buenas-practicas">
-    Buenas prácticas para apps Android e iOS, empaquetado, callbacks, sesiones y pruebas en dispositivos.
+    Sesiones, callbacks y pruebas en dispositivos.
   </Card>
 
-  <Card title="API de Pagos" icon="credit-card-front" href="/api-de-pagos/buenas-practicas">
-    Lineamientos para integraciones server-to-server, autenticación, trazabilidad, PCI y manejo de respuestas.
+  <Card title="API de Pagos" icon="server" href="/api-de-pagos/buenas-practicas">
+    Autenticación, respuestas y responsabilidades del servidor.
   </Card>
 </CardGroup>
 
-## Ruta recomendada
+## El siguiente paso
 
-<Steps>
-  <Step title="Elige el tipo de integración">
-    Define si usarás E-commerce, Checkout Web, SDK Mobile o API de Pagos según tu canal y nivel de control técnico.
-  </Step>
-  <Step title="Revisa las buenas prácticas específicas">
-    Ingresa a la guía correspondiente para aplicar recomendaciones propias de ese flujo.
-  </Step>
-  <Step title="Ejecuta pruebas completas">
-    Valida credenciales, datos de prueba, respuestas esperadas, errores y trazabilidad antes de solicitar producción.
-  </Step>
-  <Step title="Completa la certificación">
-    Confirma que tu integración cumple los requisitos técnicos, operativos y de seguridad solicitados por Pay-me.
-  </Step>
-</Steps>
-
-## Checklist de certificación
-
-<Card title="Checklist de certificación técnica" icon="clipboard-check" horizontal href="/primeros-pasos/checklist-de-certificacion">
-  Revisa los requisitos necesarios antes de solicitar credenciales o pase a producción.
+<Card title="Demuestra que tu integración está lista" icon="clipboard-check" horizontal href="/primeros-pasos/checklist-de-certificacion">
+  Ejecuta los escenarios de tu canal, reúne evidencias y coordina la certificación.
 </Card>
