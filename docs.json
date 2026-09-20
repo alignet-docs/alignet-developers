@@ -23,9 +23,7 @@
                 "pages": [
                   "index",
                   "primeros-pasos/metodos-de-integracion",
-                  "primeros-pasos/inicio-rapido",
-                  "primeros-pasos/buenas-practicas",
-                  "primeros-pasos/checklist-de-certificacion"
+                  "primeros-pasos/inicio-rapido"
                 ]
               },
               {
@@ -249,6 +247,20 @@
                       }
                     ]
                   }
+                ]
+              },
+              {
+                "group": "Seguridad",
+                "icon": "shield-check",
+                "pages": [
+                  "primeros-pasos/buenas-practicas"
+                ]
+              },
+              {
+                "group": "Pruebas y producción",
+                "icon": "clipboard-check",
+                "pages": [
+                  "primeros-pasos/checklist-de-certificacion"
                 ]
               },
               {

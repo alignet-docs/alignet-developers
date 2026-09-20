@@ -54,3 +54,9 @@ img.nav-logo {
   background: rgba(255, 255, 255, 0.1);
   color: #d4d4d4;
 }
+
+
+/* Editorial onboarding pages replace only the native page title, not navigation. */
+#content-area:has(.pm-editorial) #header {
+  display: none;
+}
