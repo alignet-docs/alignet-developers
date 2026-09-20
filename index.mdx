@@ -19,11 +19,18 @@ import { MigrationCheckout } from "/snippets/migration-checkout.jsx"
         <a className="ao-text-link" href="/primeros-pasos/metodos-de-integracion">Explorar soluciones <span aria-hidden="true">→</span></a>
       </div>
       <p className="ao-backing">Tecnología de Alignet. Conexión directa.</p>
-      <div className="ao-card-brands" aria-label="Marcas prioritarias: Visa, Mastercard y American Express">
+      <div className="ao-card-brands" aria-label="Marcas prioritarias: Visa, Mastercard, American Express y Diners Club">
         <span className="ao-card-brands-label">Marcas prioritarias</span>
         <span className="ao-card-brand" role="img" aria-label="Visa" title="Visa"><Icon icon="cc-visa" iconType="brands" size={34} /></span>
         <span className="ao-card-brand" role="img" aria-label="Mastercard" title="Mastercard"><Icon icon="cc-mastercard" iconType="brands" size={34} /></span>
         <span className="ao-card-brand" role="img" aria-label="American Express" title="American Express"><Icon icon="cc-amex" iconType="brands" size={34} /></span>
+        <span className="ao-card-brand" role="img" aria-label="Diners Club" title="Diners Club"><Icon icon="cc-diners-club" iconType="brands" size={34} /></span>
+      </div>
+      <div className="pm-payment-methods" aria-label="Métodos de pago">
+        <span className="pm-payment-methods-label">Métodos de pago</span>
+        <div className="pm-payment-methods-list">
+          <span>Billetera</span><span>Transferencia</span><span>Compra ahora, paga después</span><span>Código Yape</span><span>G Pay</span>
+        </div>
       </div>
     </div>
     <MigrationCheckout locale="es" />
@@ -69,4 +76,5 @@ import { MigrationCheckout } from "/snippets/migration-checkout.jsx"
   </section>
   <div className="ao-bottom"><div><span className="ao-status-dot" /><p>¿Ya integras con nosotros? <a href="mailto:equipo.integraciones@pay-me.com">Coordina tu siguiente paso <span aria-hidden="true">→</span></a></p></div><a href="mailto:equipo.integraciones@pay-me.com">Habla con nuestro equipo <span aria-hidden="true">↗</span></a></div>
 </div>
+
 

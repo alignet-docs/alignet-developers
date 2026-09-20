@@ -460,3 +460,11 @@ img.nav-logo {
   .ao-demo-intro .mig-checkout { transition: none; }
 }
 
+
+/* Compact payment-method labels beneath the priority card brands. */
+.ao-cover .pm-payment-methods { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 16px; }
+.ao-cover .pm-payment-methods-label { color: var(--ao-muted); font-size: 10px; line-height: 26px; white-space: nowrap; }
+.ao-cover .pm-payment-methods-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.ao-cover .pm-payment-methods-list > span { padding: 4px 9px; border: 1px solid rgba(13,112,76,.13); border-radius: 999px; background: rgba(13,112,76,.035); color: var(--ao-muted); font-size: 10px; line-height: 16px; }
+.dark .ao-cover .pm-payment-methods-list > span { border-color: rgba(113,216,178,.18); background: rgba(113,216,178,.06); }
+
