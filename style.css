@@ -481,3 +481,37 @@ img.nav-logo {
 #assistant-entry { border-radius: 10px; }
 #assistant-entry:focus-visible { outline: 2px solid #198960; outline-offset: 3px; }
 
+
+/* Task-oriented desktop navigation: brand, product, find/help, preferences, support. */
+@media (min-width: 1024px) {
+  #navbar div:has(> div > #search-bar-entry) {
+    display: grid;
+    grid-template-columns: auto auto minmax(150px, 1fr) auto auto auto auto;
+    column-gap: 14px;
+    align-items: center;
+  }
+  #navbar div:has(> a > .nav-logo),
+  #navbar div:has(> #search-bar-entry),
+  #navbar div:has(> nav[aria-label="Main"]),
+  #navbar div:has(> #localization-select-trigger),
+  #navbar div:has(> #theme-preference-menu-trigger) {
+    display: contents;
+  }
+  #navbar a:has(> .nav-logo) { grid-column: 1; grid-row: 1; width: 165px; }
+  #navbar .nav-logo { max-width: 100%; }
+  #navbar [data-component-part="products-selector-trigger"] { grid-column: 2; grid-row: 1; }
+  #navbar [data-component-part="products-selector-trigger"] > span { overflow: visible; }
+  #navbar #search-bar-entry { grid-column: 3; grid-row: 1; min-width: 0; }
+  #navbar #assistant-entry { grid-column: 4; grid-row: 1; }
+  #navbar #localization-select-trigger { grid-column: 5; grid-row: 1; margin: 0; }
+  #navbar #theme-preference-menu-trigger { grid-column: 6; grid-row: 1; margin: 0; }
+  #navbar nav[aria-label="Main"] { grid-column: 7; grid-row: 1; margin: 0; }
+}
+@media (min-width: 1024px) and (max-width: 1279px) {
+  #navbar div:has(> div > #search-bar-entry) { column-gap: 9px; }
+  #navbar a:has(> .nav-logo) { width: 135px; }
+  #navbar #assistant-entry > span { display: none; }
+  #navbar #assistant-entry { width: 36px; padding: 0; }
+  #navbar #search-bar-entry > span { display: none; }
+}
+
