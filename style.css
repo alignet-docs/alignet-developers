@@ -304,11 +304,11 @@ img.nav-logo {
 .ao-cover .ao-eyebrow { display: flex; align-items: center; gap: 8px; font-size: 10px; line-height: 1.6; font-weight: 600; letter-spacing: 1.4px; color: var(--ao-muted); }
 .ao-eyebrow > span, .ao-status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #198960; flex: 0 0 auto; }
 .ao-cover h1 { margin: 23px 0; font-size: clamp(38px, 3.8vw, 59px); line-height: 1.07; letter-spacing: -2.2px; font-weight: 500; color: var(--ao-ink); }
-.ao-cover h1 em { font-family: Georgia, serif; font-weight: 400; color: var(--ao-accent); }
+.ao-cover h1 em { font-family: Georgia, serif; font-weight: 400; color: #5FA9B3; }
 .ao-cover .ao-lead { color: var(--ao-muted); font-size: 16px; line-height: 1.8; max-width: 380px; }
 .ao-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; margin-top: 28px; }
-.ao-cover .ao-button { background: #0d704c; color: #fff; border-radius: 7px; padding: 13px 17px; font-size: 13px; font-weight: 600; display: inline-flex; gap: 19px; align-items: center; transition: background 160ms; }
-.ao-cover .ao-button:hover { background: #095738; }
+.ao-cover .ao-button { background: #146C78; color: #fff; border-radius: 7px; padding: 13px 17px; font-size: 13px; font-weight: 600; display: inline-flex; gap: 19px; align-items: center; transition: background 160ms; }
+.ao-cover .ao-button:hover { background: #0F5F69; }
 .ao-cover .ao-text-link { font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 10px; }
 .ao-cover .ao-text-link:hover { color: var(--ao-accent); }
 .ao-cover .ao-backing { font-size: 11px; color: var(--ao-muted); margin-top: 24px; }

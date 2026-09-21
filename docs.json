@@ -3,9 +3,9 @@
   "theme": "mint",
   "name": "Alignet Integration Docs",
   "colors": {
-    "primary": "#0d704c",
-    "light": "#198960",
-    "dark": "#1a4a6a"
+    "primary": "#146C78",
+    "light": "#5FA9B3",
+    "dark": "#0F5F69"
   },
   "navigation": {
     "languages": [
@@ -527,7 +527,8 @@
   },
   "background": {
     "color": {
-      "dark": "#181818"
+      "dark": "#181818",
+      "light": "#F8FBFB"
     },
     "decoration": "windows"
   },
