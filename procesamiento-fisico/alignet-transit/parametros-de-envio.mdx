@@ -34,10 +34,11 @@ Envía los cuatro campos obligatorios en el cuerpo JSON:
 
 | Campo | Tipo JSON | Obligatorio | Validación | Descripción |
 | --- | --- | --- | --- | --- |
-| `operationNumber` | String | Sí | Cadena numérica de 1 a 64 dígitos. | Identificador único generado por el sistema central. Se utiliza como clave de idempotencia y referencia de consulta. |
+| `operationNumber` | String | Sí | Cadena numérica de 6 a 12 dígitos. | Identificador único generado por el sistema central. Se utiliza como clave de idempotencia y referencia de consulta. |
 | `amount` | String | Sí | Cadena numérica que representa un entero positivo de 1 a 12 dígitos, expresado en unidades menores. | Importe total del pago. Por ejemplo, `"1500"` representa S/ 15.00. |
 | `currency` | String | Sí | Cadena numérica de exactamente 3 dígitos. | Código numérico ISO 4217 de la moneda. Para soles peruanos, envía `"604"`. |
 | `paymentMethod` | String | Sí | Debe contener un único valor: `CARD` o `QR`. | Método con el que Pay-me PinPAD procesará el pago. |
+| `tollData` | Object | No | Sus campos deben enviarse como String. | Datos de la operación de peaje. Pueden enviarse para fines de trazabilidad. |
 | `additionalFields` | Object | No | Todos los valores deben ser String. | Información complementaria asociada al pago. |
 
 Respeta los nombres, los tipos JSON y el uso de mayúsculas de cada campo. Por ejemplo, envía `paymentMethod`, no `payment_method`.
@@ -48,8 +49,8 @@ Respeta los nombres, los tipos JSON y el uso de mayúsculas de cada campo. Por e
 
 Genera un `operationNumber` nuevo para cada pago y almacénalo antes de llamar a `POST /authorize`. El valor debe cumplir estas condiciones:
 
-- ser una cadena de entre 1 y 64 dígitos;
-- contener únicamente caracteres del `0` al `9`;
+- ser una cadena de entre 6 y 12 dígitos;
+- contener únicamente dígitos del `0` al `9`;
 - ser único para una operación real de pago;
 - permanecer asociado a la operación hasta obtener un resultado final.
 
@@ -89,17 +90,33 @@ Envía exactamente uno de los siguientes valores en mayúsculas:
 
 Cada solicitud admite un solo método de pago. No envíes `CARD` y `QR` juntos, arreglos, valores combinados como `"CARD,QR"`, variantes como `card` o `qr`, ni valores diferentes de los documentados.
 
+### `tollData`
+
+Utiliza `tollData` para enviar datos de la operación de peaje con fines de trazabilidad. El objeto y todos sus campos son opcionales.
+
+| Campo | Tipo JSON | Obligatorio | Descripción |
+| --- | --- | --- | --- |
+| `shiftId` | String | No | Identificador del turno de la operación de peaje (`IdTurnoVia-Celsat`). |
+| `tollOperatorId` | String | No | Identificador del operador del peaje, por ejemplo, `PROVIAS` o `IRSA`. |
+| `tollPointId` | String | No | Identificador del punto de peaje. |
+| `laneId` | String | No | Identificador de la vía o carril. |
+| `plate` | String | No | Placa del vehículo. |
+| `tollAmount` | String | No | Importe del peaje expresado en unidades menores. |
+| `withholdingAmount` | String | No | Importe de la retención expresado en unidades menores. |
+
+Cuando envíes los importes de peaje y retención, deben cumplir esta relación:
+
+```text
+amount = tollAmount + withholdingAmount
+```
+
 ### `additionalFields`
 
-Utiliza `additionalFields` para asociar información complementaria al pago. Cada valor del objeto debe ser una cadena:
+Utiliza `additionalFields` para asociar otra información complementaria al pago. Cada valor del objeto debe ser una cadena. Si no necesitas agregar información, puedes enviar un objeto vacío:
 
 ```json
 {
-  "additionalFields": {
-    "plate": "ABC-123",
-    "tollPointId": "PEAJE-01",
-    "laneId": "VIA-03"
-  }
+  "additionalFields": {}
 }
 ```
 
@@ -109,21 +126,26 @@ No envíes números, booleanos, arreglos, objetos anidados ni valores `null` den
   El catálogo de claves admitidas y el uso de cada valor por el procesador están pendientes de validación con Alignet. Las claves del ejemplo son ilustrativas y no representan un catálogo obligatorio.
 </Note>
 
-## Ejemplo con información adicional
+## Ejemplo de autorización para peaje
 
-El siguiente ejemplo incluye `additionalFields` con valores String:
+El siguiente ejemplo incluye los datos opcionales de la operación de peaje para trazabilidad:
 
 ```json
 {
-  "operationNumber": "20260827000001",
-  "amount": "1500",
+  "operationNumber": "012001000039",
+  "amount": "3150",
   "currency": "604",
-  "paymentMethod": "QR",
-  "additionalFields": {
-    "plate": "ABC-123",
-    "tollPointId": "PEAJE-01",
-    "laneId": "VIA-03"
-  }
+  "paymentMethod": "CARD",
+  "tollData": {
+    "shiftId": "TV-012001-20260916-D",
+    "tollOperatorId": "PROVIAS",
+    "tollPointId": "TA1",
+    "laneId": "N",
+    "plate": "TIY953",
+    "tollAmount": "2583",
+    "withholdingAmount": "567"
+  },
+  "additionalFields": {}
 }
 ```
 
@@ -169,10 +191,11 @@ Hasta confirmar el último punto, reenvía exactamente el mismo cuerpo cuando no
 
 Antes de enviar la solicitud, verifica lo siguiente:
 
-- `operationNumber` está almacenado, es único y contiene únicamente entre 1 y 64 dígitos.
+- `operationNumber` está almacenado, es único y contiene únicamente entre 6 y 12 dígitos.
 - `amount` es un String numérico de hasta 12 dígitos que representa un entero positivo en unidades menores.
 - `currency` es un String numérico de exactamente tres dígitos.
 - `paymentMethod` está presente y contiene exactamente un valor: `CARD` o `QR`, en mayúsculas.
+- Si envías `tollData`, sus campos son String y los importes cumplen `amount = tollAmount + withholdingAmount`.
 - Todos los valores de `additionalFields`, si envías el objeto, son cadenas.
 - La solicitud utiliza `Content-Type: application/json`.
 - El timeout del cliente HTTP es el acordado para el ambiente.
