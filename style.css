@@ -638,3 +638,34 @@ img.nav-logo {
 .dark .psm-context small {color:#bdcfc7}
 #content-area:has(.pc-intro) #header {display:none}
 
+
+/* Intro palette harmonization. The real checkout and all mig-* rules stay untouched. */
+body:has(.ao-demo-intro) #background-color { background-color:#fafcfc; }
+body:has(.ao-demo-intro) #content-container > span:has(> svg) { opacity:.5; }
+body:has(.ao-demo-intro) #navbar #navbar-transition {
+  background-color:rgba(250,252,252,.86) !important;
+  background-image:radial-gradient(60% 90% at 60% 0%,rgba(20,108,120,.065),transparent 100%) !important;
+}
+.ao-demo-intro .ao-hero-copy h1 em { color:#146c78; }
+.ao-demo-intro .ao-hero-copy .ao-button { background:#146c78; color:#fff; }
+.ao-demo-intro .ao-hero-copy .ao-button:hover { background:#0f5964; }
+.ao-demo-intro .ao-hero-copy .ao-eyebrow > span,
+.ao-demo-intro .ao-bottom > div > .ao-status-dot { background:#438d96; }
+.ao-demo-intro .ao-hero-copy .pm-payment-methods-list > span {
+  background:rgba(20,108,120,.025); border-color:rgba(68,99,108,.16);
+}
+.ao-demo-intro .ao-path-icon, .ao-demo-intro .ao-feature-number,
+.ao-demo-intro .ao-step-number, .ao-demo-intro .ao-code-mark { color:#146c78; }
+.ao-demo-intro .ao-path:hover { border-color:#438d96; }
+.dark body:has(.ao-demo-intro) #background-color { background-color:#171b1e; }
+.dark body:has(.ao-demo-intro) #navbar #navbar-transition {
+  background-color:rgba(23,27,30,.88) !important;
+  background-image:radial-gradient(60% 90% at 60% 0%,rgba(95,169,179,.08),transparent 100%) !important;
+}
+.dark .ao-demo-intro .ao-hero-copy h1 em,
+.dark .ao-demo-intro .ao-path-icon, .dark .ao-demo-intro .ao-feature-number,
+.dark .ao-demo-intro .ao-step-number, .dark .ao-demo-intro .ao-code-mark { color:#82c3cb; }
+.dark .ao-demo-intro .ao-hero-copy .pm-payment-methods-list > span {
+  background:rgba(130,195,203,.04); border-color:rgba(130,195,203,.2);
+}
+
