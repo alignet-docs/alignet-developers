@@ -669,3 +669,31 @@ body:has(.ao-demo-intro) #navbar #navbar-transition {
   background:rgba(130,195,203,.04); border-color:rgba(130,195,203,.2);
 }
 
+
+/* Subtle Pay-me demo palette: color only; preserve assets, layout and behavior. */
+.ao-demo-intro .mig-checkout { border-color:#dce5e8; }
+.ao-demo-intro .mig-pay { background:#246b82; color:#fff; }
+.ao-demo-intro .mig-pay:hover:not(:disabled) { background:#1d5d73; }
+.ao-demo-intro .mig-field { background:#f5f8fa; border-color:#dce5ea; color:#657580; }
+.ao-demo-intro .mig-interactive input.mig-field:focus { border-color:#397e95; box-shadow:0 0 0 2px #397e9520; }
+.ao-demo-intro .mig-method-nav button[aria-pressed="true"] { background:#edf5f7; color:#286d87; }
+.ao-demo-intro .mig-languages { background:#eef3f5; }
+.ao-demo-intro .mig-interactive .mig-languages button[aria-pressed="true"] { color:#286d87; }
+.ao-demo-intro .mig-test-cards button { color:#286d87; }
+.ao-demo-intro .mig-test-cards button[aria-pressed="true"] { color:#245668; }
+.ao-demo-intro .mig-test-cards button:focus-visible,
+.ao-demo-intro .mig-method-nav button:focus-visible { outline-color:#397e95; }
+.ao-demo-intro .mig-shop-icon { background:#edf3f8; }
+.ao-demo-intro .mig-shop, .ao-demo-intro .mig-method-nav,
+.ao-demo-intro .mig-checkout-total, .ao-demo-intro .mig-checkout-footer { border-color:#dfe7ec; }
+.dark .ao-demo-intro .mig-checkout { border-color:#455962; }
+.dark .ao-demo-intro .mig-field { background:#2b3742; border-color:#43545f; color:#c4d2db; }
+.dark .ao-demo-intro .mig-method-nav button[aria-pressed="true"] { background:#294450; color:#9cd0df; }
+.dark .ao-demo-intro .mig-languages { background:#303f4a; }
+.dark .ao-demo-intro .mig-interactive .mig-languages button[aria-pressed="true"] { background:#294450; color:#b2deea; }
+.dark .ao-demo-intro .mig-test-cards button { color:#9ccddd; }
+.dark .ao-demo-intro .mig-test-cards button[aria-pressed="true"] { color:#c3e7ef; }
+.dark .ao-demo-intro .mig-shop-icon { background:#303f50; }
+.dark .ao-demo-intro .mig-shop, .dark .ao-demo-intro .mig-method-nav,
+.dark .ao-demo-intro .mig-checkout-total, .dark .ao-demo-intro .mig-checkout-footer { border-color:#42535f; }
+
