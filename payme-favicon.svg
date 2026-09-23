@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Pay-me</title>
+  <rect width="64" height="64" rx="15" fill="#123E49"/>
+  <g fill="#64D398">
+    <path d="M13 10h11L21 21z"/><path d="M13 22h11L21 33z"/>
+    <path d="M13 34h11L21 45z"/><path d="M13 46h11L21 57z"/>
+  </g>
+  <g fill="#55BFB0">
+    <path d="M26 10h11L34 21z"/><path d="M26 22h11L34 33z"/>
+    <path d="M26 34h11L34 45z"/>
+  </g>
+  <g fill="#73BFD6">
+    <path d="M39 10h11L47 21z"/><path d="M39 22h11L47 33z"/>
+  </g>
+</svg>
+

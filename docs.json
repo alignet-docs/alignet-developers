@@ -1103,9 +1103,7 @@
   "search": {
     "prompt": "Buscar en la guía…"
   },
-  "favicon": {
-    "light": "/icon/IconoOscuroPayMe.png",
-    "dark": "/icon/IconoClaroPayMe.png"
-  }
+  "favicon": "/payme-favicon.svg"
 }
+
 
