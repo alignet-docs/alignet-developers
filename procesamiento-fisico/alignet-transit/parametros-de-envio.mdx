@@ -96,10 +96,11 @@ Utiliza `tollData` para enviar datos de la operación de peaje con fines de traz
 
 | Campo | Tipo JSON | Obligatorio | Descripción |
 | --- | --- | --- | --- |
-| `shiftId` | String | No | Identificador del turno de la operación de peaje (`IdTurnoVia-Celsat`). |
-| `tollOperatorId` | String | No | Identificador del operador del peaje, por ejemplo, `PROVIAS` o `IRSA`. |
+| `shiftId` | String | No | Identificador del turno y la vía. Su formato se acuerda para cada integración; no existe una composición única para todos los operadores. |
+| `tollOperatorId` | String | No | Identificador del operador del peaje. |
 | `tollPointId` | String | No | Identificador del punto de peaje. |
 | `laneId` | String | No | Identificador de la vía o carril. |
+| `transactionDateTime` | String | No | Fecha y hora de la operación en formato ISO 8601, con zona horaria. |
 | `plate` | String | No | Placa del vehículo. |
 | `tollAmount` | String | No | Importe del peaje expresado en unidades menores. |
 | `withholdingAmount` | String | No | Importe de la retención expresado en unidades menores. |
@@ -109,6 +110,10 @@ Cuando envíes los importes de peaje y retención, deben cumplir esta relación:
 ```text
 amount = tollAmount + withholdingAmount
 ```
+
+Si `shiftId` codifica el punto, la vía, el turno o una fecha operativa, acuerda antes su orden y la longitud de cada segmento. Los componentes incluidos en el identificador deben ser coherentes con `tollPointId` y `laneId` cuando también se envían por separado. La fecha operativa del turno puede ser distinta de la fecha calendario de `transactionDateTime`, especialmente si un turno cruza la medianoche.
+
+Con una convención de composición definida para la integración, los componentes de `shiftId` pueden separarse para filtros y columnas de reportes de conciliación. Esta separación corresponde al procesamiento del reporte; no requiere agregar campos `shift` o `shiftDate` al cuerpo de `POST /authorize`.
 
 ### `additionalFields`
 
@@ -122,13 +127,15 @@ Utiliza `additionalFields` para asociar otra información complementaria al pago
 
 No envíes números, booleanos, arreglos, objetos anidados ni valores `null` dentro de `additionalFields`. Si no necesitas enviar información adicional, omite el objeto.
 
+Las claves de `additionalFields` se acuerdan para cada integración. Por ejemplo, datos como el sentido de circulación, la clasificación del vehículo o la cantidad de ejes pueden evaluarse como información complementaria, con las claves `direction`, `vehicleClass` y `axleCount`, respectivamente. Estos nombres son ilustrativos: no forman parte del ejemplo de autorización siguiente y no deben enviarse hasta que se confirme su soporte y su uso en procesamiento, consulta o reportes.
+
 <Note>
-  El catálogo de claves admitidas y el uso de cada valor por el procesador están pendientes de validación con Alignet. Las claves del ejemplo son ilustrativas y no representan un catálogo obligatorio.
+  Confirma con Alignet las claves admitidas y el uso de cada valor antes de incorporarlos a una integración. Incluir un valor en `additionalFields` no garantiza que esté disponible como filtro o columna de un reporte.
 </Note>
 
 ## Ejemplo de autorización para peaje
 
-El siguiente ejemplo incluye los datos opcionales de la operación de peaje para trazabilidad:
+El siguiente ejemplo ilustra los datos de la operación de peaje con identificadores genéricos. El formato de `shiftId` mostrado es solo un ejemplo de composición: código del punto (`AB`) + vía (`2`) + turno (`N`) + fecha operativa (`20260710`). Cada integración debe acordar su propia convención.
 
 ```json
 {
@@ -137,10 +144,11 @@ El siguiente ejemplo incluye los datos opcionales de la operación de peaje para
   "currency": "604",
   "paymentMethod": "CARD",
   "tollData": {
-    "shiftId": "TV-012001-20260916-D",
-    "tollOperatorId": "PROVIAS",
-    "tollPointId": "TA1",
-    "laneId": "N",
+    "shiftId": "AB2N20260710",
+    "tollOperatorId": "OPERADOR_01",
+    "tollPointId": "AB",
+    "laneId": "2",
+    "transactionDateTime": "2026-07-10T00:13:00-05:00",
     "plate": "TIY953",
     "tollAmount": "2583",
     "withholdingAmount": "567"
@@ -183,7 +191,7 @@ Corrige el campo indicado antes de reenviar la solicitud. Conserva el error y el
 
 ## Antes de producción
 
-Confirma las monedas y medios de pago habilitados, el catálogo de `additionalFields`, el timeout definitivo y el comportamiento de una referencia reutilizada con otro body. Consulta el registro centralizado de [Datos por validar](/procesamiento-fisico/alignet-transit/datos-por-validar).
+Confirma las monedas y medios de pago habilitados, el soporte de `transactionDateTime`, la convención de `shiftId`, el catálogo de `additionalFields`, el timeout definitivo y el comportamiento de una referencia reutilizada con otro body. Si los componentes de `shiftId` se utilizarán en reportes, confirma también la regla de extracción y la fecha operativa que corresponde a los turnos que cruzan la medianoche. Consulta el registro centralizado de [Datos por validar](/procesamiento-fisico/alignet-transit/datos-por-validar).
 
 Hasta confirmar el último punto, reenvía exactamente el mismo cuerpo cuando no hayas recibido el resultado. Para consultar su estado, utiliza el `operationNumber` original.
 
@@ -196,6 +204,7 @@ Antes de enviar la solicitud, verifica lo siguiente:
 - `currency` es un String numérico de exactamente tres dígitos.
 - `paymentMethod` está presente y contiene exactamente un valor: `CARD` o `QR`, en mayúsculas.
 - Si envías `tollData`, sus campos son String y los importes cumplen `amount = tollAmount + withholdingAmount`.
+- Si envías `transactionDateTime`, incluye la zona horaria. Si `shiftId` tiene componentes acordados, comprueba su coherencia con el punto y la vía enviados por separado.
 - Todos los valores de `additionalFields`, si envías el objeto, son cadenas.
 - La solicitud utiliza `Content-Type: application/json`.
 - El timeout del cliente HTTP es el acordado para el ambiente.
