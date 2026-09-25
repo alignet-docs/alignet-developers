@@ -19,6 +19,7 @@ Esta página reúne la información ambigua, incompleta o dependiente de cada im
 | Frecuencia de consulta | Header `Retry-After`; aproximadamente `2` segundos si no está presente. | Intervalo, backoff y tiempo máximo de consulta. |
 | Operación no resuelta | No iniciar otro cobro ante `PENDING`, `PROCESSING` o `UNKNOWN`. | Procedimiento de inmovilización, escalamiento y decisión de negocio. |
 | Reinicio durante un extorno | Puede producir `UNKNOWN`. | Confirmar si el procesador recibió la reversa y cómo conciliarla. |
+| Cancelación con resultado incierto | `POST /cancel` puede responder `202` con `Retry-After`, o perderse la conexión antes de recibir el resultado. | Confirmar el mecanismo para recuperar o conciliar el resultado final; no existe un GET documentado para cancelaciones. |
 
 ## Contrato y habilitación
 
@@ -26,7 +27,7 @@ Esta página reúne la información ambigua, incompleta o dependiente de cada im
 | --- | --- | --- |
 | `operationNumber` | String numérico único de `1–64` dígitos. | Restricciones adicionales que pueda imponer el procesador. |
 | Referencia reutilizada con otro body | No está documentado. | Comportamiento de Pay-me PinPAD; hasta entonces, reenvía exactamente el mismo payload. |
-| `additionalFields` | Objeto opcional; todos sus valores son String. | Catálogo de claves y uso final de cada dato. |
+| `additionalFields` | Objeto opcional; todos sus valores son String. | El comercio define las claves que necesita enviar como información complementaria. |
 | Monedas | PEN usa `currency: "604"`. | Otras monedas habilitadas para el comercio y el ambiente. |
 | Métodos de pago | El contrato admite `CARD` y `QR`, uno por solicitud. | Métodos efectivamente habilitados para el comercio y el ambiente. |
 | Códigos financieros | `00` es aprobación; `01` aparece como ejemplo verificado de rechazo. | Catálogo completo y clasificación de códigos reintentables. |

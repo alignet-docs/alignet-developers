@@ -11,6 +11,7 @@ La sección pública de Transit PinPAD está alineada con la guía técnica del 
 - Se documentaron IP, puerto `8080` predeterminado, red local, configuración inicial y verificación de llaves.
 - Se corrigieron tipos, obligatoriedad y validaciones de `operationNumber`, `amount`, `currency` y `additionalFields`.
 - Se reemplazó la respuesta anidada anterior por la estructura plana vigente.
+- Se separó la cancelación de una autorización activa (`POST /cancel`) del extorno de una venta aprobada (`POST /reversals`).
 - Se documentaron códigos HTTP, estados, idempotencia, concurrencia, timeouts y recuperación por consulta.
 - Se añadieron ejemplos de cURL, Java, C#, Python y Node.js.
 - Se añadió una página de solución de problemas y se renovaron los checklists de certificación y producción.

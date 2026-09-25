@@ -25,7 +25,7 @@ No envíes un header `Authorization` ni agregues un esquema de firma por iniciat
 
 | Header | Operación | Uso |
 | --- | --- | --- |
-| `Content-Type: application/json` | `POST /authorize` y `POST /reversals` | Obligatorio para enviar el cuerpo JSON. |
+| `Content-Type: application/json` | `POST /authorize`, `POST /cancel` y `POST /reversals` | Obligatorio para enviar el cuerpo JSON. |
 | `Retry-After` | Respuestas HTTP `202`, cuando esté presente | Indica cuánto esperar antes de consultar nuevamente. |
 | `Authorization` | Todas | No forma parte del contrato vigente. |
 

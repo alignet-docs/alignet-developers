@@ -44,6 +44,8 @@ El valor definitivo de la espera interna, el timeout del sistema central y el ti
 
 ## Recuperación de una operación incierta
 
+Este procedimiento corresponde a `POST /authorize` y su consulta mediante `GET /payments/{operationNumber}`. Para `POST /cancel`, revisa el [manejo específico de `202` y pérdida de conexión](/procesamiento-fisico/alignet-transit/cancelacion#manejo-de-202-y-perdida-de-conexion), porque no existe un GET de cancelación confirmado.
+
 Consulta cuando ocurra cualquiera de estos casos:
 
 - `POST /authorize` devuelve HTTP `202` con `status: "PENDING"`;

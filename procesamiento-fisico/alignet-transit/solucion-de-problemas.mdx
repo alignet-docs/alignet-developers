@@ -16,8 +16,9 @@ Usa el código HTTP, `status`, `resultCode` y `operationNumber` para diagnostica
 | `400 BAD_REQUEST` | JSON o campo inválido. | Revisa tipo, obligatoriedad, longitud y formato. Corrige antes de reenviar. |
 | `409 POS_BUSY` | Existe otra operación activa. | Espera a que termine. Serializa los cobros por terminal. |
 | `503 POS_NOT_AVAILABLE` | Pay-me PinPAD o el SDK de pagos no está listo. | El operador debe abrir la aplicación y dejarla en estado **Listo**. |
-| El sistema central pierde la respuesta | Timeout menor que la duración del cobro o pérdida de red. | No inicies otro cobro. Consulta el `operationNumber` original. |
-| `202 PENDING` | Venció la espera, pero la operación puede seguir activa. | Consulta y respeta `Retry-After`. |
+| El sistema central pierde la respuesta de autorización | Timeout menor que la duración del cobro o pérdida de red. | No inicies otro cobro. Consulta el `operationNumber` original mediante `GET /payments/{operationNumber}`. |
+| `202 PENDING` en autorización o extorno | Venció la espera, pero la operación puede seguir activa. | Usa el GET correspondiente y respeta `Retry-After`. |
+| `202` en cancelación | Venció la espera de `/cancel`, sin resultado final. | Respeta `Retry-After`; no uses un GET de extorno. El mecanismo de recuperación está pendiente de confirmar. |
 | `404 NOT_FOUND` al consultar | La referencia no existe o no coincide con la enviada. | Verifica el valor exacto y el terminal consultado. No asumas rechazo financiero. |
 | Estado `UNKNOWN` | El terminal se reinició durante el proceso. | Mantén la operación abierta, consulta y aplica el escalamiento acordado. |
 | Pago rechazado con HTTP `200` | `DENIED` es un resultado financiero válido. | No confirmes el pago. Un nuevo intento requiere otro `operationNumber`. |
@@ -57,6 +58,8 @@ Conserva el `resultMessage` para saber qué validación falló. No lo muestres s
 ## Timeout o desconexión
 
 Un timeout describe la conexión del sistema central, no el resultado financiero.
+
+El siguiente flujo corresponde a `POST /authorize`. Para una cancelación, conserva la referencia y aplica el [procedimiento de `/cancel`](/procesamiento-fisico/alignet-transit/cancelacion#manejo-de-202-y-perdida-de-conexion); no uses `GET /reversals/{operationNumber}`.
 
 ```text
 POST sin respuesta

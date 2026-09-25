@@ -19,11 +19,12 @@ El puerto predeterminado es `8080`. Confirma la IP y el puerto de cada terminal 
 | `GET` | `/health` | Verificar que Pay-me PinPAD esté accesible. | `200` |
 | `POST` | `/authorize` | Iniciar un cobro síncrono. | `200`, `202`, `400`, `409`, `503` |
 | `GET` | `/payments/{operationNumber}` | Recuperar el estado de una autorización. | `200`, `202`, `404` |
-| `POST` | `/reversals` | Cancelar una autorización activa o extornar una venta aprobada. | `200`, `202`, `400`, `404`, `409`, `502`, `503` |
-| `GET` | `/reversals/{operationNumber}` | Recuperar el estado de una cancelación o extorno. | `200`, `202`, `404`, `502` |
+| `POST` | `/cancel` | Cancelar una autorización que continúa en curso. | `200`, `202`, `404`, `503` |
+| `POST` | `/reversals` | Extornar una venta aprobada. | `200`, `202`, `400`, `404`, `409`, `502`, `503` |
+| `GET` | `/reversals/{operationNumber}` | Recuperar el estado de un extorno cuando el resultado es incierto. | `200`, `202`, `404`, `502` |
 
 <Note>
-  `POST /reversals` decide la acción según el estado actual de la operación. No recibe un parámetro para elegir entre cancelación y extorno.
+  `POST /cancel` y `POST /reversals` son operaciones distintas. Ambas usan el `operationNumber` de la autorización original y se consumen en el mismo host y puerto que `POST /authorize`.
 </Note>
 
 ## Verificar disponibilidad
@@ -57,11 +58,17 @@ Usa `GET /health` al configurar el terminal y antes de iniciar operaciones cuand
 curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528"
 ```
 
-## Cancelar o extornar y consultar el resultado
+## Cancelar una autorización activa
 
-`POST /reversals` requiere el `operationNumber` de la autorización original. Consulta [Cancelación y extorno](/procesamiento-fisico/alignet-transit/extorno) para revisar el contrato completo.
+`POST /cancel` requiere el `operationNumber` de la autorización original que continúa en curso. HTTP `200` entrega el resultado final en la misma respuesta; no requiere un GET posterior. Consulta [Cancelación de una autorización en curso](/procesamiento-fisico/alignet-transit/cancelacion) para revisar el contrato y el manejo de `202`.
 
-`GET /reversals/{operationNumber}` recupera la solicitud de cancelación o extorno. No lo confundas con `GET /payments/{operationNumber}`, que recupera la autorización original.
+No existe un endpoint de consulta de cancelaciones confirmado en la documentación disponible.
+
+## Extornar una venta aprobada
+
+`POST /reversals` requiere el `operationNumber` de la venta aprobada. HTTP `200` entrega el resultado final en la misma respuesta. Consulta [Extorno de una venta aprobada](/procesamiento-fisico/alignet-transit/extorno) para revisar el contrato completo.
+
+`GET /reversals/{operationNumber}` se reserva para recuperar un extorno después de `202`, timeout o pérdida de conexión. No consulta cancelaciones y no reemplaza la respuesta final del POST.
 
 ## Rutas fuera del contrato vigente
 

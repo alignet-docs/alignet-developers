@@ -20,9 +20,9 @@ icon: "people-arrows"
 
 ### Cliente HTTP
 
-- Implementa `GET /health`, `POST /authorize`, `GET /payments/{operationNumber}`, `POST /reversals` y `GET /reversals/{operationNumber}`.
-- Envía `Content-Type: application/json` en la autorización y en la cancelación o extorno.
-- Configura al menos 100 a 110 segundos de timeout para `POST /authorize` y `POST /reversals` con la espera de desarrollo actual.
+- Implementa `GET /health`, `POST /authorize`, `GET /payments/{operationNumber}`, `POST /cancel`, `POST /reversals` y `GET /reversals/{operationNumber}`.
+- Envía `Content-Type: application/json` en la autorización, la cancelación y el extorno.
+- Configura al menos 100 a 110 segundos de timeout para `POST /authorize`, `POST /cancel` y `POST /reversals` con la espera de desarrollo actual.
 - Lee el código HTTP, el cuerpo JSON y `Retry-After` cuando esté disponible.
 - Maneja `200`, `202`, `400`, `404`, `409`, `502` y `503` según la operación.
 - Mantén una cola o bloqueo por terminal para no enviar cobros concurrentes.

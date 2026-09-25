@@ -141,7 +141,7 @@ GET /payments/{operationNumber}
 Ejemplo:
 
 ```http
-GET http://192.168.68.121:8080/payments/44992528
+GET http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528
 ```
 
 | Código HTTP | Significado | Acción del sistema central |
@@ -169,7 +169,7 @@ Respuesta de una operación inexistente:
 | --- | --- | --- | --- |
 | `APPROVED` | Sí | Pago aprobado. | Confirma solo si `resultCode` también es `"00"`. |
 | `DENIED` | Sí | Pago rechazado por el procesador. | No confirmes. Un nuevo intento requiere otro `operationNumber`. |
-| `CANCELLED` | Sí | La autorización terminó cancelada; no equivale a un extorno. | No confirmes. Un nuevo intento requiere otra referencia. Revisa la [diferencia entre cancelación y extorno](/procesamiento-fisico/alignet-transit/extorno#cancelacion-y-extorno-no-son-sinonimos). |
+| `CANCELLED` | Sí | La autorización terminó cancelada; no equivale a un extorno. | No confirmes el cobro. Revisa [Cancelación de una autorización en curso](/procesamiento-fisico/alignet-transit/cancelacion). |
 | `PENDING` | No | Venció la espera, pero el cobro puede continuar. | Consulta; no inicies otro cobro. |
 | `PROCESSING` | No | El cobro se está procesando. | Consulta; no inicies otro cobro. |
 | `UNKNOWN` | No | El resultado es incierto, por ejemplo después de un reinicio durante el proceso. | Mantén la operación abierta y consulta. |

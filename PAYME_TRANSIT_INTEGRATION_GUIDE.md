@@ -12,18 +12,20 @@ El **sistema central del comercio** es el cliente HTTP. Puede ser un POS, un sis
 | `GET` | `/health` | Verificar disponibilidad. |
 | `POST` | `/authorize` | Iniciar un cobro síncrono. |
 | `GET` | `/payments/{operationNumber}` | Consultar una operación. |
-| `POST` | `/reversals` | Cancelar una autorización activa o extornar una venta aprobada. |
-| `GET` | `/reversals/{operationNumber}` | Consultar una cancelación o extorno. |
+| `POST` | `/cancel` | Cancelar una autorización que continúa en curso. |
+| `POST` | `/reversals` | Extornar una venta aprobada. |
+| `GET` | `/reversals/{operationNumber}` | Consultar un extorno cuando el resultado es incierto. |
 
 La solicitud de autorización incluye `operationNumber`, `amount`, `currency` y `paymentMethod` como campos obligatorios. `additionalFields` es opcional. La aprobación requiere HTTP `200`, `status: "APPROVED"` y `resultCode: "00"`.
 
-Ante HTTP `202`, timeout o pérdida de comunicación, el sistema central conserva la referencia y consulta la operación. Pay-me PinPAD aplica idempotencia por `operationNumber` y procesa una operación a la vez.
+Ante HTTP `202`, timeout o pérdida de comunicación, el sistema central conserva la referencia. Para autorizaciones consulta `GET /payments/{operationNumber}` y para extornos usa `GET /reversals/{operationNumber}`. El mecanismo de recuperación de `/cancel` está pendiente de confirmación y no debe sustituirse por un GET de extorno. Pay-me PinPAD aplica idempotencia por `operationNumber` y procesa una operación a la vez.
 
 ## Documentación detallada
 
 - `procesamiento-fisico/alignet-transit/introduccion.mdx`
 - `procesamiento-fisico/alignet-transit/arquitectura-y-trazabilidad.mdx`
 - `procesamiento-fisico/alignet-transit/parametros-de-envio.mdx`
+- `procesamiento-fisico/alignet-transit/cancelacion.mdx`
 - `procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos.mdx`
 - `procesamiento-fisico/alignet-transit/operacion-y-recuperacion.mdx`
 - `procesamiento-fisico/alignet-transit/solucion-de-problemas.mdx`

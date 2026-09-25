@@ -17,13 +17,13 @@ En los ejemplos, reemplaza `192.168.68.121` y `8080` por la IP y el puerto confi
 ### Disponibilidad
 
 ```bash
-curl "http://192.168.68.121:8080/health"
+curl "http://<IP_DEL_PINPAD>:<PUERTO>/health"
 ```
 
 ### Autorización
 
 ```bash
-curl --request POST "http://192.168.68.121:8080/authorize" \
+curl --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/authorize" \
   --header "Content-Type: application/json" \
   --max-time 110 \
   --data '{
@@ -39,12 +39,12 @@ curl --request POST "http://192.168.68.121:8080/authorize" \
   }'
 ```
 
-Las claves de `additionalFields` son ilustrativas. Confirma con Alignet el catálogo admitido para tu implementación.
+El comercio puede definir y enviar en `additionalFields` la información complementaria que necesite asociar al pago.
 
 ### Consulta
 
 ```bash
-curl -i "http://192.168.68.121:8080/payments/44992528"
+curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528"
 ```
 
 Usa `-i` durante las pruebas para comprobar `Retry-After` en una respuesta `202`.
@@ -141,7 +141,7 @@ public sealed class PinpadClient
 ```python
 import requests
 
-BASE_URL = "http://192.168.68.121:8080"
+BASE_URL = "http://<IP_DEL_PINPAD>:<PUERTO>"
 
 
 def authorize(operation_number, amount, currency, payment_method):
@@ -178,7 +178,7 @@ elif http_status == 202:
 ## Node.js 18 o posterior
 
 ```javascript
-const BASE_URL = "http://192.168.68.121:8080";
+const BASE_URL = "http://<IP_DEL_PINPAD>:<PUERTO>";
 
 async function authorize(operationNumber, amount, currency, paymentMethod) {
   const controller = new AbortController();

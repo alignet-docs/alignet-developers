@@ -32,14 +32,14 @@ Envía los cuatro campos obligatorios en el cuerpo JSON:
 
 ## Parámetros
 
-| Campo | Tipo JSON | Obligatorio | Validación | Descripción |
-| --- | --- | --- | --- | --- |
-| `operationNumber` | String | Sí | Cadena numérica de 6 a 12 dígitos. | Identificador único generado por el sistema central. Se utiliza como clave de idempotencia y referencia de consulta. |
-| `amount` | String | Sí | Cadena numérica que representa un entero positivo de 1 a 12 dígitos, expresado en unidades menores. | Importe total del pago. Por ejemplo, `"1500"` representa S/ 15.00. |
-| `currency` | String | Sí | Cadena numérica de exactamente 3 dígitos. | Código numérico ISO 4217 de la moneda. Para soles peruanos, envía `"604"`. |
-| `paymentMethod` | String | Sí | Debe contener un único valor: `CARD` o `QR`. | Método con el que Pay-me PinPAD procesará el pago. |
-| `tollData` | Object | No | Sus campos deben enviarse como String. | Datos de la operación de peaje. Pueden enviarse para fines de trazabilidad. |
-| `additionalFields` | Object | No | Todos los valores deben ser String. | Información complementaria asociada al pago. |
+| Campo              | Tipo JSON | Obligatorio | Validación                                                                                          | Descripción                                                                                                          |
+| ------------------ | --------- | ----------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `operationNumber`  | String    | Sí          | Cadena numérica de 6 a 12 dígitos.                                                                  | Identificador único generado por el sistema central. Se utiliza como clave de idempotencia y referencia de consulta. |
+| `amount`           | String    | Sí          | Cadena numérica que representa un entero positivo de 1 a 12 dígitos, expresado en unidades menores. | Importe total del pago. Por ejemplo, `"1500"` representa S/ 15.00.                                                   |
+| `currency`         | String    | Sí          | Cadena numérica de exactamente 3 dígitos.                                                           | Código numérico ISO 4217 de la moneda. Para soles peruanos, envía `"604"`.                                           |
+| `paymentMethod`    | String    | Sí          | Debe contener un único valor: `CARD` o `QR`.                                                        | Método con el que Pay-me PinPAD procesará el pago.                                                                   |
+| `tollData`         | Object    | No          | Sus campos deben enviarse como String.                                                              | Datos de la operación de peaje. Pueden enviarse para fines de trazabilidad.                                          |
+| `additionalFields` | Object    | No          | Todos los valores deben ser String.                                                                 | Información complementaria asociada al pago.                                                                         |
 
 Respeta los nombres, los tipos JSON y el uso de mayúsculas de cada campo. Por ejemplo, envía `paymentMethod`, no `payment_method`.
 
@@ -49,10 +49,10 @@ Respeta los nombres, los tipos JSON y el uso de mayúsculas de cada campo. Por e
 
 Genera un `operationNumber` nuevo para cada pago y almacénalo antes de llamar a `POST /authorize`. El valor debe cumplir estas condiciones:
 
-- ser una cadena de entre 6 y 12 dígitos;
-- contener únicamente dígitos del `0` al `9`;
-- ser único para una operación real de pago;
-- permanecer asociado a la operación hasta obtener un resultado final.
+* ser una cadena de entre 6 y 12 dígitos;
+* contener únicamente dígitos del `0` al `9`;
+* ser único para una operación real de pago;
+* permanecer asociado a la operación hasta obtener un resultado final.
 
 Si no recibes el resultado por un timeout o una pérdida de conexión, conserva la referencia original. Utilízala para consultar la operación o para reenviar exactamente la misma solicitud.
 
@@ -64,12 +64,12 @@ Si no recibes el resultado por un timeout o una pérdida de conexión, conserva 
 
 Expresa el importe en unidades menores, sin símbolo de moneda, separadores ni decimales:
 
-| Importe | Valor válido de `amount` |
-| --- | ---: |
-| S/ 1.00 | `"100"` |
-| S/ 8.50 | `"850"` |
-| S/ 15.00 | `"1500"` |
-| S/ 125.40 | `"12540"` |
+| Importe   | Valor válido de `amount` |
+| --------- | -----------------------: |
+| S/ 1.00   |                  `"100"` |
+| S/ 8.50   |                  `"850"` |
+| S/ 15.00  |                 `"1500"` |
+| S/ 125.40 |                `"12540"` |
 
 Envía `amount` como String. No utilices números JSON, valores decimales, signos, espacios ni separadores.
 
@@ -83,10 +83,10 @@ Para pagos en soles peruanos, utiliza `"604"`. Confirma con Alignet cualquier mo
 
 Envía exactamente uno de los siguientes valores en mayúsculas:
 
-| Valor | Método de pago |
-| --- | --- |
+| Valor  | Método de pago               |
+| ------ | ---------------------------- |
 | `CARD` | Tarjeta de crédito o débito. |
-| `QR` | Código QR. |
+| `QR`   | Código QR.                   |
 
 Cada solicitud admite un solo método de pago. No envíes `CARD` y `QR` juntos, arreglos, valores combinados como `"CARD,QR"`, variantes como `card` o `qr`, ni valores diferentes de los documentados.
 
@@ -94,16 +94,19 @@ Cada solicitud admite un solo método de pago. No envíes `CARD` y `QR` juntos, 
 
 Utiliza `tollData` para enviar datos de la operación de peaje con fines de trazabilidad. El objeto y todos sus campos son opcionales.
 
-| Campo | Tipo JSON | Obligatorio | Descripción |
-| --- | --- | --- | --- |
-| `shiftId` | String | No | Identificador del turno y la vía. Su formato se acuerda para cada integración; no existe una composición única para todos los operadores. |
-| `tollOperatorId` | String | No | Identificador del operador del peaje. |
-| `tollPointId` | String | No | Identificador del punto de peaje. |
-| `laneId` | String | No | Identificador de la vía o carril. |
-| `transactionDateTime` | String | No | Fecha y hora de la operación en formato ISO 8601, con zona horaria. |
-| `plate` | String | No | Placa del vehículo. |
-| `tollAmount` | String | No | Importe del peaje expresado en unidades menores. |
-| `withholdingAmount` | String | No | Importe de la retención expresado en unidades menores. |
+| Campo                 | Tipo JSON | Obligatorio | Descripción                                                                                                                               |
+| --------------------- | --------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `shiftId`             | String    | No          | Identificador del turno y la vía. Su formato se acuerda para cada integración; no existe una composición única para todos los operadores. |
+| `tollOperatorId`      | String    | No          | Identificador del operador del peaje.                                                                                                     |
+| `tollPointId`         | String    | No          | Identificador del punto de peaje.                                                                                                         |
+| `laneId`              | String    | No          | Identificador de la vía o carril.                                                                                                         |
+| `transactionDateTime` | String    | No          | Fecha y hora de la operación en formato ISO 8601, con zona horaria.                                                                       |
+| `plate`               | String    | No          | Placa del vehículo.                                                                                                                       |
+| `tollAmount`          | String    | No          | Importe del peaje expresado en unidades menores.                                                                                          |
+| `withholdingAmount`   | String    | No          | Importe de la retención expresado en unidades menores.                                                                                    |
+| `direction`           | String    | No          | Sentido de circulación.                                                                                                                   |
+| `vehicleClass`        | String    | No          | Categoría del vehículo.                                                                                                                   |
+| `axleCount`           | String    | No          | Número de ejes.                                                                                                                           |
 
 Cuando envíes los importes de peaje y retención, deben cumplir esta relación:
 
@@ -111,13 +114,24 @@ Cuando envíes los importes de peaje y retención, deben cumplir esta relación:
 amount = tollAmount + withholdingAmount
 ```
 
-Si `shiftId` codifica el punto, la vía, el turno o una fecha operativa, acuerda antes su orden y la longitud de cada segmento. Los componentes incluidos en el identificador deben ser coherentes con `tollPointId` y `laneId` cuando también se envían por separado. La fecha operativa del turno puede ser distinta de la fecha calendario de `transactionDateTime`, especialmente si un turno cruza la medianoche.
+#### Interpretación de `shiftId` para reportes
 
-Con una convención de composición definida para la integración, los componentes de `shiftId` pueden separarse para filtros y columnas de reportes de conciliación. Esta separación corresponde al procesamiento del reporte; no requiere agregar campos `shift` o `shiftDate` al cuerpo de `POST /authorize`.
+El formato de `shiftId` se acuerda para cada integración. Por ejemplo, si el formato acordado es `punto + vía + turno + fecha operativa (AAAAMMDD)`, el valor ilustrativo `AB2N20260710` se interpreta así:
+
+| Componente | Valor | Significado |
+| --- | --- | --- |
+| Punto | `AB` | Debe coincidir con `tollPointId`. |
+| Vía | `2` | Debe coincidir con `laneId`. |
+| Turno | `N` | Código del turno según la convención acordada. |
+| Fecha operativa | `20260710` | Fecha asociada al turno en formato `AAAAMMDD`. |
+
+Con la convención acordada, estos componentes pueden usarse como filtros y columnas del reporte de conciliación. **No agregues `shift` ni `shiftDate` al request**: son valores derivados de `shiftId`. Define también cómo interpretar la fecha operativa cuando un turno cruza la medianoche; puede ser distinta del día indicado por `transactionDateTime`.
+
+Si el formato del identificador es diferente, define la regla de extracción antes de usarlo en reportes. No apliques el formato ilustrativo a todas las integraciones.
 
 ### `additionalFields`
 
-Utiliza `additionalFields` para asociar otra información complementaria al pago. Cada valor del objeto debe ser una cadena. Si no necesitas agregar información, puedes enviar un objeto vacío:
+El comercio puede declarar en `additionalFields` cualquier otro dato complementario que necesite. Los valores se envían como cadenas.
 
 ```json
 {
@@ -125,13 +139,7 @@ Utiliza `additionalFields` para asociar otra información complementaria al pago
 }
 ```
 
-No envíes números, booleanos, arreglos, objetos anidados ni valores `null` dentro de `additionalFields`. Si no necesitas enviar información adicional, omite el objeto.
-
-Las claves de `additionalFields` se acuerdan para cada integración. Por ejemplo, datos como el sentido de circulación, la clasificación del vehículo o la cantidad de ejes pueden evaluarse como información complementaria, con las claves `direction`, `vehicleClass` y `axleCount`, respectivamente. Estos nombres son ilustrativos: no forman parte del ejemplo de autorización siguiente y no deben enviarse hasta que se confirme su soporte y su uso en procesamiento, consulta o reportes.
-
-<Note>
-  Confirma con Alignet las claves admitidas y el uso de cada valor antes de incorporarlos a una integración. Incluir un valor en `additionalFields` no garantiza que esté disponible como filtro o columna de un reporte.
-</Note>
+Si el comercio no necesita agregar información complementaria, puede enviar un objeto vacío u omitir `additionalFields`.
 
 ## Ejemplo de autorización para peaje
 
@@ -151,7 +159,10 @@ El siguiente ejemplo ilustra los datos de la operación de peaje con identificad
     "transactionDateTime": "2026-07-10T00:13:00-05:00",
     "plate": "TIY953",
     "tollAmount": "2583",
-    "withholdingAmount": "567"
+    "withholdingAmount": "567",
+    "direction": "NORTH",
+    "vehicleClass": "HEAVY",
+    "axleCount": "3"
   },
   "additionalFields": {}
 }
@@ -175,9 +186,82 @@ curl --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/authorize" \
 
 Reemplaza `<IP_DEL_PINPAD>` y `<PUERTO>` por los valores configurados en tu terminal.
 
-## Errores de validación
+## Respuestas de autorización
 
-Una solicitud con campos ausentes o valores inválidos devuelve HTTP `400` con `resultCode: "BAD_REQUEST"`. Este resultado indica un error en la solicitud y no un rechazo financiero.
+Cuando `POST /authorize` responde HTTP `200`, el resultado final viene en esa misma respuesta. Evalúa siempre `status` y `resultCode`.
+
+| HTTP | Resultado | Acción del sistema central |
+| --- | --- | --- |
+| `200` | `APPROVED` + `00` | Confirma el pago y guarda el código de autorización. |
+| `200` | `DENIED` | No confirmes el pago. Un nuevo intento requiere otro `operationNumber`. |
+| `202` | `PENDING` | Conserva la referencia, respeta `Retry-After` y consulta el resultado. |
+| `400` | `BAD_REQUEST` | Corrige la solicitud antes de reenviarla. |
+| `409` | `POS_BUSY` | Espera a que el terminal termine la operación activa. |
+| `503` | `POS_NOT_AVAILABLE` | Restablece la disponibilidad del PinPAD antes de reintentar. |
+
+<Warning>
+  Un HTTP `200` no significa necesariamente que el pago fue aprobado. Confirma únicamente `status: "APPROVED"` junto con `resultCode: "00"`.
+</Warning>
+
+### Ejemplos de respuesta
+
+<AccordionGroup>
+  <Accordion title="Pago aprobado — 200 APPROVED" defaultOpen icon="circle-check">
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "APPROVED",
+  "resultCode": "00",
+  "resultMessage": "Aprobado",
+  "authorizationCode": "123456",
+  "completedAt": "2026-08-27T20:12:48Z"
+}
+```
+
+Confirma la venta únicamente con `APPROVED` y `00`.
+
+  </Accordion>
+
+  <Accordion title="Pago rechazado — 200 DENIED" icon="circle-xmark">
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "DENIED",
+  "resultCode": "01",
+  "resultMessage": "Peticion rechazada por el Procesador",
+  "authorizationCode": null,
+  "completedAt": "2026-08-27T20:12:48Z"
+}
+```
+
+`DENIED` es un resultado final, pero no confirma el pago.
+
+  </Accordion>
+
+  <Accordion title="Resultado pendiente — 202 PENDING" icon="clock">
+
+```http
+Retry-After: 2
+```
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "PENDING",
+  "resultCode": "WAITING_RESULT",
+  "resultMessage": "Consulte el estado antes de reintentar",
+  "authorizationCode": null,
+  "completedAt": null
+}
+```
+
+No vuelvas a cobrar. Consulta `GET /payments/{operationNumber}` y respeta `Retry-After`.
+
+  </Accordion>
+
+  <Accordion title="Solicitud inválida — 400 BAD_REQUEST" icon="triangle-exclamation">
 
 ```json
 {
@@ -187,11 +271,48 @@ Una solicitud con campos ausentes o valores inválidos devuelve HTTP `400` con `
 }
 ```
 
-Corrige el campo indicado antes de reenviar la solicitud. Conserva el error y el intento en los registros del sistema central para mantener la trazabilidad.
+Corrige el campo indicado antes de reenviar. Este error no es un rechazo financiero.
+
+  </Accordion>
+
+  <Accordion title="Terminal ocupado — 409 POS_BUSY" icon="hourglass-half">
+
+```json
+{
+  "operationNumber": "44992530",
+  "status": "ERROR",
+  "resultCode": "POS_BUSY",
+  "resultMessage": "El Pinpad está procesando otra operación",
+  "authorizationCode": null,
+  "completedAt": null
+}
+```
+
+Espera a que termine la operación activa antes de reintentar la solicitud rechazada por concurrencia.
+
+  </Accordion>
+
+  <Accordion title="PinPAD no disponible — 503 POS_NOT_AVAILABLE" icon="terminal">
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "ERROR",
+  "resultCode": "POS_NOT_AVAILABLE",
+  "resultMessage": "El SDK de pagos no está disponible",
+  "authorizationCode": null,
+  "completedAt": null
+}
+```
+
+Reintenta cuando Pay-me PinPAD y el SDK vuelvan a estar disponibles.
+
+  </Accordion>
+</AccordionGroup>
 
 ## Antes de producción
 
-Confirma las monedas y medios de pago habilitados, el soporte de `transactionDateTime`, la convención de `shiftId`, el catálogo de `additionalFields`, el timeout definitivo y el comportamiento de una referencia reutilizada con otro body. Si los componentes de `shiftId` se utilizarán en reportes, confirma también la regla de extracción y la fecha operativa que corresponde a los turnos que cruzan la medianoche. Consulta el registro centralizado de [Datos por validar](/procesamiento-fisico/alignet-transit/datos-por-validar).
+Confirma las monedas y medios de pago habilitados, el soporte de `transactionDateTime`, la convención de `shiftId`, el timeout definitivo y el comportamiento de una referencia reutilizada con otro body. Si los componentes de `shiftId` se utilizarán en reportes, confirma también la regla de extracción y la fecha operativa que corresponde a los turnos que cruzan la medianoche. Consulta el registro centralizado de [Datos por validar](/procesamiento-fisico/alignet-transit/datos-por-validar).
 
 Hasta confirmar el último punto, reenvía exactamente el mismo cuerpo cuando no hayas recibido el resultado. Para consultar su estado, utiliza el `operationNumber` original.
 
@@ -199,15 +320,16 @@ Hasta confirmar el último punto, reenvía exactamente el mismo cuerpo cuando no
 
 Antes de enviar la solicitud, verifica lo siguiente:
 
-- `operationNumber` está almacenado, es único y contiene únicamente entre 6 y 12 dígitos.
-- `amount` es un String numérico de hasta 12 dígitos que representa un entero positivo en unidades menores.
-- `currency` es un String numérico de exactamente tres dígitos.
-- `paymentMethod` está presente y contiene exactamente un valor: `CARD` o `QR`, en mayúsculas.
-- Si envías `tollData`, sus campos son String y los importes cumplen `amount = tollAmount + withholdingAmount`.
-- Si envías `transactionDateTime`, incluye la zona horaria. Si `shiftId` tiene componentes acordados, comprueba su coherencia con el punto y la vía enviados por separado.
-- Todos los valores de `additionalFields`, si envías el objeto, son cadenas.
-- La solicitud utiliza `Content-Type: application/json`.
-- El timeout del cliente HTTP es el acordado para el ambiente.
+* `operationNumber` está almacenado, es único y contiene únicamente entre 6 y 12 dígitos.
+* `amount` es un String numérico de hasta 12 dígitos que representa un entero positivo en unidades menores.
+* `currency` es un String numérico de exactamente tres dígitos.
+* `paymentMethod` está presente y contiene exactamente un valor: `CARD` o `QR`, en mayúsculas.
+* Si envías `tollData`, sus campos son String y los importes cumplen `amount = tollAmount + withholdingAmount`.
+* `direction`, `vehicleClass` y `axleCount`, si se envían, están dentro de `tollData`.
+* Si envías `transactionDateTime`, incluye la zona horaria. Si `shiftId` tiene componentes acordados, comprueba su coherencia con el punto y la vía enviados por separado.
+* Todos los valores de `additionalFields`, si envías el objeto, son cadenas.
+* La solicitud utiliza `Content-Type: application/json`.
+* El timeout del cliente HTTP es el acordado para el ambiente.
 
 <Card title="Respuestas, consulta y códigos" icon="code" href="/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos">
   Implementa los códigos HTTP, los estados y la consulta de operaciones.

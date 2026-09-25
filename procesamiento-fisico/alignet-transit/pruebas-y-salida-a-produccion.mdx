@@ -48,7 +48,8 @@ Antes de ejecutar casos:
 | --- | --- | --- |
 | Pago aprobado | HTTP `200`, `APPROVED`, `00`, código de autorización y fecha final. | Confirmar y aplicar la regla de apertura. |
 | Pago rechazado | HTTP `200`, `DENIED` y código distinto de `00`. | No confirmar. |
-| Cancelación remota | `POST /reversals` sobre una autorización activa interrumpe el flujo y termina en `CANCELLED`. | No confirmar ni enviar un extorno adicional. |
+| Cancelación remota | `POST /cancel` sobre una autorización activa devuelve HTTP `200` con resultado final `CANCELLED` o `DENIED`. | Confirmar la cancelación solo con `CANCELLED`; `DENIED` no la confirma. |
+| Cancelación pendiente | `POST /cancel` devuelve HTTP `202` e incluye `Retry-After`. | Mantener la operación abierta; el mecanismo de recuperación está pendiente de confirmar con Alignet. |
 | Extorno aprobado | `POST /reversals` devuelve HTTP `200`, `REVERSED` y `00`. | Registrar la reversa y su código de autorización. |
 | Extorno pendiente | HTTP `202`, `PENDING`, `WAITING_RESULT`. | Consultar `GET /reversals/{operationNumber}`. |
 | Extorno denegado | HTTP `200`, `DENIED` y código distinto de `00`. | No registrar como extornado ni reintentar automáticamente. |
@@ -95,7 +96,7 @@ Antes de ejecutar casos:
 </Check>
 
 <Check>
-  El sistema central ejecuta satisfactoriamente autorización, consulta, extorno y consulta de extorno.
+  El sistema central ejecuta satisfactoriamente autorización, consulta, cancelación, extorno y consulta de extorno.
 </Check>
 
 <Check>
@@ -119,7 +120,7 @@ Antes de ejecutar casos:
 </Check>
 
 <Check>
-  Las claves de `additionalFields`, monedas y medios de pago están confirmados.
+  Las claves de `additionalFields` están definidas por el comercio, y las monedas y medios de pago están confirmados.
 </Check>
 
 <Check>

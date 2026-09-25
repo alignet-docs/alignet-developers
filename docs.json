@@ -452,6 +452,7 @@
                         "pages": [
                           "procesamiento-fisico/alignet-transit/referencia-de-endpoints",
                           "procesamiento-fisico/alignet-transit/parametros-de-envio",
+                          "procesamiento-fisico/alignet-transit/cancelacion",
                           "procesamiento-fisico/alignet-transit/extorno"
                         ]
                       },

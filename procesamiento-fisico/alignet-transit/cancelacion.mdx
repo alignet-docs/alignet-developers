@@ -1,0 +1,182 @@
+---
+title: "Cancelación de una autorización en curso"
+description: "Cancela una autorización activa mediante POST /cancel e interpreta sus resultados confirmados."
+icon: "ban"
+---
+
+Usa `POST /cancel` para solicitar la cancelación de una autorización iniciada con `POST /authorize` que **todavía continúa en curso**.
+
+<CardGroup cols={2}>
+  <Card title="Cancelar autorización activa" icon="ban">
+    Usa `POST /cancel` mientras la autorización original sigue en curso. El resultado final puede ser `CANCELLED` o `DENIED`.
+  </Card>
+  <Card title="Extornar venta aprobada" icon="rotate-left" href="/procesamiento-fisico/alignet-transit/extorno">
+    Si la venta ya terminó como `APPROVED`, usa `POST /reversals`.
+  </Card>
+</CardGroup>
+
+| Decisión | Endpoint | Resultado exitoso |
+| --- | --- | --- |
+| Interrumpir una autorización activa | `POST /cancel` | HTTP `200` con `status: "CANCELLED"`. |
+| Revertir una venta aprobada | `POST /reversals` | HTTP `200` con `status: "REVERSED"` y `resultCode: "00"`. |
+
+<Warning>
+  No uses `/cancel` para una venta ya aprobada y no uses `/reversals` para cancelar una autorización activa. Son operaciones distintas.
+</Warning>
+
+<ParamField path="POST /cancel" type="endpoint" />
+
+## Solicitud
+
+`POST /cancel` se consume en el mismo host y puerto configurados para `POST /authorize`.
+
+```http
+POST /cancel
+Content-Type: application/json
+```
+
+URL completa:
+
+```text
+http://<IP_DEL_PINPAD>:<PUERTO>/cancel
+```
+
+### Cuerpo JSON confirmado
+
+```json
+{
+  "operationNumber": "44992528"
+}
+```
+
+| Campo | Tipo | Obligatorio | Descripción |
+| --- | --- | --- | --- |
+| `operationNumber` | String | Sí | El mismo número de operación enviado en la autorización original que continúa en curso. |
+
+No generes otra referencia y no envíes monto, moneda, medio de pago ni datos de tarjeta.
+
+### cURL
+
+```bash
+curl --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/cancel" \
+  --header "Content-Type: application/json" \
+  --max-time 110 \
+  --data '{"operationNumber":"44992528"}'
+```
+
+Reemplaza la IP y el puerto por los mismos valores usados para `POST /authorize`.
+
+## Respuestas confirmadas
+
+Cuando el POST responde HTTP `200`, el resultado final viene en el cuerpo de **esa misma respuesta**. Evalúa siempre `status`: un HTTP `200` no confirma por sí solo que la autorización fue cancelada.
+
+| HTTP | Resultado o situación | Acción del sistema central |
+| --- | --- | --- |
+| `200` | Resultado final `CANCELLED` o `DENIED`. Puede ser el resultado recién obtenido o uno previamente guardado. | Confirma la cancelación solo si `status` es `CANCELLED`. Con `DENIED`, no declares la autorización como cancelada. |
+| `202` | Venció la espera de 90 segundos. El resultado continúa pendiente e incluye `Retry-After`. | Mantén la operación abierta, espera el intervalo indicado y no asumas éxito ni fallo. |
+| `404` | El `operationNumber` no existe en ese PinPAD. | Verifica la referencia y que la solicitud se envió al mismo PinPAD de la autorización original. |
+| `503` | El SDK no está listo o no hay una pantalla disponible. | Restablece la disponibilidad del PinPAD antes de volver a intentar. |
+
+<Warning>
+  HTTP `202` no es una cancelación exitosa ni fallida. No confirmes `CANCELLED`, no inicies un extorno y no cierres la operación solo por haber recibido `202`.
+</Warning>
+
+## Ejemplos de respuesta
+
+<AccordionGroup>
+  <Accordion title="Cancelación confirmada — 200 CANCELLED" defaultOpen icon="ban">
+
+Los ejemplos de HTTP `200` muestran únicamente los campos de decisión confirmados; conserva cualquier campo adicional que entregue la implementación.
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "CANCELLED"
+}
+```
+
+`CANCELLED` confirma que la autorización en curso terminó cancelada. El resultado puede haberse obtenido en esta solicitud o provenir del resultado final guardado para el mismo `operationNumber`.
+
+  </Accordion>
+
+  <Accordion title="Cancelación denegada — 200 DENIED" icon="circle-xmark">
+
+```json
+{
+  "operationNumber": "44992528",
+  "status": "DENIED"
+}
+```
+
+`DENIED` es un resultado final, pero **no confirma una cancelación**. Conserva el resultado y no marques la autorización como cancelada.
+
+  </Accordion>
+
+  <Accordion title="Resultado pendiente — 202 Accepted" icon="clock">
+
+```http
+HTTP/1.1 202 Accepted
+Retry-After: <segundos>
+```
+
+Respeta el valor de `Retry-After` antes de cualquier acción posterior. La espera interna venció, pero este cuerpo no informa todavía el resultado final.
+
+  </Accordion>
+
+  <Accordion title="Operación inexistente — 404 Not Found" icon="magnifying-glass">
+
+```http
+HTTP/1.1 404 Not Found
+```
+
+El número de operación no existe en el PinPAD que recibió la solicitud. Verifica tanto la referencia como el terminal de destino.
+
+  </Accordion>
+
+  <Accordion title="PinPAD no disponible — 503 Service Unavailable" icon="terminal">
+
+```http
+HTTP/1.1 503 Service Unavailable
+```
+
+El SDK no está listo o no existe una pantalla disponible para procesar la solicitud. Recupera la disponibilidad antes de reintentar.
+
+  </Accordion>
+</AccordionGroup>
+
+## Manejo de `202` y pérdida de conexión
+
+1. Conserva el `operationNumber` original y el estado pendiente en almacenamiento persistente.
+2. Respeta `Retry-After`; no interpretes el vencimiento de 90 segundos como resultado financiero.
+3. No uses `GET /reversals/{operationNumber}`: ese endpoint consulta extornos, no cancelaciones.
+4. No inventes ni implementes `GET /cancel/{operationNumber}` sin una confirmación contractual.
+
+<Note>
+  **Pendiente de confirmar:** la documentación disponible no define un endpoint de consulta ni otro mecanismo de recuperación para obtener el resultado final de `/cancel` después de HTTP `202`, un timeout o una pérdida de conexión. Antes de producción, acuerda con Alignet el procedimiento de recuperación y conciliación.
+</Note>
+
+## Flujo recomendado para el sistema central
+
+<Steps>
+  <Step title="Comprueba que la autorización sigue activa">
+    Usa `/cancel` solo mientras la autorización original continúa en curso. Si ya fue aprobada, sigue el flujo de extorno.
+  </Step>
+  <Step title="Reutiliza la referencia original">
+    Envía el mismo `operationNumber` de `POST /authorize` al mismo host y puerto del PinPAD.
+  </Step>
+  <Step title="Procesa la respuesta del POST">
+    Ante HTTP `200`, usa el cuerpo recibido: `CANCELLED` confirma la cancelación y `DENIED` no la confirma.
+  </Step>
+  <Step title="Mantén abiertos los resultados pendientes">
+    Ante HTTP `202`, timeout o pérdida de conexión, conserva la referencia y no tomes una decisión final hasta aplicar el mecanismo que Alignet confirme.
+  </Step>
+</Steps>
+
+<CardGroup cols={2}>
+  <Card title="Extorno de una venta aprobada" icon="rotate-left" href="/procesamiento-fisico/alignet-transit/extorno">
+    Revisa el contrato separado de `POST /reversals`.
+  </Card>
+  <Card title="Solicitud de autorización" icon="file-export" href="/procesamiento-fisico/alignet-transit/parametros-de-envio">
+    Revisa `POST /authorize` y la creación del `operationNumber` original.
+  </Card>
+</CardGroup>
