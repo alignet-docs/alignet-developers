@@ -28,9 +28,10 @@ En ambos flujos se reutiliza exactamente el `operationNumber` enviado en la auto
 | Aspecto | Cancelación | Extorno |
 | --- | --- | --- |
 | Estado de la autorización original | Continúa en curso. | Ya finalizó como `APPROVED`. |
-| Acción | Intenta interrumpir la autorización activa. | Revierte una venta aprobada. |
+| Acción | Solicita cancelar la autorización activa. Si el cobro se aprueba mientras se procesa la cancelación, Pay-me ejecuta internamente el extorno correspondiente. | El integrador solicita explícitamente revertir una venta que ya conoce como aprobada. |
 | Endpoint | `POST /cancel`. | `POST /reversals`. |
-| Resultado exitoso | `CANCELLED`. | `REVERSED` junto con `resultCode: "00"`. |
+| Resultado identificado | HTTP `200`, `DENIED`, `resultCode: "14"` y `resultMessage: "Operación cancelada"`. | `REVERSED` junto con `resultCode: "00"`. |
+| Verificación del flujo | `GET /payments/{operationNumber}` para autorización o cancelación. | `GET /reversals/{operationNumber}` para el extorno solicitado mediante `/reversals`. |
 | Más información | [Cancelación de una autorización en curso](/procesamiento-fisico/alignet-transit/cancelacion). | Esta página. |
 
 ## Solicitud
@@ -73,11 +74,11 @@ Reemplaza la dirección y el puerto por los configurados en tu Wiseasy P5L. Usa 
 
 ## Respuestas de `POST /reversals`
 
-Cuando el POST responde HTTP `200`, el cuerpo de **esa misma respuesta** contiene el resultado final. No ejecutes un GET como paso obligatorio del flujo exitoso. Evalúa primero el código HTTP y después `status` y `resultCode`.
+Cuando el POST responde HTTP `200`, evalúa el resultado del cuerpo mediante `status` y `resultCode`. Al finalizar el flujo, consulta `GET /reversals/{operationNumber}` para verificar el estado actualizado, incluso después de HTTP `200`, antes de confirmar, cerrar, reintentar o solicitar otra acción.
 
 | HTTP | Resultado | Significado | Acción del sistema central |
 | --- | --- | --- | --- |
-| `200` | `REVERSED` + `00` | Se extornó una venta aprobada. Puede ser el resultado recién obtenido o uno previamente guardado. | Registra el extorno y conserva el código de autorización. |
+| `200` | `REVERSED` + `00` | Se extornó una venta aprobada. Puede ser el resultado recién obtenido o uno previamente guardado. | Conserva el resultado y el código de autorización; verifica el estado actualizado antes de cerrar el flujo. |
 | `200` | `DENIED` | El procesador rechazó el extorno. | No lo registres como extornado ni reintentes automáticamente. |
 | `202` | `PENDING` | Venció la espera y el extorno continúa pendiente. | Respeta `Retry-After` y recupera el resultado antes de decidir. |
 | `400` | `BAD_REQUEST` | La solicitud es inválida. | Corrige el body antes de reenviar. |
@@ -102,7 +103,7 @@ Cuando el POST responde HTTP `200`, el cuerpo de **esa misma respuesta** contien
 }
 ```
 
-Registra el extorno únicamente con `status: "REVERSED"` y `resultCode: "00"`. La respuesta del POST ya es el resultado final. Si repites la misma solicitud y Pay-me PinPAD conserva el resultado, puede devolver este cuerpo sin ejecutar otro extorno.
+El extorno se confirma con `status: "REVERSED"` y `resultCode: "00"`. Verifica el estado actualizado mediante `GET /reversals/{operationNumber}` antes de cerrar el flujo. Si repites la misma solicitud y Pay-me PinPAD conserva el resultado, puede devolver este cuerpo sin ejecutar otro extorno.
 
   </Accordion>
   <Accordion title="Extorno denegado — 200 DENIED" icon="circle-xmark">
@@ -219,9 +220,9 @@ Cuando `UNKNOWN` proviene de la búsqueda ambigua de la venta original, Pay-me P
   </Accordion>
 </AccordionGroup>
 
-## Recuperar un resultado incierto
+## Verificar el resultado final
 
-El GET no forma parte del flujo normal después de HTTP `200`. Úsalo únicamente después de HTTP `202`, un timeout o una pérdida de conexión:
+Consulta el extorno al finalizar el flujo, incluso después de HTTP `200`. Ante HTTP `202`, un timeout o una pérdida de conexión, utiliza la misma consulta para recuperar el resultado antes de tomar otra acción:
 
 ```http
 GET /reversals/{operationNumber}
@@ -239,6 +240,10 @@ curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/reversals/44992528"
 | `502 Bad Gateway` | La operación quedó en `UNKNOWN` según la guía técnica. | No reintentes en bucle; escala con la evidencia disponible. |
 
 `GET /payments/{operationNumber}` consulta la **autorización original**. `GET /reversals/{operationNumber}` consulta el **extorno**. Usa ambas vistas para conciliar una operación incierta.
+
+La autorización y el extorno tienen resultados separados aunque compartan `operationNumber`: un resultado `APPROVED` de la autorización no confirma ni descarta el extorno. Verifica el estado actualizado del extorno antes de confirmar, cerrar, reintentar o solicitar otra acción. Si la consulta sigue pendiente o indeterminada, mantén la operación pendiente y respeta `Retry-After` cuando corresponda. Una respuesta tardía `PENDING` no debe sobrescribir un resultado final ya confirmado.
+
+El extorno interno que Pay-me ejecuta cuando el cobro se aprueba durante `/cancel` pertenece al flujo de cancelación. No está confirmado en la implementación disponible cómo se registra ni si se expone en `GET /reversals/{operationNumber}`. Sigue la [verificación de autorización o cancelación](/procesamiento-fisico/alignet-transit/cancelacion) y no presupongas que esta consulta devuelve ese extorno interno.
 
 ## Estados y códigos de resultado
 
@@ -275,7 +280,7 @@ La guía técnica confirma que un `502 UNKNOWN` originado durante la búsqueda d
 
 ## Timeouts, idempotencia y concurrencia
 
-La espera interna de referencia es de **90 segundos**. Configura `POST /reversals` con al menos **100 a 110 segundos**. Ante `202`, respeta `Retry-After`; si no está presente, la guía propone aproximadamente 2 segundos como referencia inicial.
+La espera interna de referencia es de **90 segundos**. Configura `POST /reversals` con al menos **100 a 110 segundos**. Ante `202`, respeta `Retry-After`; si no está presente, aplica el intervalo de consulta acordado para la integración. El intervalo entre consultas no garantiza cuándo se actualizará el resultado.
 
 <Warning>
   El timeout del sistema central describe la conexión, no el resultado del extorno. Consulta `GET /reversals/{operationNumber}` antes de reenviar o tomar una decisión financiera.
@@ -304,8 +309,8 @@ Usa una sola cola por terminal. Ante una respuesta perdida, consulta primero. Si
   <Step title="Solicita y procesa el extorno">
     Envía `POST /reversals`. Ante HTTP `200`, confirma solo `REVERSED` junto con `00`; `DENIED` no es un extorno aprobado.
   </Step>
-  <Step title="Recupera solo un resultado incierto">
-    Ante HTTP `202`, timeout o pérdida de conexión, consulta `GET /reversals/{operationNumber}` y respeta `Retry-After`.
+  <Step title="Verifica el estado actualizado del extorno">
+    Consulta `GET /reversals/{operationNumber}` al finalizar el flujo, incluso después de HTTP `200`, antes de confirmar, cerrar, reintentar o solicitar otra acción. Respeta `Retry-After` cuando corresponda. Si sigue pendiente o indeterminado, mantén la operación pendiente; un `PENDING` tardío no sobrescribe un resultado final ya confirmado.
   </Step>
   <Step title="Escala estados indeterminados">
     Ante `UNKNOWN` o un límite de consulta agotado, evita reintentos en bucle y coordina la conciliación con Alignet.

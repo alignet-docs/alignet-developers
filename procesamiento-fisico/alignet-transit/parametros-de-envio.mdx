@@ -4,7 +4,11 @@ description: "Parámetros, validaciones y ejemplos para iniciar un pago con POST
 icon: "file-export"
 ---
 
-El sistema central del comercio inicia un pago mediante una solicitud HTTP a Pay-me PinPAD. `POST /authorize` es síncrono: la conexión permanece abierta mientras el terminal procesa la operación y devuelve el resultado.
+El sistema central del comercio inicia el procesamiento del pago mediante `POST /authorize` a Pay-me PinPAD. La conexión permanece abierta mientras el terminal procesa la operación, hasta recibir un resultado o completar el tiempo de espera de la solicitud.
+
+Mientras la autorización continúa en curso, puedes solicitar su [cancelación](/procesamiento-fisico/alignet-transit/cancelacion) mediante `POST /cancel` con el mismo `operationNumber`. La solicitud original de `/authorize` puede seguir abierta hasta completar su tiempo de espera, aunque la cancelación ya se haya procesado y el PINPAD haya salido de la pantalla de pago.
+
+Si posteriormente `/authorize` responde HTTP `202` con `status: "PENDING"`, significa que venció la espera de esa solicitud. Esta respuesta no invalida una cancelación confirmada ni determina por sí sola el estado final de la transacción. Consulta `GET /payments/{operationNumber}` para verificar el resultado actualizado.
 
 ```http
 POST /authorize
@@ -54,7 +58,7 @@ Genera un `operationNumber` nuevo para cada pago y almacénalo antes de llamar a
 * ser único para una operación real de pago;
 * permanecer asociado a la operación hasta obtener un resultado final.
 
-Si no recibes el resultado por un timeout o una pérdida de conexión, conserva la referencia original. Utilízala para consultar la operación o para reenviar exactamente la misma solicitud.
+Si no recibes el resultado por un timeout o una pérdida de conexión, conserva la referencia original. Consulta el estado actualizado antes de decidir si corresponde reenviar exactamente la misma solicitud.
 
 <Warning>
   No generes otro `operationNumber` después de un timeout. La solicitud original puede haber producido un cargo.
@@ -188,13 +192,14 @@ Reemplaza `<IP_DEL_PINPAD>` y `<PUERTO>` por los valores configurados en tu term
 
 ## Respuestas de autorización
 
-Cuando `POST /authorize` responde HTTP `200`, el resultado final viene en esa misma respuesta. Evalúa siempre `status` y `resultCode`.
+Cuando `POST /authorize` responde HTTP `200`, evalúa `status` y `resultCode` del cuerpo. Al finalizar el flujo, consulta `GET /payments/{operationNumber}` para verificar el resultado actualizado antes de confirmar, cerrar, reintentar o solicitar otra acción.
 
 | HTTP | Resultado | Acción del sistema central |
 | --- | --- | --- |
-| `200` | `APPROVED` + `00` | Confirma el pago y guarda el código de autorización. |
-| `200` | `DENIED` | No confirmes el pago. Un nuevo intento requiere otro `operationNumber`. |
-| `202` | `PENDING` | Conserva la referencia, respeta `Retry-After` y consulta el resultado. |
+| `200` | `APPROVED` + `00` | Guarda el código de autorización y verifica el estado actualizado antes de confirmar el pago. |
+| `200` | `DENIED` + `14` + `"Operación cancelada"` | Identifica la cancelación; verifica el resultado actualizado y no confirmes el pago. |
+| `200` | Otros resultados `DENIED` | No confirmes el pago ni los clasifiques automáticamente como cancelación. Consulta antes de decidir un nuevo intento. |
+| `202` | `PENDING` | Venció la espera de la solicitud. Conserva la referencia, respeta `Retry-After` cuando se incluya y consulta el resultado actualizado. |
 | `400` | `BAD_REQUEST` | Corrige la solicitud antes de reenviarla. |
 | `409` | `POS_BUSY` | Espera a que el terminal termine la operación activa. |
 | `503` | `POS_NOT_AVAILABLE` | Restablece la disponibilidad del PinPAD antes de reintentar. |
@@ -219,7 +224,7 @@ Cuando `POST /authorize` responde HTTP `200`, el resultado final viene en esa mi
 }
 ```
 
-Confirma la venta únicamente con `APPROVED` y `00`.
+Confirma la venta únicamente con `APPROVED` y `00`, después de verificar el estado actualizado mediante `GET /payments/{operationNumber}`.
 
   </Accordion>
 
@@ -257,7 +262,7 @@ Retry-After: 2
 }
 ```
 
-No vuelvas a cobrar. Consulta `GET /payments/{operationNumber}` y respeta `Retry-After`.
+No vuelvas a cobrar. Consulta `GET /payments/{operationNumber}` y respeta `Retry-After` cuando se incluya. Una respuesta tardía `PENDING` no debe sobrescribir un resultado final ya confirmado, incluida una cancelación.
 
   </Accordion>
 
@@ -310,11 +315,18 @@ Reintenta cuando Pay-me PinPAD y el SDK vuelvan a estar disponibles.
   </Accordion>
 </AccordionGroup>
 
+## Verificar el resultado final
+
+1. Conserva el `operationNumber` y consulta `GET /payments/{operationNumber}` al finalizar la autorización o su cancelación.
+2. Evalúa el estado actualizado antes de confirmar, cerrar, reintentar o solicitar otra acción. Si la consulta sigue mostrando un resultado pendiente o indeterminado, mantén la operación pendiente y respeta `Retry-After` cuando corresponda.
+3. No sobrescribas un resultado final ya confirmado con una respuesta tardía `PENDING` de `/authorize`. El fin de la espera HTTP y la salida de la pantalla de pago no determinan por sí solos el resultado financiero.
+4. Si ya conoces que la venta terminó como `APPROVED` y deseas revertirla, utiliza `POST /reversals` con la misma referencia y verifica ese extorno mediante `GET /reversals/{operationNumber}`. La autorización y el extorno tienen resultados separados.
+
 ## Antes de producción
 
 Confirma las monedas y medios de pago habilitados, el soporte de `transactionDateTime`, la convención de `shiftId`, el timeout definitivo y el comportamiento de una referencia reutilizada con otro body. Si los componentes de `shiftId` se utilizarán en reportes, confirma también la regla de extracción y la fecha operativa que corresponde a los turnos que cruzan la medianoche. Consulta el registro centralizado de [Datos por validar](/procesamiento-fisico/alignet-transit/datos-por-validar).
 
-Hasta confirmar el último punto, reenvía exactamente el mismo cuerpo cuando no hayas recibido el resultado. Para consultar su estado, utiliza el `operationNumber` original.
+Hasta confirmar el último punto, consulta primero con el `operationNumber` original cuando no hayas recibido el resultado. Si corresponde reenviar, conserva exactamente el mismo cuerpo y referencia.
 
 ## Lista de verificación
 
