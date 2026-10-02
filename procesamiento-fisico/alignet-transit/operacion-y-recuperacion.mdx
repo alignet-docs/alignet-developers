@@ -4,24 +4,20 @@ description: "Flujo síncrono, timeouts, consulta, idempotencia, concurrencia y 
 icon: "rotate"
 ---
 
-## Secuencia normal
+## Secuencia por método
 
-```mermaid
-sequenceDiagram
-    participant CENTRAL as Sistema central del comercio
-    participant PINPAD as Pay-me PinPAD / Wiseasy P5L
-    participant BANK as Procesador o banco
+| Método | Secuencia normal |
+| --- | --- |
+| CARD | Autorizar → solicitar tarjeta y PIN cuando corresponda → procesar → confirmar resultado. |
+| QR | Autorizar → generar QR y transacción pendiente → esperar confirmación de pago → confirmar resultado. |
 
-    CENTRAL->>CENTRAL: Generar y persistir operationNumber
-    CENTRAL->>PINPAD: POST /authorize
-    PINPAD->>PINPAD: Mostrar pago y leer tarjeta/PIN
-    PINPAD->>BANK: Procesar autorización
-    BANK-->>PINPAD: Aprobar o rechazar
-    PINPAD-->>CENTRAL: 200 con resultado final
-    CENTRAL->>CENTRAL: Evaluar status y resultCode
-```
+El POST espera un resultado hasta agotar su tiempo de espera. La transacción QR existe desde que se genera el código. Consulta los [diagramas CARD y QR](/procesamiento-fisico/alignet-transit/cancelacion).
 
-`POST /authorize` es síncrono. La misma llamada permanece abierta mientras el usuario presenta su tarjeta e ingresa el PIN cuando corresponde.
+## Después de cancelar
+
+Para ambos métodos, `/cancel` corta el flujo visual. Siempre consulta `GET /payments/{operationNumber}`, incluso después de HTTP `200`. Si aparece una autorización, verifica si existe extorno completado o en curso antes de solicitar otro. Aplica la [tabla de resolución](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
+
+No inicies una nueva transacción mientras la anterior siga sin resolverse. Un `202 PENDING` tardío de `/authorize` no reemplaza un resultado final confirmado.
 
 ## Timeouts
 
@@ -44,7 +40,7 @@ El valor definitivo de la espera interna, el timeout del sistema central y el ti
 
 ## Recuperación de una operación incierta
 
-Este procedimiento corresponde a `POST /authorize` y su consulta mediante `GET /payments/{operationNumber}`. Para `POST /cancel`, revisa el [manejo específico de `202` y pérdida de conexión](/procesamiento-fisico/alignet-transit/cancelacion#manejo-de-202-y-perdida-de-conexion), porque no existe un GET de cancelación confirmado.
+Usa `GET /payments/{operationNumber}` para recuperar autorización o cancelación. Para un extorno explícito, usa `GET /reversals/{operationNumber}`. No está verificada la consulta separada del extorno interno de CARD.
 
 Consulta cuando ocurra cualquiera de estos casos:
 
@@ -56,15 +52,11 @@ Consulta cuando ocurra cualquiera de estos casos:
 
 ```mermaid
 flowchart TD
-    POST[POST /authorize] --> RESPONSE{¿Hay respuesta?}
-    RESPONSE -->|200 final| FINAL[Evaluar status y resultCode]
-    RESPONSE -->|202| STORE[Conservar operationNumber]
-    RESPONSE -->|Timeout o desconexión| STORE
-    STORE --> GET[GET /payments/operationNumber]
-    GET -->|200 final| FINAL
-    GET -->|202 pendiente| WAIT[Esperar Retry-After o ~2 s]
-    WAIT --> GET
-    GET -->|404| REVIEW[Verificar referencia y escalar si persiste]
+    A[Conservar referencia] --> B[Consultar operación]
+    B -->|Final confirmado| C[Resolver resultado]
+    B -->|Pendiente| D[Esperar Retry-After]
+    D --> B
+    B -->|Error o indeterminado| E[Verificar y escalar]
 ```
 
 Procedimiento:
@@ -122,7 +114,8 @@ La operación en curso queda en `UNKNOWN`. No la marques como aprobada ni rechaz
 2. Generar y persistir un operationNumber único.
 3. POST /authorize con timeout de al menos 100–110 s.
 4. Evaluar el código HTTP, status y resultCode.
-5. Confirmar solo 200 + APPROVED + 00.
+5. Confirmar solo 200 + APPROVED + 00 en el flujo normal.
+   Si hubo cancelación, resolver el cobro según el método y verificar el resultado.
 6. Ante 202, timeout o desconexión, consultar la referencia original.
 7. Reintentar una operación final DENIED o CANCELLED solo como una nueva venta,
    con un operationNumber nuevo y después de la decisión del usuario.
@@ -143,6 +136,7 @@ operationNumber
 amount
 currency
 paymentMethod
+tollData
 additionalFields
 HTTP status
 status
@@ -154,3 +148,5 @@ fecha y hora de cada solicitud y respuesta
 ```
 
 No almacenes datos sensibles de tarjeta.
+
+Conserva por separado los eventos de cancelación, la autorización original y cualquier extorno explícito. Guarda su estado y marcas de tiempo para evitar decisiones basadas en una respuesta anterior.

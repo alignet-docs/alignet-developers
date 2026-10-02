@@ -21,6 +21,15 @@ Construye la URL con la dirección IP y el puerto configurados en el terminal:
 http://<IP_DEL_PINPAD>:<PUERTO>/authorize
 ```
 
+## Flujos por método
+
+| Método | Inicio | Confirmación del cobro |
+| --- | --- | --- |
+| CARD | El PinPAD solicita la tarjeta después de `POST /authorize`. | Resultado `APPROVED` + `00`. |
+| QR | `POST /authorize` genera el QR y crea una transacción pendiente asociada a `operationNumber`. | Confirmación de pago con `APPROVED` + `00`; mostrar o escanear el QR no basta. |
+
+Consulta los [diagramas y la resolución después de cancelar](/procesamiento-fisico/alignet-transit/cancelacion). Siempre consulta el pago después de `/cancel`, incluso con HTTP `200`.
+
 ## Solicitud mínima
 
 Envía los cuatro campos obligatorios en el cuerpo JSON:
@@ -197,7 +206,7 @@ Cuando `POST /authorize` responde HTTP `200`, evalúa `status` y `resultCode` de
 | HTTP | Resultado | Acción del sistema central |
 | --- | --- | --- |
 | `200` | `APPROVED` + `00` | Guarda el código de autorización y verifica el estado actualizado antes de confirmar el pago. |
-| `200` | `DENIED` + `14` + `"Operación cancelada"` | Identifica la cancelación; verifica el resultado actualizado y no confirmes el pago. |
+| `200` | Cancelación CARD o QR | Aplica la [combinación por método](/procesamiento-fisico/alignet-transit/cancelacion#resultados-por-m%C3%A9todo) y consulta siempre el pago. |
 | `200` | Otros resultados `DENIED` | No confirmes el pago ni los clasifiques automáticamente como cancelación. Consulta antes de decidir un nuevo intento. |
 | `202` | `PENDING` | Venció la espera de la solicitud. Conserva la referencia, respeta `Retry-After` cuando se incluya y consulta el resultado actualizado. |
 | `400` | `BAD_REQUEST` | Corrige la solicitud antes de reenviarla. |
@@ -208,119 +217,14 @@ Cuando `POST /authorize` responde HTTP `200`, evalúa `status` y `resultCode` de
   Un HTTP `200` no significa necesariamente que el pago fue aprobado. Confirma únicamente `status: "APPROVED"` junto con `resultCode: "00"`.
 </Warning>
 
-### Ejemplos de respuesta
-
-<AccordionGroup>
-  <Accordion title="Pago aprobado — 200 APPROVED" defaultOpen icon="circle-check">
-
-```json
-{
-  "operationNumber": "44992528",
-  "status": "APPROVED",
-  "resultCode": "00",
-  "resultMessage": "Aprobado",
-  "authorizationCode": "123456",
-  "completedAt": "2026-08-27T20:12:48Z"
-}
-```
-
-Confirma la venta únicamente con `APPROVED` y `00`, después de verificar el estado actualizado mediante `GET /payments/{operationNumber}`.
-
-  </Accordion>
-
-  <Accordion title="Pago rechazado — 200 DENIED" icon="circle-xmark">
-
-```json
-{
-  "operationNumber": "44992528",
-  "status": "DENIED",
-  "resultCode": "01",
-  "resultMessage": "Peticion rechazada por el Procesador",
-  "authorizationCode": null,
-  "completedAt": "2026-08-27T20:12:48Z"
-}
-```
-
-`DENIED` es un resultado final, pero no confirma el pago.
-
-  </Accordion>
-
-  <Accordion title="Resultado pendiente — 202 PENDING" icon="clock">
-
-```http
-Retry-After: 2
-```
-
-```json
-{
-  "operationNumber": "44992528",
-  "status": "PENDING",
-  "resultCode": "WAITING_RESULT",
-  "resultMessage": "Consulte el estado antes de reintentar",
-  "authorizationCode": null,
-  "completedAt": null
-}
-```
-
-No vuelvas a cobrar. Consulta `GET /payments/{operationNumber}` y respeta `Retry-After` cuando se incluya. Una respuesta tardía `PENDING` no debe sobrescribir un resultado final ya confirmado, incluida una cancelación.
-
-  </Accordion>
-
-  <Accordion title="Solicitud inválida — 400 BAD_REQUEST" icon="triangle-exclamation">
-
-```json
-{
-  "status": "ERROR",
-  "resultCode": "BAD_REQUEST",
-  "resultMessage": "amount inválido: debe ser un entero positivo en unidades menores"
-}
-```
-
-Corrige el campo indicado antes de reenviar. Este error no es un rechazo financiero.
-
-  </Accordion>
-
-  <Accordion title="Terminal ocupado — 409 POS_BUSY" icon="hourglass-half">
-
-```json
-{
-  "operationNumber": "44992530",
-  "status": "ERROR",
-  "resultCode": "POS_BUSY",
-  "resultMessage": "El Pinpad está procesando otra operación",
-  "authorizationCode": null,
-  "completedAt": null
-}
-```
-
-Espera a que termine la operación activa antes de reintentar la solicitud rechazada por concurrencia.
-
-  </Accordion>
-
-  <Accordion title="PinPAD no disponible — 503 POS_NOT_AVAILABLE" icon="terminal">
-
-```json
-{
-  "operationNumber": "44992528",
-  "status": "ERROR",
-  "resultCode": "POS_NOT_AVAILABLE",
-  "resultMessage": "El SDK de pagos no está disponible",
-  "authorizationCode": null,
-  "completedAt": null
-}
-```
-
-Reintenta cuando Pay-me PinPAD y el SDK vuelvan a estar disponibles.
-
-  </Accordion>
-</AccordionGroup>
+Consulta los cuerpos de respuesta en [Respuestas, consulta y códigos](/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos). Los ejemplos de cancelación por método están en [Cancelación](/procesamiento-fisico/alignet-transit/cancelacion).
 
 ## Verificar el resultado final
 
 1. Conserva el `operationNumber` y consulta `GET /payments/{operationNumber}` al finalizar la autorización o su cancelación.
 2. Evalúa el estado actualizado antes de confirmar, cerrar, reintentar o solicitar otra acción. Si la consulta sigue mostrando un resultado pendiente o indeterminado, mantén la operación pendiente y respeta `Retry-After` cuando corresponda.
 3. No sobrescribas un resultado final ya confirmado con una respuesta tardía `PENDING` de `/authorize`. El fin de la espera HTTP y la salida de la pantalla de pago no determinan por sí solos el resultado financiero.
-4. Si ya conoces que la venta terminó como `APPROVED` y deseas revertirla, utiliza `POST /reversals` con la misma referencia y verifica ese extorno mediante `GET /reversals/{operationNumber}`. La autorización y el extorno tienen resultados separados.
+4. Si aparece `APPROVED` después de cancelar, aplica la [resolución de cobros autorizados](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). Evita extornos duplicados. Para una reversa explícita usa la misma referencia y `GET /reversals/{operationNumber}`; confirma primero que el método esté habilitado.
 
 ## Antes de producción
 

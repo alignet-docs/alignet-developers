@@ -1,58 +1,60 @@
 ---
 title: "Cancelación de una autorización en curso"
-description: "Cancela una autorización activa mediante POST /cancel e interpreta sus resultados confirmados."
+description: "Flujos CARD y QR, consulta obligatoria y resolución de cobros después de cancelar."
 icon: "ban"
 ---
 
-Usa `POST /cancel` para solicitar la cancelación de una autorización iniciada con `POST /authorize` que **todavía continúa en curso**.
-
-<CardGroup cols={2}>
-  <Card title="Cancelar autorización activa" icon="ban">
-    Usa `POST /cancel` mientras la autorización original sigue en curso. La cancelación identificada se devuelve como `DENIED`, código `14` y mensaje `"Operación cancelada"`.
-  </Card>
-  <Card title="Extornar venta aprobada" icon="rotate-left" href="/procesamiento-fisico/alignet-transit/extorno">
-    Si la venta ya terminó como `APPROVED`, usa `POST /reversals`.
-  </Card>
-</CardGroup>
-
-| Decisión | Endpoint | Resultado exitoso |
-| --- | --- | --- |
-| Interrumpir una autorización activa | `POST /cancel` | HTTP `200`, `status: "DENIED"`, `resultCode: "14"` y `resultMessage: "Operación cancelada"`. |
-| Revertir una venta aprobada | `POST /reversals` | HTTP `200` con `status: "REVERSED"` y `resultCode: "00"`. |
+Usa `POST /cancel` para resolver una autorización en curso. Para una venta que ya conoces como aprobada, usa el [extorno explícito](/procesamiento-fisico/alignet-transit/extorno).
 
 <Warning>
-  No uses `/cancel` para una venta ya aprobada y no uses `/reversals` para cancelar una autorización activa. Son operaciones distintas.
+  Para CARD y QR, cualquier solicitud de cancelación corta el flujo visual de pago del PinPAD. Siempre consulta `GET /payments/{operationNumber}` después de cancelar, incluso si `/cancel` respondió HTTP `200`. Cerrar la pantalla no confirma el resultado financiero.
 </Warning>
 
-<ParamField path="POST /cancel" type="endpoint" />
+## CARD
 
-## Comportamiento durante la cancelación
+`POST /authorize` con `paymentMethod: "CARD"` inicia el flujo y el PinPAD solicita la tarjeta. La cancelación interrumpe el procesamiento si todavía no existe un cobro aprobado. Si se aprueba durante la cancelación, el flujo interno localiza la autorización y ejecuta el extorno correspondiente.
 
-Pay-me verifica la operación mientras procesa `/cancel`:
+```mermaid
+flowchart TD
+    A[Autorizar CARD] --> B[Solicitar tarjeta]
+    B --> C[Cancelar y cortar pantalla]
+    C --> D[Consultar pago]
+    D -->|Autorizado| E[Resolver extorno]
+    E --> F[Verificar resultado]
+    D -->|Cancelado o denegado| F
+    D -->|Pendiente| D
+```
 
-- Si la autorización sigue en curso, procesa la cancelación.
-- Si el cobro se aprobó mientras se procesaba la cancelación, Pay-me ejecuta internamente el extorno correspondiente.
+El extorno interno pertenece a `/cancel`. No apliques automáticamente los requisitos de presentación de tarjeta del extorno explícito a este flujo.
 
-Este extorno interno forma parte del procesamiento de `/cancel`. Es distinto del extorno que solicitas explícitamente mediante `POST /reversals` cuando ya conoces que una venta terminó como `APPROVED`. No envíes una reversa adicional sin verificar primero el estado actualizado.
+## QR
 
-La solicitud original de `/authorize` puede permanecer abierta hasta completar su tiempo de espera, aunque la cancelación ya se haya procesado y el PINPAD haya salido de la pantalla de pago. Un HTTP `202 PENDING` posterior de `/authorize` indica que venció esa espera: no invalida una cancelación confirmada ni determina por sí solo el estado final.
+`POST /authorize` con `paymentMethod: "QR"` inicia el flujo. **Al generarse el QR, ya existe una transacción asociada al `operationNumber`, pendiente de pago.** La transacción no comienza al escanear. Generar o mostrar el QR no confirma el cobro; se requiere la confirmación del pago.
+
+La cancelación actúa sobre esa transacción y corta la pantalla de pago.
+
+```mermaid
+flowchart TD
+    A[Generar QR] --> B[Transacción pendiente]
+    B -->|Pago| D[Consultar pago]
+    B -->|Cancelación| C[Cancelar y cortar pantalla]
+    C --> D
+    D -->|Autorizado| E[Resolver cobro QR]
+    E --> F[Verificar resultado]
+    D -->|Cancelado o denegado| F
+    D -->|Pendiente| D
+```
+
+Si llega una confirmación de pago durante la cancelación, consulta el estado. No está verificado que QR ejecute un extorno interno ni que admita `POST /reversals`. Resuelve el cobro mediante el mecanismo habilitado y confirmado para QR; si no está definido, conserva la operación abierta y escala a Alignet. No copies la regla de extorno interno de CARD.
 
 ## Solicitud
 
-`POST /cancel` se consume en el mismo host y puerto configurados para `POST /authorize`.
+Envía al mismo PinPAD de la autorización original:
 
 ```http
 POST /cancel
 Content-Type: application/json
 ```
-
-URL completa:
-
-```text
-http://<IP_DEL_PINPAD>:<PUERTO>/cancel
-```
-
-### Cuerpo JSON confirmado
 
 ```json
 {
@@ -60,47 +62,37 @@ http://<IP_DEL_PINPAD>:<PUERTO>/cancel
 }
 ```
 
-| Campo | Tipo | Obligatorio | Descripción |
+| Campo | Tipo | Obligatorio | Uso |
 | --- | --- | --- | --- |
-| `operationNumber` | String | Sí | El mismo número de operación enviado en la autorización original que continúa en curso. |
+| `operationNumber` | String | Sí | Referencia original de la autorización en curso. |
 
-No generes otra referencia y no envíes monto, moneda, medio de pago ni datos de tarjeta.
-
-### cURL
+No generes otra referencia ni envíes monto, moneda, método o datos de tarjeta.
 
 ```bash
 curl --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/cancel" \
   --header "Content-Type: application/json" \
   --max-time 110 \
   --data '{"operationNumber":"44992528"}'
+
+curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528"
 ```
 
-Reemplaza la IP y el puerto por los mismos valores usados para `POST /authorize`.
+La consulta es obligatoria aunque el POST responda `200`. Si recibes `Retry-After`, espera el intervalo indicado antes de consultar.
 
-## Respuestas confirmadas
+## Resultados por método
 
-Cuando el POST responde HTTP `200`, evalúa conjuntamente `status`, `resultCode` y `resultMessage`: un HTTP `200` o un estado `DENIED` aislado no identifican una cancelación. Al finalizar el flujo, consulta `GET /payments/{operationNumber}` para verificar el resultado actualizado.
+Evalúa método, estado, código y mensaje conjuntamente. No clasifiques cualquier `DENIED` como cancelación.
 
-| HTTP | Resultado o situación | Acción del sistema central |
+| Método | Resultado de cancelación | Interpretación |
 | --- | --- | --- |
-| `200` | `DENIED`, `resultCode: "14"` y `resultMessage: "Operación cancelada"`. | Identifica el resultado de cancelación y verifica el estado actualizado mediante `GET /payments/{operationNumber}`. |
-| `200` | Otros resultados `DENIED`. | No los clasifiques automáticamente como cancelación. Conserva el código y mensaje y consulta el estado actualizado. |
-| `202` | Venció la espera de 90 segundos. El resultado continúa pendiente e incluye `Retry-After`. | Mantén la operación abierta, espera el intervalo indicado y no asumas éxito ni fallo. |
-| `404` | El `operationNumber` no existe en ese PinPAD. | Verifica la referencia y que la solicitud se envió al mismo PinPAD de la autorización original. |
-| `503` | El SDK no está listo o no hay una pantalla disponible. | Restablece la disponibilidad del PinPAD antes de volver a intentar. |
+| CARD | `DENIED`, `resultCode: "14"`, `resultMessage: "Operación cancelada"`. | Cancelación completada: se interrumpió antes del cobro o terminó el extorno interno de la autorización encontrada. Verifica por consulta. |
+| QR | `CANCELLED`, `resultCode: "00"`. | Respuesta observada de cancelación; contrástala con la versión vigente. Conserva el mensaje real y verifica por consulta. No equivale a aprobación ni acredita un extorno. |
 
-<Warning>
-  HTTP `202` no es una cancelación exitosa ni fallida. Consulta el estado actualizado; no inicies un extorno ni cierres la operación solo por haber recibido `202`.
-</Warning>
+Estos ejemplos muestran solo los campos de decisión, no un esquema completo:
 
-## Ejemplos de respuesta
+<CodeGroup>
 
-<AccordionGroup>
-  <Accordion title="Cancelación identificada — 200 DENIED, código 14" defaultOpen icon="ban">
-
-Los ejemplos de HTTP `200` muestran únicamente los campos de decisión confirmados; conserva cualquier campo adicional que entregue la implementación.
-
-```json
+```json CARD
 {
   "operationNumber": "44992528",
   "status": "DENIED",
@@ -109,89 +101,52 @@ Los ejemplos de HTTP `200` muestran únicamente los campos de decisión confirma
 }
 ```
 
-Esta combinación identifica el resultado de cancelación. Verifica el estado actualizado mediante `GET /payments/{operationNumber}` antes de cerrar la operación. No sobrescribas este resultado final con un `PENDING` tardío de `/authorize`.
-
-  </Accordion>
-
-  <Accordion title="Otros resultados DENIED" icon="circle-xmark">
-
-```json
+```json QR observado
 {
-  "operationNumber": "44992528",
-  "status": "DENIED"
+  "operationNumber": "44992529",
+  "status": "CANCELLED",
+  "resultCode": "00"
 }
 ```
 
-El estado `DENIED` aislado no permite identificar una cancelación. Revisa el código y el mensaje entregados por Pay-me: la combinación `DENIED`, `14` y `"Operación cancelada"` corresponde a cancelación; otros resultados `DENIED` deben evaluarse según su código y mensaje. Consulta el estado actualizado antes de decidir.
-
-  </Accordion>
-
-  <Accordion title="Resultado pendiente — 202 Accepted" icon="clock">
-
-```http
-HTTP/1.1 202 Accepted
-Retry-After: <segundos>
-```
-
-Respeta el valor de `Retry-After` antes de cualquier acción posterior. La espera interna venció, pero este cuerpo no informa todavía el resultado final.
-
-  </Accordion>
-
-  <Accordion title="Operación inexistente — 404 Not Found" icon="magnifying-glass">
-
-```http
-HTTP/1.1 404 Not Found
-```
-
-El número de operación no existe en el PinPAD que recibió la solicitud. Verifica tanto la referencia como el terminal de destino.
-
-  </Accordion>
-
-  <Accordion title="PinPAD no disponible — 503 Service Unavailable" icon="terminal">
-
-```http
-HTTP/1.1 503 Service Unavailable
-```
-
-El SDK no está listo o no existe una pantalla disponible para procesar la solicitud. Recupera la disponibilidad antes de reintentar.
-
-  </Accordion>
-</AccordionGroup>
+</CodeGroup>
 
 ## Verificar el resultado final
 
-1. Conserva el `operationNumber` original y los resultados recibidos en almacenamiento persistente.
-2. Consulta `GET /payments/{operationNumber}` al finalizar el flujo, incluso después de HTTP `200`, para verificar el resultado de la autorización o cancelación.
-3. Respeta `Retry-After` cuando corresponda. Antes de confirmar, cerrar, reintentar o solicitar otra acción, verifica el estado actualizado. Si sigue pendiente o indeterminado, mantén la operación pendiente.
-4. No sobrescribas un resultado final ya confirmado con un `PENDING` tardío de `/authorize`. No asumas un resultado financiero por el vencimiento de la espera ni por la salida de la pantalla de pago.
-5. La autorización y el extorno tienen resultados separados. `GET /reversals/{operationNumber}` verifica el extorno solicitado mediante `/reversals`; no lo sustituyas por la consulta de autorización o cancelación.
+**Cancelar → cortar el flujo visual → consultar el estado → resolver cualquier cobro autorizado → verificar el resultado.**
 
-<Note>
-  La consulta del flujo de autorización o cancelación se realiza mediante `GET /payments/{operationNumber}`. No está confirmado en la implementación disponible cómo se registra el extorno interno generado durante `/cancel`, ni si queda expuesto en `GET /reversals/{operationNumber}`. Si el resultado actualizado no permite resolver la operación, mantenla pendiente y coordina su conciliación con Pay-me antes de solicitar otra acción.
-</Note>
+1. Conserva la referencia original, el método y las respuestas recibidas.
+2. Consulta `GET /payments/{operationNumber}` después de cualquier cancelación, incluso con HTTP `200`.
+3. Aplica la decisión de la tabla y verifica la resolución antes de cerrar la operación.
 
-## Flujo recomendado para el sistema central
+| Resultado actualizado | Acción |
+| --- | --- |
+| Cancelación confirmada según el método | Cierra como cancelada. |
+| `APPROVED` + `00` | Verifica si el extorno interno terminó o está en curso. Si terminó, verifica su resultado; si está en curso, espera y consulta. Si el cobro sigue vigente y confirmas que no hay extorno completado ni en curso, solicita el extorno correspondiente al método y consulta su resultado. |
+| `PENDING`, `PROCESSING` o `UNKNOWN` | Continúa consultando y respeta `Retry-After`. No asumas cancelación, aprobación ni extorno. Escala al alcanzar el límite acordado. |
+| Denegación confirmada | Cierra como no aprobado; distingue rechazo de cancelación mediante código y mensaje. |
+| Error o respuesta contradictoria | Conserva la operación sin resolver; verifica referencia, terminal y evidencias. No registres una cancelación completada. |
 
-<Steps>
-  <Step title="Comprueba que la autorización sigue activa">
-    Usa `/cancel` solo mientras la autorización original continúa en curso. Si ya fue aprobada, sigue el flujo de extorno.
-  </Step>
-  <Step title="Reutiliza la referencia original">
-    Envía el mismo `operationNumber` de `POST /authorize` al mismo host y puerto del PinPAD.
-  </Step>
-  <Step title="Procesa la respuesta del POST">
-    Ante HTTP `200`, identifica la cancelación con `DENIED`, `14` y `"Operación cancelada"`. No clasifiques otros resultados `DENIED` como cancelación.
-  </Step>
-  <Step title="Verifica el estado actualizado">
-    Consulta `GET /payments/{operationNumber}` antes de confirmar, cerrar, reintentar o solicitar otra acción. Respeta `Retry-After` cuando corresponda. Mantén pendientes los resultados pendientes o indeterminados y conserva cualquier resultado final ya confirmado frente a un `PENDING` tardío.
-  </Step>
-</Steps>
+<Warning>
+  No generes un extorno duplicado ni una nueva transacción mientras el resultado anterior siga sin resolverse. Encontrar la autorización original no basta para saber si fue extornada: autorización y extorno pueden tener registros separados.
+</Warning>
 
-<CardGroup cols={2}>
-  <Card title="Extorno de una venta aprobada" icon="rotate-left" href="/procesamiento-fisico/alignet-transit/extorno">
-    Revisa el contrato separado de `POST /reversals`.
-  </Card>
-  <Card title="Solicitud de autorización" icon="file-export" href="/procesamiento-fisico/alignet-transit/parametros-de-envio">
-    Revisa `POST /authorize` y la creación del `operationNumber` original.
-  </Card>
-</CardGroup>
+### Verificación del extorno interno
+
+`GET /payments/{operationNumber}` verifica autorización/cancelación. La evidencia disponible no define cómo consultar por separado el extorno interno de CARD ni confirma que aparezca en `/reversals`. No uses un `404` de esa ruta para concluir que no existe un extorno interno.
+
+Si la consulta muestra una autorización vigente pero no permite comprobar el extorno interno, concilia con Alignet antes de enviar otra reversa. `GET /reversals/{operationNumber}` verifica los extornos **explícitos** solicitados mediante `POST /reversals`.
+
+## Manejo de 202 y pérdida de conexión
+
+| Respuesta de `/cancel` | Significado documentado | Acción |
+| --- | --- | --- |
+| `200` | Resultado en el cuerpo; no basta el HTTP. | Evalúa la combinación por método y consulta siempre el pago. |
+| `202` con `Retry-After` | Venció la espera de referencia de 90 segundos; sin resultado final. | Respeta el header y consulta el pago. El cuerpo y los códigos específicos requieren validación. |
+| `404` | La referencia no existe en ese PinPAD. | Verifica referencia y terminal; consulta la operación original. No equivale a cancelación. |
+| `503` | SDK no listo o pantalla no disponible. | Recupera disponibilidad y consulta antes de reintentar. No equivale a cancelación. |
+| Timeout o desconexión | Se perdió la respuesta. | Consulta la referencia original; el timeout no determina el resultado financiero. |
+
+Un `202 PENDING` tardío de `/authorize` no reemplaza un resultado final confirmado. La solicitud original puede seguir abierta después de que se cierre la pantalla. Conserva ambos eventos y decide con el estado actualizado.
+
+Los cuerpos de fallos, la consulta del extorno interno y el mecanismo de resolución QR requieren [confirmación por versión](/procesamiento-fisico/alignet-transit/datos-por-validar). No presentes un procesamiento fallido como cancelación completada.

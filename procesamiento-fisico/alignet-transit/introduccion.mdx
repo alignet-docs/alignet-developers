@@ -1,5 +1,29 @@
 ---
 title: "Introducción a Alignet Transit"
-description: "Referencia técnica vigente para la integración del SPD de CELSAT con Alignet Transit."
+description: "Integración local con Pay-me PinPAD para cobros CARD y QR."
 icon: "road"
 ---
+
+Alignet Transit conecta tu sistema central con Pay-me PinPAD en el Wiseasy P5L mediante HTTP/JSON en la red local.
+
+| Método | Inicio del flujo | Confirmación |
+| --- | --- | --- |
+| CARD | `POST /authorize` solicita la tarjeta. | Pago aprobado con `APPROVED` + `00`. |
+| QR | `POST /authorize` genera el QR y crea una transacción pendiente. | Confirmación del pago; mostrar el QR no confirma el cobro. |
+
+Cancela una autorización en curso con `POST /cancel`. En ambos métodos se corta el flujo visual y **siempre consultas el pago después**, incluso con HTTP `200`. Resuelve cualquier autorización vigente antes de cerrar o iniciar otra transacción.
+
+<CardGroup cols={2}>
+  <Card title="Autorizar" icon="file-export" href="/procesamiento-fisico/alignet-transit/parametros-de-envio">
+    Parámetros comunes y datos del peaje en tollData.
+  </Card>
+  <Card title="Cancelar" icon="ban" href="/procesamiento-fisico/alignet-transit/cancelacion">
+    Diagramas CARD y QR y resolución posterior.
+  </Card>
+  <Card title="Extornar" icon="rotate-left" href="/procesamiento-fisico/alignet-transit/extorno">
+    Extorno explícito y verificación de su resultado.
+  </Card>
+  <Card title="Validar" icon="flask-vial" href="/procesamiento-fisico/alignet-transit/pruebas-y-salida-a-produccion">
+    Casos de certificación por método.
+  </Card>
+</CardGroup>

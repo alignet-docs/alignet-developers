@@ -6,7 +6,7 @@ icon: "ethernet"
 
 El sistema central del comercio actúa como **cliente HTTP**. La aplicación Pay-me PinPAD instalada en el Wiseasy P5L actúa como **servidor HTTP** sobre la red local.
 
-En los ejemplos, reemplaza `192.168.68.121` y `8080` por la IP y el puerto configurados en tu terminal.
+Reemplaza `<IP_DEL_PINPAD>` y `<PUERTO>` por la configuración de tu terminal. Los clientes de lenguaje muestran el transporte HTTP; aplica las reglas de recuperación antes de cerrar una operación.
 
 <Info>
   Consulta la [referencia de endpoints](/procesamiento-fisico/alignet-transit/referencia-de-endpoints) y el contrato de cada operación antes de adaptar estos ejemplos.
@@ -31,15 +31,16 @@ curl --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/authorize" \
     "amount": "100",
     "currency": "604",
     "paymentMethod": "QR",
-    "additionalFields": {
+    "tollData": {
       "plate": "ABC-123",
       "tollPointId": "PEAJE-01",
       "laneId": "VIA-03"
-    }
+    },
+    "additionalFields": {}
   }'
 ```
 
-El comercio puede definir y enviar en `additionalFields` la información complementaria que necesite asociar al pago.
+Los datos estructurados del peaje van en `tollData`. Usa `additionalFields` para información complementaria. Para CARD cambia únicamente `paymentMethod` a `"CARD"` en una operación nueva y resuelta de forma independiente; el PinPAD solicitará la tarjeta. En QR, generar el código ya crea la transacción pendiente.
 
 ### Consulta
 
@@ -48,6 +49,19 @@ curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528"
 ```
 
 Usa `-i` durante las pruebas para comprobar `Retry-After` en una respuesta `202`.
+
+### Cancelar y consultar siempre
+
+```bash
+curl --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/cancel" \
+  --header "Content-Type: application/json" \
+  --max-time 110 \
+  --data '{"operationNumber":"44992528"}'
+
+curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528"
+```
+
+Ejecuta la consulta incluso después de HTTP `200`; si hay `Retry-After`, espera antes de consultar. Aplica la [tabla de resolución](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final), incluida la verificación de extornos antes de enviar otra reversa. Un pago QR autorizado requiere el mecanismo habilitado para QR.
 
 ## Java 11 o posterior
 
@@ -167,12 +181,7 @@ def query_status(operation_number):
     return response.status_code, response.json(), response.headers.get("Retry-After")
 
 
-http_status, body = authorize("44992528", "100", "604", "QR")
-if http_status == 200 and body.get("status") == "APPROVED" \
-        and body.get("resultCode") == "00":
-    print("Pago aprobado", body.get("authorizationCode"))
-elif http_status == 202:
-    http_status, body, retry_after = query_status("44992528")
+
 ```
 
 ## Node.js 18 o posterior
@@ -218,7 +227,10 @@ async function queryStatus(operationNumber) {
 - Envía `operationNumber`, `amount` y `currency` como Strings numéricos, y un único `paymentMethod`: `CARD` o `QR`.
 - Configura al menos 100 a 110 segundos para la autorización.
 - Conserva por separado el código HTTP y el JSON.
-- Confirma únicamente `200` + `APPROVED` + `00`.
+- Confirma el flujo normal únicamente con `200` + `APPROVED` + `00`.
+- Después de cancelar CARD o QR, consulta siempre el pago y resuelve cualquier autorización vigente.
+- No generes extornos duplicados ni otra venta mientras falte resolución.
+- No sustituyas un resultado final confirmado por un `202 PENDING` tardío.
 - Ante `202`, timeout o pérdida de conexión, consulta la misma referencia.
 - Respeta `Retry-After` si está presente.
 - Serializa los cobros dirigidos al mismo terminal.

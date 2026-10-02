@@ -25,7 +25,7 @@ Antes de ejecutar casos:
 | --- | --- | --- |
 | Disponibilidad | `GET /health` | HTTP `200`, `status: "UP"`, `service: "Alignet ECR"`. |
 | Solicitud mínima | `operationNumber`, `amount`, `currency` y `paymentMethod` válidos | La autorización se procesa sin error de validación. |
-| Solicitud completa | Incluye los campos obligatorios y `additionalFields` con valores String | La autorización se procesa sin error de validación. |
+| Solicitud completa | Incluye campos obligatorios, `tollData` y `additionalFields` con valores String | La autorización se procesa sin error de validación. |
 | Referencia numérica | `operationNumber: "44992528"` | Se acepta como String numérico. |
 | Referencia con caracteres no numéricos | Incluye letras, guiones, espacios u otros caracteres | HTTP `400` con `BAD_REQUEST`. |
 | Monto como cadena | `amount: "100"` | Se acepta como String numérico en unidades menores. |
@@ -37,7 +37,7 @@ Antes de ejecutar casos:
 | Método de pago ausente | No incluye `paymentMethod` | HTTP `400` con `BAD_REQUEST`. |
 | Métodos de pago simultáneos | Envía `CARD` y `QR` juntos, como arreglo o valor combinado | HTTP `400` con `BAD_REQUEST`. |
 | Método de pago inválido | Envía un valor distinto de `CARD` o `QR` | HTTP `400` con `BAD_REQUEST`. |
-| Referencia inválida | Vacía, no numérica o mayor de 64 dígitos | HTTP `400` con `BAD_REQUEST`. |
+| Referencia inválida | Vacía o no numérica; prueba límites según la tabla de parámetros tras contrastarla con ECR | HTTP `400` con `BAD_REQUEST`. |
 | Monto inválido | Cero, negativo, decimal, no numérico o mayor de 12 dígitos | HTTP `400` con `BAD_REQUEST`. |
 | Moneda inválida | No contiene exactamente tres dígitos | HTTP `400` con `BAD_REQUEST`. |
 | Campo adicional inválido | Valor que no es String | HTTP `400` con `BAD_REQUEST`. |
@@ -48,15 +48,46 @@ Antes de ejecutar casos:
 | --- | --- | --- |
 | Pago aprobado | HTTP `200`, `APPROVED`, `00`, código de autorización y fecha final. | Confirmar y aplicar la regla de apertura. |
 | Pago rechazado | HTTP `200`, `DENIED` y código distinto de `00`. | No confirmar. |
-| Cancelación remota | `POST /cancel` sobre una autorización activa devuelve HTTP `200` con resultado final `CANCELLED` o `DENIED`. | Confirmar la cancelación solo con `CANCELLED`; `DENIED` no la confirma. |
-| Cancelación pendiente | `POST /cancel` devuelve HTTP `202` e incluye `Retry-After`. | Mantener la operación abierta; el mecanismo de recuperación está pendiente de confirmar con Alignet. |
-| Extorno aprobado | `POST /reversals` devuelve HTTP `200`, `REVERSED` y `00`. | Registrar la reversa y su código de autorización. |
+| Extorno explícito aprobado, método habilitado | `POST /reversals` devuelve HTTP `200`, `REVERSED` y `00`. | Consultar `GET /reversals/{operationNumber}` y registrar el resultado verificado. |
 | Extorno pendiente | HTTP `202`, `PENDING`, `WAITING_RESULT`. | Consultar `GET /reversals/{operationNumber}`. |
 | Extorno denegado | HTTP `200`, `DENIED` y código distinto de `00`. | No registrar como extornado ni reintentar automáticamente. |
 | Espera agotada | HTTP `202`, `PENDING`, `WAITING_RESULT`. | Consultar, sin nuevo cobro. |
 | Terminal ocupado | Otra referencia durante un cobro activo devuelve `409 POS_BUSY`. | Esperar y reintentar cuando se libere. |
 | Terminal no listo | HTTP `503 POS_NOT_AVAILABLE`. | Recuperar disponibilidad antes de reintentar. |
 | Referencia inexistente | La consulta devuelve `404 NOT_FOUND`. | Verificar la referencia; no asumir rechazo financiero. |
+
+## Cancelación CARD
+
+En cada caso, comprueba el corte visual y ejecuta `GET /payments/{operationNumber}`, incluso después de HTTP `200`. Evalúa estado, código y mensaje juntos.
+
+| Caso | Estímulo | Validación esperada |
+| --- | --- | --- |
+| Antes del cobro | Cancelar mientras el PinPAD solicita tarjeta. | `DENIED/14/Operación cancelada`, sin cargo; consulta posterior confirma cancelación. |
+| Aprobación durante cancelación | Coordinar aprobación mientras se procesa `/cancel`. | El flujo interno localiza la autorización y extorna. Solo cerrar con resolución verificada. |
+| Extorno interno completado | Completar la reversa dentro de `/cancel`. | La combinación `DENIED/14/Operación cancelada` indica cancelación completada; verificar el pago y documentar la evidencia del extorno. |
+| Autorización detectada después de cancelar | La consulta devuelve `APPROVED/00`. | Comprobar extorno completado o en curso. Si el cobro sigue vigente y se descartan ambos, solicitar una sola reversa explícita y consultar su resultado. |
+| Extorno interno no verificable | La consulta mantiene autorización y no hay vista confirmada del extorno interno. | Mantener abierta y conciliar; no inferir ausencia por `404` en `/reversals` ni duplicar. |
+| Fallo de cancelación o extorno interno | Provocar fallo controlado del SDK o procesador. | Capturar HTTP y cuerpo reales, consultar el pago y no registrar cancelación completada. No anticipar códigos no verificados. |
+| Pendiente | `/cancel` responde `202` o consulta no final. | Respetar `Retry-After`, continuar consultando, sin nueva venta ni extorno duplicado. |
+| Respuesta tardía | `/authorize` devuelve `202 PENDING` después de resolución final. | Conservar el resultado final; no reabrirlo por la respuesta tardía. |
+| Extorno explícito | Venta aprobada vigente, sin extorno previo. | Validar presentación de tarjeta cuando la solicite el PinPAD; verificar `REVERSED/00` por consulta de extorno. |
+
+## Cancelación QR
+
+Contrasta `CANCELLED/00` y el mecanismo de reversión con la versión ECR de pruebas. Los casos no comprobados quedan pendientes de certificación; no asumas el comportamiento CARD.
+
+| Caso | Estímulo | Validación esperada |
+| --- | --- | --- |
+| Generación sin escaneo | Generar QR sin escanearlo. | Ya existe transacción pendiente asociada a `operationNumber`; no registrar cobro aprobado. |
+| Antes del pago | Cancelar el QR generado. | Cortar pantalla y consultar pago; contrastar cancelación observada `CANCELLED/00` y mensaje real. |
+| Pago durante cancelación | Coordinar confirmación de pago con `/cancel`. | Consultar estado y resolver con el mecanismo QR realmente habilitado; no presumir extorno interno CARD. |
+| Autorización detectada después de cancelar | Consulta devuelve `APPROVED/00`. | Verificar cualquier reversión completada o en curso; si no existe, usar el mecanismo QR confirmado y consultar resultado. Sin mecanismo confirmado, mantener abierta y escalar. |
+| Extorno interno o explícito QR | Verificar si la versión ofrece estos mecanismos. | Registrar soporte y consulta real. Si no están soportados, documentar el mecanismo alternativo aprobado; no ejecutar `/reversals` por analogía. |
+| Fallo | Provocar cancelación o resolución fallida en pruebas. | Registrar respuesta real, consultar y no presentar fallo como `CANCELLED/00`. |
+| Pendiente | `/cancel` responde `202` o la consulta queda pendiente. | Respetar `Retry-After`, continuar consultando, sin aprobación, cancelación o extorno asumidos. |
+| Respuesta tardía | `/authorize` devuelve `202 PENDING` después de cancelación confirmada. | No reemplazar el resultado final confirmado; conservar los eventos. |
+
+Para ambos métodos, prueba timeout, rechazo confirmado y pérdida de red después del cierre visual. No inicies otra transacción hasta resolver la anterior.
 
 ## Casos de idempotencia y recuperación
 
@@ -96,7 +127,7 @@ Antes de ejecutar casos:
 </Check>
 
 <Check>
-  El sistema central ejecuta satisfactoriamente autorización, consulta, cancelación, extorno y consulta de extorno.
+  El sistema central supera por separado los casos CARD y QR. Consulta siempre después de cancelar y verifica cualquier reversión antes de cerrar.
 </Check>
 
 <Check>
@@ -120,11 +151,11 @@ Antes de ejecutar casos:
 </Check>
 
 <Check>
-  Las claves de `additionalFields` están definidas por el comercio, y las monedas y medios de pago están confirmados.
+  Los datos del peaje permanecen en `tollData`; las claves complementarias, monedas y métodos están confirmados.
 </Check>
 
 <Check>
-  El catálogo de códigos y el procedimiento para códigos desconocidos están registrados.
+  Las combinaciones por método, el catálogo de códigos y el procedimiento para códigos desconocidos están registrados.
 </Check>
 
 <Check>
@@ -133,6 +164,10 @@ Antes de ejecutar casos:
 
 <Check>
   El integrador y Alignet aprobaron las evidencias de integración y UAT.
+</Check>
+
+<Check>
+  Se verificó cómo observar el extorno interno CARD, qué resolución soporta QR y cuándo se solicita tarjeta en un extorno explícito.
 </Check>
 
 ## Criterio de aceptación

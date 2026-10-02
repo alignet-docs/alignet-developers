@@ -9,7 +9,7 @@ icon: "people-arrows"
 | Área | Comercio o integrador — sistema central | Pay-me PinPAD / Alignet | Validación conjunta |
 | --- | --- | --- | --- |
 | Red local | Alcanzar la IP y el puerto del terminal; configurar firewall y timeout. | Exponer el servidor HTTP en el Wiseasy P5L. | Ejecutar `GET /health` desde el sistema central. |
-| Operación | Calcular el monto, generar y persistir `operationNumber` y aplicar la decisión de negocio. | Validar la solicitud; ejecutar el cobro, cancelación o extorno; y devolver el resultado. | Probar aprobación, rechazo, cancelación, extorno y recuperación. |
+| Operación | Calcular el monto, generar y persistir `operationNumber` y aplicar la decisión de negocio. | Validar la solicitud; ejecutar el cobro, cancelación o extorno; y devolver el resultado. | Probar CARD y QR por separado: aprobación, rechazo, cancelación, extorno habilitado y recuperación. |
 | Idempotencia | Mantener una sola referencia por operación real y consultar ante incertidumbre. | Evitar un segundo cargo para la misma referencia y conservar el resultado. | Simular timeout, reenvío y consulta. |
 | Concurrencia | Serializar solicitudes destinadas al mismo terminal. | Procesar una operación a la vez y devolver `409 POS_BUSY` a otra referencia. | Enviar solicitudes concurrentes controladas. |
 | Configuración | Registrar IP, puerto y asociación entre sistema central, punto de atención y terminal. | Instalar la aplicación, configurar IP/puerto y verificar llaves. | Confirmar el estado operativo que muestra Pay-me PinPAD. |
@@ -30,7 +30,9 @@ icon: "people-arrows"
 ### Estado transaccional
 
 - Persiste la referencia y los datos del cobro antes del envío.
-- Confirma solo `status: "APPROVED"` junto con `resultCode: "00"`.
+- Confirma el cobro normal solo con `APPROVED` + `00`; si hubo cancelación, resuelve cualquier cobro vigente antes de cerrar.
+- Consulta siempre el pago después de cancelar CARD o QR, incluso con HTTP `200`.
+- Verifica el extorno completado o en curso antes de solicitar otro; conserva abiertas las operaciones cuya resolución no puedas comprobar.
 - Conserva como abiertas las operaciones `PENDING`, `PROCESSING` o `UNKNOWN`.
 - Recupera las operaciones abiertas después de un reinicio del sistema central.
 - No conviertas un timeout o `404` de consulta en rechazo financiero.
@@ -39,7 +41,7 @@ icon: "people-arrows"
 
 - Define la acción que ejecutará el comercio después de una aprobación —por ejemplo, confirmar una venta o abrir una barrera— y cómo informará un rechazo o una cancelación.
 - Define el límite de espera y el escalamiento de una operación no resuelta.
-- Crea un nuevo `operationNumber` para un nuevo intento después de un resultado final `DENIED` o `CANCELLED`.
+- Crea una referencia nueva solo después de resolver la operación anterior y verificar su resultado final. Distingue cancelación y rechazo por método, estado, código y mensaje.
 - Conserva `authorizationCode` y `operationNumber` para el comprobante y la conciliación.
 
 ## Preparación del Wiseasy P5L

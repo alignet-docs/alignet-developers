@@ -18,10 +18,15 @@ Usa el código HTTP, `status`, `resultCode` y `operationNumber` para diagnostica
 | `503 POS_NOT_AVAILABLE` | Pay-me PinPAD o el SDK de pagos no está listo. | El operador debe abrir la aplicación y dejarla en estado **Listo**. |
 | El sistema central pierde la respuesta de autorización | Timeout menor que la duración del cobro o pérdida de red. | No inicies otro cobro. Consulta el `operationNumber` original mediante `GET /payments/{operationNumber}`. |
 | `202 PENDING` en autorización o extorno | Venció la espera, pero la operación puede seguir activa. | Usa el GET correspondiente y respeta `Retry-After`. |
-| `202` en cancelación | Venció la espera de `/cancel`, sin resultado final. | Respeta `Retry-After`; no uses un GET de extorno. El mecanismo de recuperación está pendiente de confirmar. |
+| `202` en cancelación | Venció la espera de `/cancel`, sin resultado final. | Consulta `GET /payments/{operationNumber}` y respeta `Retry-After`; no lo registres como cancelado. |
 | `404 NOT_FOUND` al consultar | La referencia no existe o no coincide con la enviada. | Verifica el valor exacto y el terminal consultado. No asumas rechazo financiero. |
 | Estado `UNKNOWN` | El terminal se reinició durante el proceso. | Mantén la operación abierta, consulta y aplica el escalamiento acordado. |
-| Pago rechazado con HTTP `200` | `DENIED` es un resultado financiero válido. | No confirmes el pago. Un nuevo intento requiere otro `operationNumber`. |
+| `DENIED` con HTTP `200` | Rechazo o cancelación CARD, según código y mensaje. | Aplica la [combinación por método](/procesamiento-fisico/alignet-transit/cancelacion#resultados-por-m%C3%A9todo). |
+| Pantalla cerrada después de cancelar | El flujo visual se cortó; no determina el resultado financiero. | Consulta siempre el pago, incluso después de `200`. |
+| `APPROVED/00` después de cancelar CARD | La autorización puede tener un registro separado del extorno interno. | Verifica si terminó o está en curso; si no puedes comprobarlo, concilia antes de enviar otra reversa. |
+| Pago QR confirmado durante cancelación | La transacción existía desde la generación del QR. | Consulta y resuelve con el mecanismo QR habilitado. No presupongas extorno interno o soporte de `/reversals`. |
+| `404` en consulta de extorno después de `/cancel` | La exposición del extorno interno en esa ruta no está verificada. | No concluyas que falta el extorno ni generes uno duplicado. |
+| `202 PENDING` tardío de `/authorize` | Venció la espera de esa solicitud. | Conserva el resultado final confirmado y consulta si queda una discrepancia. |
 
 ## `GET /health` no responde
 
@@ -45,10 +50,11 @@ Respuesta esperada:
 
 Verifica:
 
-- `operationNumber`: String numérico de 1 a 64 dígitos, sin letras, guiones ni otros caracteres;
+- `operationNumber`: referencia numérica original; aplica la tabla de [Parámetros](/procesamiento-fisico/alignet-transit/parametros-de-envio) y valida la discrepancia de longitud antes de producción;
 - `amount`: String numérico que representa un entero positivo de 1 a 12 dígitos en unidades menores;
 - `currency`: String numérico de exactamente tres dígitos;
 - `paymentMethod`: campo obligatorio; debe contener exactamente un valor, `CARD` o `QR`, en mayúsculas;
+- `tollData`: datos estructurados del peaje; conserva sus campos dentro de este objeto;
 - `additionalFields`: objeto opcional cuyos valores son únicamente String;
 - header `Content-Type: application/json`;
 - JSON bien formado.
@@ -59,7 +65,7 @@ Conserva el `resultMessage` para saber qué validación falló. No lo muestres s
 
 Un timeout describe la conexión del sistema central, no el resultado financiero.
 
-El siguiente flujo corresponde a `POST /authorize`. Para una cancelación, conserva la referencia y aplica el [procedimiento de `/cancel`](/procesamiento-fisico/alignet-transit/cancelacion#manejo-de-202-y-perdida-de-conexion); no uses `GET /reversals/{operationNumber}`.
+El siguiente flujo corresponde a `POST /authorize`. Para una cancelación, conserva la referencia y aplica el [procedimiento de `/cancel`](/procesamiento-fisico/alignet-transit/cancelacion#manejo-de-202-y-p%C3%A9rdida-de-conexi%C3%B3n); no presupongas que el extorno interno aparece en `GET /reversals/{operationNumber}`.
 
 ```text
 POST sin respuesta
@@ -88,7 +94,9 @@ Comparte:
 - identificador del sistema central, punto de atención y Wiseasy P5L;
 - versión de Pay-me PinPAD;
 - IP y puerto, sin exponer información innecesaria fuera del canal de soporte;
-- `operationNumber`;
+- `operationNumber` y `paymentMethod`;
+- cierre visual y secuencia de autorización, cancelación, consultas y extorno;
+- evidencia de extorno completado, en curso o todavía no verificable;
 - código HTTP y `Retry-After`;
 - cuerpo de solicitud y respuesta sanitizados;
 - duración del `POST` y secuencia de consultas;

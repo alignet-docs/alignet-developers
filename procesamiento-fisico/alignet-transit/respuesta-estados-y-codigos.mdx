@@ -27,8 +27,8 @@ Pay-me PinPAD diferencia los **resultados de negocio** de los **errores operativ
 | --- | --- | --- |
 | `operationNumber` | String | Referencia recibida desde el sistema central. Puede faltar en errores de validación donde no fue posible identificarla. |
 | `status` | String | Estado transaccional u operativo. |
-| `resultCode` | String o null | Código financiero u operativo. `"00"` es el único código documentado como aprobación. |
-| `resultMessage` | String | Mensaje legible asociado al resultado. Úsalo para diagnóstico, no para lógica de decisión. |
+| `resultCode` | String o null | Código financiero u operativo. `"00"` requiere contexto: `APPROVED` para pago, `REVERSED` para extorno explícito o `CANCELLED` para la cancelación QR observada. |
+| `resultMessage` | String | Mensaje asociado al resultado. Evalúalo junto con estado y código para distinguir cancelación de rechazo; nunca lo uses solo. |
 | `authorizationCode` | String o null | Código del procesador cuando el pago fue aprobado. |
 | `completedAt` | String o null | Fecha y hora final en ISO 8601 UTC (`yyyy-MM-ddTHH:mm:ssZ`). Es `null` mientras no existe un resultado final. |
 
@@ -167,9 +167,9 @@ Respuesta de una operación inexistente:
 
 | `status` | Final | Significado | Acción |
 | --- | --- | --- | --- |
-| `APPROVED` | Sí | Pago aprobado. | Confirma solo si `resultCode` también es `"00"`. |
-| `DENIED` | Sí | Pago rechazado por el procesador. | No confirmes. Un nuevo intento requiere otro `operationNumber`. |
-| `CANCELLED` | Sí | La autorización terminó cancelada; no equivale a un extorno. | No confirmes el cobro. Revisa [Cancelación de una autorización en curso](/procesamiento-fisico/alignet-transit/cancelacion). |
+| `APPROVED` | Sí para la autorización | Pago aprobado. | Confirma con `00` en el flujo normal; después de cancelar, resuelve el cobro y verifica cualquier extorno. |
+| `DENIED` | Sí, con combinación confirmada | Rechazo; en CARD, `14` + `Operación cancelada` identifica cancelación completada. | Evalúa estado, código y mensaje. Después de cancelar, consulta antes de cerrar. |
+| `CANCELLED` | Sí, con combinación validada | Cancelación QR observada con `00`; contrastar con la versión vigente. | No confirmes el cobro ni un extorno. Consulta después de cancelar. |
 | `PENDING` | No | Venció la espera, pero el cobro puede continuar. | Consulta; no inicies otro cobro. |
 | `PROCESSING` | No | El cobro se está procesando. | Consulta; no inicies otro cobro. |
 | `UNKNOWN` | No | El resultado es incierto, por ejemplo después de un reinicio durante el proceso. | Mantén la operación abierta y consulta. |
@@ -179,7 +179,8 @@ Respuesta de una operación inexistente:
 
 | `resultCode` | Contexto | Significado |
 | --- | --- | --- |
-| `00` | Financiero | Pago aprobado. |
+| `00` | Según estado y operación | Pago aprobado solo con `APPROVED`; extorno explícito con `REVERSED`; cancelación QR observada con `CANCELLED`. |
+| `14` | Cancelación CARD | Con `DENIED` y `Operación cancelada`: interrupción antes del cobro o extorno interno completado. |
 | `01` | Financiero, ejemplo verificado | Petición rechazada por el procesador. |
 | `WAITING_RESULT` | Operativo | La operación sigue pendiente; consulta su estado. |
 | `POS_BUSY` | Operativo | Ya existe otra operación activa. |
@@ -192,17 +193,22 @@ Respuesta de una operación inexistente:
 </Note>
 
 <Note>
-  Los códigos `14` y `15` no están confirmados para el contrato HTTP vigente de Transit. No los uses para decidir una cancelación hasta validarlos contra la implementación ECR.
+  La combinación CARD `DENIED/14/Operación cancelada` corresponde a cancelación completada. No asignes significado al código `15` ni a otros códigos sin confirmación. El contrato observado de QR requiere contraste por versión.
 </Note>
 
 ## Matriz de decisión
 
 | Respuesta | Decisión |
 | --- | --- |
-| `200` + `APPROVED` + `00` | Confirmar el pago, guardar el código de autorización y aplicar la regla de apertura. |
-| `200` + `DENIED` o `CANCELLED` | No confirmar. Informar el resultado. |
+| `200` + `APPROVED` + `00` | Confirmar en el flujo normal. Si hubo cancelación, resolver el cobro y verificar el extorno antes de cerrar. |
+| `200` + cancelación por método | Consultar siempre el pago antes de cerrar como cancelado. |
+| `200` + denegación confirmada | Cerrar como no aprobado; distinguir rechazo de cancelación. |
 | `202` + `PENDING` | Mantener la operación abierta y consultar. |
 | `409` + `POS_BUSY` | Esperar a que el terminal se libere. |
 | `503` + `POS_NOT_AVAILABLE` | Restablecer la disponibilidad del terminal y reintentar. |
 | `400` + `BAD_REQUEST` | Corregir la solicitud. |
 | Timeout o conexión interrumpida | Consultar la referencia original antes de cualquier nuevo cobro. |
+
+## Consulta después de cancelar
+
+Siempre usa `GET /payments/{operationNumber}`, incluso tras HTTP `200` de `/cancel`. Si aparece una autorización, aplica la [resolución y verificación del extorno](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). La autorización original no acredita el estado de un extorno separado. Un `202 PENDING` tardío de `/authorize` no sustituye un resultado final confirmado.

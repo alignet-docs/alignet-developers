@@ -7,24 +7,14 @@ icon: "diagram-project"
 ## Arquitectura
 
 ```mermaid
-flowchart LR
-    CENTRAL[Sistema central del comercio<br/>Cliente HTTP]
-
-    subgraph P5L[Wiseasy P5L]
-        PINPAD[Aplicación Pay-me PinPAD<br/>Servidor HTTP]
-        SDK[SDK de pagos y dispositivo]
-        READER[Lector de tarjeta y PIN]
-        PINPAD --> SDK
-        SDK --> READER
-    end
-
-    PLATFORM[Procesador y banco]
-
-    CENTRAL <-->|HTTP/JSON sobre red local| PINPAD
-    SDK <-->|Conexión del terminal| PLATFORM
+flowchart TD
+    CENTRAL[Sistema central] -->|HTTP local| PINPAD[Pay-me PinPAD]
+    PINPAD --> SDK[SDK del P5L]
+    SDK --> INTERACTION[Tarjeta o QR]
+    SDK --> PLATFORM[Procesador]
 ```
 
-El sistema central inicia todas las llamadas hacia la IP y el puerto configurados en el Wiseasy P5L. Pay-me PinPAD muestra la pantalla de pago, captura la interacción con la tarjeta, procesa el pago y devuelve un resultado normalizado.
+El sistema central inicia todas las llamadas hacia la IP y el puerto configurados en el Wiseasy P5L. Pay-me PinPAD muestra la pantalla de pago, coordina la tarjeta o genera el QR con su transacción pendiente, procesa el pago y devuelve un resultado normalizado.
 
 La comunicación de Pay-me PinPAD con el procesador o banco es transparente para el sistema central.
 
@@ -93,7 +83,9 @@ Por cada intento, registra únicamente información no sensible:
 - `status`, `resultCode` y `resultMessage`;
 - `authorizationCode` y `completedAt`, cuando existan;
 - fecha y hora del envío, la respuesta y las consultas;
-- timeouts, pérdidas de conexión y reintentos de consulta.
+- timeouts, pérdidas de conexión y reintentos de consulta;
+- solicitud de cancelación, cierre visual y consultas posteriores;
+- evidencia de extorno interno o explícito, registrada por separado de la autorización.
 
 El contrato vigente no devuelve `transactionID`, información de `paymentMethod`, `stateReason`, `processor` ni un historial `lifecycle`. No diseñes la integración dependiendo de esos campos.
 

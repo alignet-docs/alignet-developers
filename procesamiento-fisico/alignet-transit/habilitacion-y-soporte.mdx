@@ -27,10 +27,10 @@ Completa esta información antes de ejecutar las pruebas conjuntas. Evita inclui
 
 ### Operación
 
-- formato utilizado para `operationNumber` dentro del límite de 1 a 64 dígitos;
+- formato utilizado para `operationNumber`, según [Parámetros](/procesamiento-fisico/alignet-transit/parametros-de-envio), con longitud contrastada contra ECR;
 - regla que garantiza unicidad por operación real;
 - montos y referencias de prueba;
-- claves y valores de `additionalFields` requeridos por el negocio, si aplica;
+- datos estructurados del peaje en `tollData` y claves complementarias en `additionalFields`, si aplica;
 - decisión de negocio para `APPROVED`, `DENIED`, `CANCELLED`, `PENDING`, `PROCESSING`, `UNKNOWN` y `ERROR`;
 - formato de comprobante y datos de conciliación.
 
@@ -50,7 +50,10 @@ Alignet debe confirmar antes de la salida a producción:
 - espera interna definitiva de Pay-me PinPAD;
 - recomendación definitiva de timeout del sistema central;
 - intervalo, backoff y límite de consulta;
-- catálogo aplicable de códigos del procesador;
+- catálogo aplicable de códigos por método y operación;
+- contrato QR `CANCELLED/00` observado y tratamiento de pago durante cancelación;
+- mecanismo para consultar el extorno interno CARD y descartar duplicados;
+- soporte de reversión QR y presentación de tarjeta en el extorno explícito CARD;
 - monedas y medios de pago habilitados;
 - claves de `additionalFields` definidas por el comercio y su finalidad;
 - contactos, horarios y procedimiento de soporte.
@@ -78,7 +81,8 @@ El registro completo, incluida la semántica pendiente de extornos y referencias
 - identificador y descripción del caso;
 - fecha, hora y ambiente;
 - terminal y sistema central utilizados;
-- `operationNumber`;
+- `operationNumber` y método CARD o QR;
+- cierre visual, consultas posteriores y evidencia del extorno interno o explícito;
 - solicitud y respuesta sanitizadas;
 - código HTTP y header `Retry-After`, cuando corresponda;
 - `status`, `resultCode`, `resultMessage`, `authorizationCode` y `completedAt`;

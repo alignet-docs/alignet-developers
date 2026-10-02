@@ -17,11 +17,11 @@ El puerto predeterminado es `8080`. Confirma la IP y el puerto de cada terminal 
 | Método | Ruta | Uso | Respuestas documentadas |
 | --- | --- | --- | --- |
 | `GET` | `/health` | Verificar que Pay-me PinPAD esté accesible. | `200` |
-| `POST` | `/authorize` | Iniciar un cobro síncrono. | `200`, `202`, `400`, `409`, `503` |
-| `GET` | `/payments/{operationNumber}` | Recuperar el estado de una autorización. | `200`, `202`, `404` |
+| `POST` | `/authorize` | Iniciar CARD o QR; generar el QR crea la transacción pendiente. | `200`, `202`, `400`, `409`, `503` |
+| `GET` | `/payments/{operationNumber}` | Consultar autorización o cancelación. | `200`, `202`, `404` |
 | `POST` | `/cancel` | Cancelar una autorización que continúa en curso. | `200`, `202`, `404`, `503` |
-| `POST` | `/reversals` | Extornar una venta aprobada. | `200`, `202`, `400`, `404`, `409`, `502`, `503` |
-| `GET` | `/reversals/{operationNumber}` | Recuperar el estado de un extorno cuando el resultado es incierto. | `200`, `202`, `404`, `502` |
+| `POST` | `/reversals` | Solicitar un extorno explícito de una venta aprobada; confirmar soporte QR. | `200`, `202`, `400`, `404`, `409`, `502`, `503` |
+| `GET` | `/reversals/{operationNumber}` | Verificar un extorno explícito. | `200`, `202`, `404`, `502` |
 
 <Note>
   `POST /cancel` y `POST /reversals` son operaciones distintas. Ambas usan el `operationNumber` de la autorización original y se consumen en el mismo host y puerto que `POST /authorize`.
@@ -60,15 +60,15 @@ curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528"
 
 ## Cancelar una autorización activa
 
-`POST /cancel` requiere el `operationNumber` de la autorización original que continúa en curso. HTTP `200` entrega el resultado final en la misma respuesta; no requiere un GET posterior. Consulta [Cancelación de una autorización en curso](/procesamiento-fisico/alignet-transit/cancelacion) para revisar el contrato y el manejo de `202`.
+`POST /cancel` requiere el `operationNumber` de la autorización en curso. En CARD y QR corta el flujo visual. Siempre consulta después `GET /payments/{operationNumber}`, incluso si el POST responde HTTP `200`. Consulta [Cancelación de una autorización en curso](/procesamiento-fisico/alignet-transit/cancelacion) para revisar el contrato y el manejo de `202`.
 
-No existe un endpoint de consulta de cancelaciones confirmado en la documentación disponible.
+Las combinaciones de cancelación de CARD y QR se definen en la página de cancelación. No confundas el cierre de pantalla con el cierre financiero.
 
 ## Extornar una venta aprobada
 
 `POST /reversals` requiere el `operationNumber` de la venta aprobada. HTTP `200` entrega el resultado final en la misma respuesta. Consulta [Extorno de una venta aprobada](/procesamiento-fisico/alignet-transit/extorno) para revisar el contrato completo.
 
-`GET /reversals/{operationNumber}` se reserva para recuperar un extorno después de `202`, timeout o pérdida de conexión. No consulta cancelaciones y no reemplaza la respuesta final del POST.
+Consulta `GET /reversals/{operationNumber}` después del extorno explícito, incluso con HTTP `200`, y ante `202`, timeout o desconexión. La autorización original puede conservar un registro separado. La exposición del extorno interno de CARD en esta ruta no está verificada.
 
 ## Rutas fuera del contrato vigente
 
