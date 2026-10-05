@@ -201,7 +201,7 @@ Respuesta de una operación inexistente:
 | Respuesta | Decisión |
 | --- | --- |
 | `200` + `APPROVED` + `00` | Confirmar en el flujo normal. Después de cancelar: verificar extorno CARD; resolver QR mediante un procedimiento separado confirmado, sin asumir `/reversals`. |
-| `200` + cancelación por método | Consultar siempre el pago antes de cerrar como cancelado. |
+| `200` + cancelación completada por método | Consultar siempre el pago antes de cerrar como cancelado; no usar esta respuesta para ocultar un fallo interno. |
 | `200` + denegación confirmada | Cerrar como no aprobado; distinguir rechazo de cancelación. |
 | `202` + `PENDING` | Mantener la operación abierta y consultar. |
 | `409` + `POS_BUSY` | Esperar a que el terminal se libere. |
@@ -211,4 +211,4 @@ Respuesta de una operación inexistente:
 
 ## Consulta después de cancelar
 
-Siempre usa `GET /payments/{operationNumber}`, incluso tras HTTP `200` de `/cancel`. Si aparece una autorización, aplica la [resolución por método](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). La autorización original no acredita el estado de un extorno separado. Un `202 PENDING` tardío de `/authorize` no sustituye un resultado final confirmado.
+Siempre usa `GET /payments/{operationNumber}` después de solicitar cancelación, incluso tras HTTP `200` de `/cancel`. Una aprobación posterior no confirma cancelación ni extorno. Si falla la conexión, no puedes asegurar recepción ni cierre visual; un fallo interno debe reflejarse en el POST. El contrato de errores requiere [confirmación de desarrollo](/procesamiento-fisico/alignet-transit/datos-por-validar). Si aparece una autorización, aplica la [resolución por método](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). La autorización original no acredita el estado de un extorno separado. Un `202 PENDING` tardío de `/authorize` no sustituye un resultado final confirmado.

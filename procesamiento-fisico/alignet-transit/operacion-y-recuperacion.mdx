@@ -15,7 +15,9 @@ El POST espera un resultado hasta agotar su tiempo de espera. La transacción QR
 
 ## Después de cancelar
 
-Para ambos métodos, `/cancel` corta el flujo visual. Siempre consulta `GET /payments/{operationNumber}`, incluso después de HTTP `200`. Si CARD aparece autorizado, verifica el extorno interno antes de solicitar otro. Si QR aparece aprobado, `/cancel` no lo extornó: requiere un procedimiento separado confirmado para QR, sin presuponer soporte de `/reversals`. Aplica la [tabla de resolución](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
+Para ambos métodos, el PinPAD corta el flujo visual cuando recibe y procesa `/cancel`. Si falla la conexión, no puedes asegurar recepción ni cierre visual. Siempre consulta `GET /payments/{operationNumber}`, incluso después de HTTP `200`. Si CARD aparece autorizado, verifica el extorno interno antes de solicitar otro. Si QR aparece aprobado después de solicitar cancelación, `/cancel` no lo extornó: requiere un procedimiento separado confirmado para QR, sin presuponer soporte de `/reversals`. Aplica la [tabla de resolución](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
+
+Sin solicitud de cancelación, un QR `APPROVED/00` confirma el pago y permite ejecutar la acción de negocio. Los ciclos de consulta repiten únicamente el GET; no reenvían `/cancel`.
 
 No inicies una nueva transacción mientras la anterior siga sin resolverse. Un `202 PENDING` tardío de `/authorize` no reemplaza un resultado final confirmado.
 

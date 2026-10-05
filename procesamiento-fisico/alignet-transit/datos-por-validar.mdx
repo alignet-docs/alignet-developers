@@ -32,6 +32,8 @@ Esta página reúne la información ambigua, incompleta o dependiente de cada im
 | Métodos de pago | El contrato admite `CARD` y `QR`, uno por solicitud. | Métodos efectivamente habilitados para el comercio y el ambiente. |
 | Códigos financieros | `APPROVED/00` es aprobación; `01` es ejemplo de rechazo. | Catálogo completo por operación y método; `00` aislado no confirma un cobro. |
 | Cancelación CARD | `DENIED/14/Operación cancelada` identifica interrupción antes del cobro o extorno interno completado. | Cuerpos reales de pendientes y fallos, sin asignar éxito al procesamiento fallido. |
+| Errores de `/cancel` | La respuesta exitosa corresponde solo a procesamiento completado; la consulta posterior no justifica éxito ante un fallo interno. | Confirmar con desarrollo HTTP, estados, códigos y cuerpos reales para fallos internos y pendientes, por método. El contrato de errores no está cerrado. |
+| Recepción y corte visual | El PinPAD corta el flujo visual cuando recibe y procesa la solicitud. | Validar fallos de conexión sin presumir recepción o cierre; distinguirlos de fallos internos tras la recepción. |
 | Cancelación QR | Respuesta observada `CANCELLED/00`. | Contrastar estado, código, mensaje y persistencia en `GET /payments` con la versión vigente. |
 | Código `15` | Sin significado verificado. | No usarlo en decisiones hasta confirmar. |
 | `tollData` | Datos estructurados del peaje, con campos String definidos en parámetros. | Confirmar aceptación y restricciones adicionales; no trasladar sus campos a `additionalFields`. |

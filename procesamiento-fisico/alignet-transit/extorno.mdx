@@ -10,8 +10,10 @@ Usa `POST /reversals` para solicitar el **extorno total de una venta aprobada**.
 
 | Flujo | Uso | Verificación |
 | --- | --- | --- |
-| `POST /cancel` | Resolver una autorización en curso. CARD puede incluir un extorno interno si el cobro se aprueba durante la cancelación. En QR solo cancela la transacción pendiente; no extorna pagos aprobados. | Siempre `GET /payments/{operationNumber}`, incluso con HTTP `200`. |
+| `POST /cancel` | Resolver una autorización en curso. CARD puede incluir un extorno interno si el cobro se aprueba durante la cancelación. En QR solicita cancelar la transacción pendiente; no extorna pagos aprobados. | Siempre `GET /payments/{operationNumber}`, incluso con HTTP `200`. |
 | `POST /reversals` | Solicitar explícitamente el extorno de una venta aprobada. | `GET /reversals/{operationNumber}`, incluso con HTTP `200`. |
+
+Sin solicitud de cancelación, un pago QR `APPROVED/00` se confirma; no requiere reversión por el solo hecho de estar aprobado. Después de solicitar cancelación, su resolución requiere el procedimiento QR separado.
 
 Las [combinaciones de cancelación por método](/procesamiento-fisico/alignet-transit/cancelacion#resultados-por-m%C3%A9todo) no son resultados del extorno explícito.
 

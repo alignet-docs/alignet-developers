@@ -52,6 +52,7 @@ Alignet debe confirmar antes de la salida a producción:
 - intervalo, backoff y límite de consulta;
 - catálogo aplicable de códigos por método y operación;
 - contrato QR `CANCELLED/00` observado y tratamiento de pago durante cancelación;
+- HTTP, estados, códigos y cuerpos reales de `/cancel` ante fallos internos o resultado incierto;
 - mecanismo para consultar el extorno interno CARD y descartar duplicados;
 - procedimiento separado de reversión QR, fuera de `/cancel`, sin presuponer `/reversals`;
 - presentación de tarjeta en el extorno explícito CARD;
@@ -83,7 +84,8 @@ El registro completo, incluida la semántica pendiente de extornos y referencias
 - fecha, hora y ambiente;
 - terminal y sistema central utilizados;
 - `operationNumber` y método CARD o QR;
-- cierre visual, consultas posteriores y evidencia del extorno interno o explícito;
+- evidencia de recepción de `/cancel`, fallo de conexión o fallo interno, y cierre visual observado;
+- consultas posteriores y evidencia del extorno interno CARD o de la reversión separada;
 - solicitud y respuesta sanitizadas;
 - código HTTP y header `Retry-After`, cuando corresponda;
 - `status`, `resultCode`, `resultMessage`, `authorizationCode` y `completedAt`;

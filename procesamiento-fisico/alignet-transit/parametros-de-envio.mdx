@@ -8,6 +8,8 @@ El sistema central del comercio inicia el procesamiento del pago mediante `POST 
 
 Mientras la autorización continúa en curso, puedes solicitar su [cancelación](/procesamiento-fisico/alignet-transit/cancelacion) mediante `POST /cancel` con el mismo `operationNumber`. La solicitud original de `/authorize` puede seguir abierta hasta completar su tiempo de espera, aunque la cancelación ya se haya procesado y el PINPAD haya salido de la pantalla de pago.
 
+Si la conexión falla al solicitar cancelación, no puedes asegurar que el PinPAD la recibió ni que cerró la pantalla. Consulta siempre la referencia original; sin solicitud de cancelación, un QR `APPROVED/00` confirma el pago.
+
 Si posteriormente `/authorize` responde HTTP `202` con `status: "PENDING"`, significa que venció la espera de esa solicitud. Esta respuesta no invalida una cancelación confirmada ni determina por sí sola el estado final de la transacción. Consulta `GET /payments/{operationNumber}` para verificar el resultado actualizado.
 
 ```http

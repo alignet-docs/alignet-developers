@@ -60,9 +60,11 @@ curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528"
 
 ## Cancelar una autorización activa
 
-`POST /cancel` requiere el `operationNumber` de la autorización en curso. En CARD y QR corta el flujo visual. Siempre consulta después `GET /payments/{operationNumber}`, incluso si el POST responde HTTP `200`. Consulta [Cancelación de una autorización en curso](/procesamiento-fisico/alignet-transit/cancelacion) para revisar el contrato y el manejo de `202`.
+`POST /cancel` requiere el `operationNumber` de la autorización en curso. En CARD y QR, el PinPAD corta el flujo visual cuando recibe y procesa la solicitud; una falla de conexión no garantiza recepción ni cierre. Siempre consulta después `GET /payments/{operationNumber}`, incluso si el POST responde HTTP `200`. Consulta [Cancelación de una autorización en curso](/procesamiento-fisico/alignet-transit/cancelacion) para revisar el contrato y el manejo de `202`.
 
 En CARD, `/cancel` puede ejecutar un extorno interno si el cobro se aprueba durante su procesamiento. En QR solo cancela la transacción pendiente creada al generar el código; no revierte un pago aprobado.
+
+Solo un procesamiento completado permite responder cancelación exitosa. Un fallo interno o resultado incierto debe reflejar su resultado real; HTTP, códigos y cuerpos de error siguen pendientes de confirmar con desarrollo.
 
 Las combinaciones de cancelación de CARD y QR se definen en la página de cancelación. No confundas el cierre de pantalla con el cierre financiero.
 

@@ -22,7 +22,10 @@ Usa el código HTTP, `status`, `resultCode` y `operationNumber` para diagnostica
 | `404 NOT_FOUND` al consultar | La referencia no existe o no coincide con la enviada. | Verifica el valor exacto y el terminal consultado. No asumas rechazo financiero. |
 | Estado `UNKNOWN` | El terminal se reinició durante el proceso. | Mantén la operación abierta, consulta y aplica el escalamiento acordado. |
 | `DENIED` con HTTP `200` | Rechazo o cancelación CARD, según código y mensaje. | Aplica la [combinación por método](/procesamiento-fisico/alignet-transit/cancelacion#resultados-por-m%C3%A9todo). |
-| Pantalla cerrada después de cancelar | El flujo visual se cortó; no determina el resultado financiero. | Consulta siempre el pago, incluso después de `200`. |
+| Pantalla cerrada tras procesar cancelación | El cierre visual no determina el resultado financiero. | Consulta siempre el pago, incluso después de `200`; no clasifiques un fallo interno como cancelación completada. |
+| Falla de conexión durante `/cancel` | No hay certeza de que el PinPAD recibió la solicitud o cerró la pantalla. | Recupera conexión y consulta la referencia original, sin repetir automáticamente el POST. |
+| Fallo interno de `/cancel` | La pantalla puede haberse cerrado sin resolver la cancelación financiera. | El POST debe reflejar el fallo o pendiente real; el contrato de errores requiere confirmación de desarrollo. |
+| QR `APPROVED/00` sin solicitud de cancelación | Pago normal aprobado. | Confirmar pago y ejecutar la acción de negocio; no iniciar reversión. |
 | `APPROVED/00` después de cancelar CARD | La autorización puede tener un registro separado del extorno interno. | Verifica si terminó o está en curso; si no puedes comprobarlo, concilia antes de enviar otra reversa. |
 | Pago QR confirmado durante cancelación | La transacción existía desde la generación del QR. | Consulta siempre; `/cancel` no extorna QR. Si aparece aprobado, aplica un procedimiento separado confirmado para QR, sin presuponer `/reversals`. |
 | `404` en consulta de extorno después de `/cancel` CARD | La exposición del extorno interno CARD en esa ruta no está verificada. | No concluyas que falta el extorno ni generes uno duplicado. |

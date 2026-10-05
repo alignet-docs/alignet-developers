@@ -58,7 +58,7 @@ Antes de ejecutar casos:
 
 ## Cancelación CARD
 
-En cada caso, comprueba el corte visual y ejecuta `GET /payments/{operationNumber}`, incluso después de HTTP `200`. Evalúa estado, código y mensaje juntos.
+En todos los casos, consulta `GET /payments/{operationNumber}`, incluso después de HTTP `200`. Comprueba el corte visual cuando el PinPAD reciba y procese la solicitud; una falla de conexión no garantiza recepción ni cierre. Evalúa estado, código y mensaje juntos.
 
 | Caso | Estímulo | Validación esperada |
 | --- | --- | --- |
@@ -78,17 +78,18 @@ En cada caso, comprueba el corte visual y ejecuta `GET /payments/{operationNumbe
 
 | Caso | Estímulo | Validación esperada |
 | --- | --- | --- |
+| Pago normal | Obtener `APPROVED/00` sin solicitar cancelación. | Confirmar el pago y ejecutar la acción de negocio; no gestionar reversión. |
 | Generación sin escaneo | Generar QR sin escanearlo. | Ya existe transacción pendiente asociada a `operationNumber`; no registrar cobro aprobado. |
-| Antes del pago | Cancelar el QR generado. | Cancelar la transacción pendiente, cortar pantalla y consultar pago, incluso con `200`; contrastar `CANCELLED/00` y mensaje real. |
+| Antes del pago | El PinPAD recibe y procesa `/cancel` sobre el QR pendiente. | Verificar cancelación completada, cierre visual y consulta, incluso con `200`; contrastar `CANCELLED/00` y mensaje real antes de cerrar como cancelado. |
 | Pago durante cancelación | Coordinar confirmación de pago con `/cancel`. | Consultar siempre. Si aparece `APPROVED/00`, no considerarlo extornado: `/cancel` no revierte pagos QR aprobados. |
 | Autorización detectada después de cancelar | Consulta devuelve `APPROVED/00`. | Usar un procedimiento separado confirmado para QR y verificar su resultado, sin presuponer `/reversals`. Sin procedimiento confirmado, mantener abierta y escalar. |
 | Sin extorno desde cancelación | Revisar el flujo QR de `/cancel`. | No ejecuta extornos ni acredita reversión de un pago aprobado. |
 | Reversión QR separada | Aplicar el procedimiento confirmado fuera de `/cancel`. | Verificar resultado y evitar duplicados; no ejecutar `/reversals` por analogía con CARD. |
-| Fallo | Provocar cancelación o resolución fallida en pruebas. | Registrar respuesta real, consultar y no presentar fallo como `CANCELLED/00`. |
+| Fallo interno | Recibir `/cancel` y provocar un fallo interno controlado. | La respuesta debe reflejar fallo o pendiente real; el cierre visual y la consulta posterior no justifican devolver `CANCELLED/00`. |
 | Pendiente | `/cancel` responde `202` o la consulta queda pendiente. | Respetar `Retry-After`, continuar consultando, sin aprobación, cancelación o extorno asumidos. |
 | Respuesta tardía | `/authorize` devuelve `202 PENDING` después de cancelación confirmada. | No reemplazar el resultado final confirmado; conservar los eventos. |
 
-Para ambos métodos, prueba timeout, rechazo confirmado y pérdida de red después del cierre visual. No inicies otra transacción hasta resolver la anterior.
+Para ambos métodos, prueba fallo de conexión antes de la recepción, pérdida de respuesta y fallo interno tras recibir `/cancel`. No garantices recepción ni cierre visual cuando falla la conexión. Verifica que los ciclos repitan solo el GET y no reenvíen `/cancel`. Prueba también timeout, rechazo confirmado y pérdida de red después del cierre visual. No inicies otra transacción hasta resolver la anterior.
 
 ## Casos de idempotencia y recuperación
 

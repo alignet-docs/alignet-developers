@@ -61,7 +61,7 @@ curl --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/cancel" \
 curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528"
 ```
 
-Ejecuta la consulta incluso después de HTTP `200`; si hay `Retry-After`, espera antes de consultar. Aplica la [tabla de resolución](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). En CARD, verifica el extorno interno antes de enviar otra reversa. En QR, `/cancel` solo cancela la transacción pendiente: si aparece aprobado, requiere un procedimiento separado confirmado; no presupongas soporte de `/reversals`.
+Sin solicitud de cancelación, confirma un QR `APPROVED/00` y ejecuta la acción de negocio. Después de enviar `/cancel`, ejecuta la consulta incluso con HTTP `200`; si hay `Retry-After`, espera antes de consultar. Aplica la [tabla de resolución](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). En CARD, verifica el extorno interno antes de enviar otra reversa. En QR, `/cancel` solo solicita cancelar la transacción pendiente: si aparece aprobado después de esa solicitud, requiere un procedimiento separado confirmado; no presupongas soporte de `/reversals`.
 
 ## Java 11 o posterior
 
@@ -228,7 +228,9 @@ async function queryStatus(operationNumber) {
 - Configura al menos 100 a 110 segundos para la autorización.
 - Conserva por separado el código HTTP y el JSON.
 - Confirma el flujo normal únicamente con `200` + `APPROVED` + `00`.
-- Después de cancelar CARD o QR, consulta siempre el pago, incluso con HTTP `200`.
+- Después de solicitar cancelación CARD o QR, consulta siempre el pago, incluso con HTTP `200`.
+- Una falla de conexión no garantiza recepción de `/cancel` ni cierre de pantalla.
+- Los ciclos repiten solo el GET; no reenvían `/cancel` ni generan otra venta.
 - En QR, `/cancel` no extorna un pago aprobado; usa un procedimiento separado confirmado para QR.
 - No generes extornos duplicados ni otra venta mientras falte resolución.
 - No sustituyas un resultado final confirmado por un `202 PENDING` tardío.
