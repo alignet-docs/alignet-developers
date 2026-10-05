@@ -224,7 +224,7 @@ Consulta los cuerpos de respuesta en [Respuestas, consulta y códigos](/procesam
 1. Conserva el `operationNumber` y consulta `GET /payments/{operationNumber}` al finalizar la autorización o su cancelación.
 2. Evalúa el estado actualizado antes de confirmar, cerrar, reintentar o solicitar otra acción. Si la consulta sigue mostrando un resultado pendiente o indeterminado, mantén la operación pendiente y respeta `Retry-After` cuando corresponda.
 3. No sobrescribas un resultado final ya confirmado con una respuesta tardía `PENDING` de `/authorize`. El fin de la espera HTTP y la salida de la pantalla de pago no determinan por sí solos el resultado financiero.
-4. Si aparece `APPROVED` después de cancelar, aplica la [resolución de cobros autorizados](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). Evita extornos duplicados. Para una reversa explícita usa la misma referencia y `GET /reversals/{operationNumber}`; confirma primero que el método esté habilitado.
+4. Si aparece `APPROVED` después de cancelar, aplica la [resolución de cobros autorizados](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). Evita extornos duplicados. En CARD, verifica el extorno interno antes de solicitar uno explícito. En QR, `/cancel` no extorna pagos aprobados: usa un procedimiento separado confirmado para QR, sin presuponer soporte de `/reversals`.
 
 ## Antes de producción
 

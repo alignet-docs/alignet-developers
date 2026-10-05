@@ -15,7 +15,7 @@ El POST espera un resultado hasta agotar su tiempo de espera. La transacción QR
 
 ## Después de cancelar
 
-Para ambos métodos, `/cancel` corta el flujo visual. Siempre consulta `GET /payments/{operationNumber}`, incluso después de HTTP `200`. Si aparece una autorización, verifica si existe extorno completado o en curso antes de solicitar otro. Aplica la [tabla de resolución](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
+Para ambos métodos, `/cancel` corta el flujo visual. Siempre consulta `GET /payments/{operationNumber}`, incluso después de HTTP `200`. Si CARD aparece autorizado, verifica el extorno interno antes de solicitar otro. Si QR aparece aprobado, `/cancel` no lo extornó: requiere un procedimiento separado confirmado para QR, sin presuponer soporte de `/reversals`. Aplica la [tabla de resolución](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
 
 No inicies una nueva transacción mientras la anterior siga sin resolverse. Un `202 PENDING` tardío de `/authorize` no reemplaza un resultado final confirmado.
 

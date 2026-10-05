@@ -19,7 +19,7 @@ Esta página reúne la información ambigua, incompleta o dependiente de cada im
 | Frecuencia de consulta | Header `Retry-After`; aproximadamente `2` segundos si no está presente. | Intervalo, backoff y tiempo máximo de consulta. |
 | Operación no resuelta | No iniciar otro cobro ante `PENDING`, `PROCESSING` o `UNKNOWN`. | Procedimiento de inmovilización, escalamiento y decisión de negocio. |
 | Reinicio durante un extorno | Puede producir `UNKNOWN`. | Confirmar si el procesador recibió la reversa y cómo conciliarla. |
-| Cancelación con resultado incierto | `POST /cancel` puede responder `202` con `Retry-After`, o perderse la conexión antes de recibir el resultado. | Consultar siempre `GET /payments/{operationNumber}`. Confirmar conciliación cuando esa vista no resuelva el cobro o el extorno interno. |
+| Cancelación con resultado incierto | `POST /cancel` puede responder `202` con `Retry-After`, o perderse la conexión antes de recibir el resultado. | Consultar siempre `GET /payments/{operationNumber}`. Confirmar conciliación cuando esa vista no resuelva el cobro o el extorno interno CARD. |
 
 ## Contrato y habilitación
 
@@ -41,7 +41,7 @@ Esta página reúne la información ambigua, incompleta o dependiente de cada im
 | Punto | Referencia disponible | Validación requerida |
 | --- | --- | --- |
 | Extorno interno CARD | `/cancel` localiza la autorización y extorna si se aprobó durante la cancelación. | Cómo observar el proceso y resultado; no está verificado que aparezca en `GET /reversals`. |
-| Pago QR durante cancelación | La transacción existe desde la generación del QR. | Mecanismo de resolución soportado, extorno interno o explícito, consulta e idempotencia. |
+| Reversión QR separada | `/cancel` cancela la transacción pendiente; no ejecuta extornos ni revierte pagos QR aprobados. | Procedimiento separado confirmado para QR, consulta e idempotencia; no presuponer soporte de `/reversals`. |
 | Presentación de tarjeta | El extorno explícito puede requerir interacción con el PinPAD. | Obligatoriedad por versión, uso de tarjeta original y pasos reales; distinguirlos del extorno interno. |
 | Prevención de duplicados | No extornar si hay un extorno completado o en curso. | Evidencia y consulta para descartar ambos antes de una reversa adicional. |
 

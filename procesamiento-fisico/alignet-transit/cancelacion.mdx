@@ -25,13 +25,13 @@ flowchart TD
     D -->|Pendiente| D
 ```
 
-El extorno interno pertenece a `/cancel`. No apliques automáticamente los requisitos de presentación de tarjeta del extorno explícito a este flujo.
+El extorno interno de CARD pertenece a `/cancel`. No apliques automáticamente los requisitos de presentación de tarjeta del extorno explícito a este flujo.
 
 ## QR
 
 `POST /authorize` con `paymentMethod: "QR"` inicia el flujo. **Al generarse el QR, ya existe una transacción asociada al `operationNumber`, pendiente de pago.** La transacción no comienza al escanear. Generar o mostrar el QR no confirma el cobro; se requiere la confirmación del pago.
 
-La cancelación actúa sobre esa transacción y corta la pantalla de pago.
+`POST /cancel` cancela la transacción QR pendiente y corta la pantalla de pago. **No ejecuta extornos en QR ni revierte un pago aprobado.**
 
 ```mermaid
 flowchart TD
@@ -39,13 +39,13 @@ flowchart TD
     B -->|Pago| D[Consultar pago]
     B -->|Cancelación| C[Cancelar y cortar pantalla]
     C --> D
-    D -->|Autorizado| E[Resolver cobro QR]
+    D -->|Autorizado| E[Reversión QR separada]
     E --> F[Verificar resultado]
     D -->|Cancelado o denegado| F
     D -->|Pendiente| D
 ```
 
-Si llega una confirmación de pago durante la cancelación, consulta el estado. No está verificado que QR ejecute un extorno interno ni que admita `POST /reversals`. Resuelve el cobro mediante el mecanismo habilitado y confirmado para QR; si no está definido, conserva la operación abierta y escala a Alignet. No copies la regla de extorno interno de CARD.
+Si QR aparece `APPROVED/00` durante o después de cancelar, el pago no fue extornado por `/cancel`. Su reversión requiere un procedimiento separado confirmado para QR; no presupongas soporte de `POST /reversals`. Si no tienes ese procedimiento, conserva la operación sin resolver y escala a Alignet.
 
 ## Solicitud
 
@@ -122,7 +122,8 @@ Estos ejemplos muestran solo los campos de decisión, no un esquema completo:
 | Resultado actualizado | Acción |
 | --- | --- |
 | Cancelación confirmada según el método | Cierra como cancelada. |
-| `APPROVED` + `00` | Verifica si el extorno interno terminó o está en curso. Si terminó, verifica su resultado; si está en curso, espera y consulta. Si el cobro sigue vigente y confirmas que no hay extorno completado ni en curso, solicita el extorno correspondiente al método y consulta su resultado. |
+| CARD: `APPROVED` + `00` | Verifica si el extorno interno terminó o está en curso. Si está en curso, espera y consulta. Si el cobro sigue vigente y confirmas que no hay extorno completado ni en curso, solicita el extorno explícito y consulta su resultado. |
+| QR: `APPROVED` + `00` | No lo consideres extornado por `/cancel`. Aplica un procedimiento separado confirmado para QR y verifica su resultado; no presupongas soporte de `/reversals`. Sin ese procedimiento, mantén la operación sin resolver y escala. |
 | `PENDING`, `PROCESSING` o `UNKNOWN` | Continúa consultando y respeta `Retry-After`. No asumas cancelación, aprobación ni extorno. Escala al alcanzar el límite acordado. |
 | Denegación confirmada | Cierra como no aprobado; distingue rechazo de cancelación mediante código y mensaje. |
 | Error o respuesta contradictoria | Conserva la operación sin resolver; verifica referencia, terminal y evidencias. No registres una cancelación completada. |
@@ -131,7 +132,7 @@ Estos ejemplos muestran solo los campos de decisión, no un esquema completo:
   No generes un extorno duplicado ni una nueva transacción mientras el resultado anterior siga sin resolverse. Encontrar la autorización original no basta para saber si fue extornada: autorización y extorno pueden tener registros separados.
 </Warning>
 
-### Verificación del extorno interno
+### Verificación del extorno interno CARD
 
 `GET /payments/{operationNumber}` verifica autorización/cancelación. La evidencia disponible no define cómo consultar por separado el extorno interno de CARD ni confirma que aparezca en `/reversals`. No uses un `404` de esa ruta para concluir que no existe un extorno interno.
 
@@ -149,4 +150,4 @@ Si la consulta muestra una autorización vigente pero no permite comprobar el ex
 
 Un `202 PENDING` tardío de `/authorize` no reemplaza un resultado final confirmado. La solicitud original puede seguir abierta después de que se cierre la pantalla. Conserva ambos eventos y decide con el estado actualizado.
 
-Los cuerpos de fallos, la consulta del extorno interno y el mecanismo de resolución QR requieren [confirmación por versión](/procesamiento-fisico/alignet-transit/datos-por-validar). No presentes un procesamiento fallido como cancelación completada.
+Los cuerpos de fallos, la consulta del extorno interno CARD y el procedimiento separado de reversión QR requieren [confirmación por versión](/procesamiento-fisico/alignet-transit/datos-por-validar). No presentes un procesamiento fallido como cancelación completada.

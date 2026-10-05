@@ -62,6 +62,8 @@ curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528"
 
 `POST /cancel` requiere el `operationNumber` de la autorización en curso. En CARD y QR corta el flujo visual. Siempre consulta después `GET /payments/{operationNumber}`, incluso si el POST responde HTTP `200`. Consulta [Cancelación de una autorización en curso](/procesamiento-fisico/alignet-transit/cancelacion) para revisar el contrato y el manejo de `202`.
 
+En CARD, `/cancel` puede ejecutar un extorno interno si el cobro se aprueba durante su procesamiento. En QR solo cancela la transacción pendiente creada al generar el código; no revierte un pago aprobado.
+
 Las combinaciones de cancelación de CARD y QR se definen en la página de cancelación. No confundas el cierre de pantalla con el cierre financiero.
 
 ## Extornar una venta aprobada

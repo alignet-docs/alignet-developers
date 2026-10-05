@@ -10,7 +10,7 @@ Usa `POST /reversals` para solicitar el **extorno total de una venta aprobada**.
 
 | Flujo | Uso | Verificación |
 | --- | --- | --- |
-| `POST /cancel` | Resolver una autorización en curso. CARD puede incluir un extorno interno si el cobro se aprueba durante la cancelación. | Siempre `GET /payments/{operationNumber}`, incluso con HTTP `200`. |
+| `POST /cancel` | Resolver una autorización en curso. CARD puede incluir un extorno interno si el cobro se aprueba durante la cancelación. En QR solo cancela la transacción pendiente; no extorna pagos aprobados. | Siempre `GET /payments/{operationNumber}`, incluso con HTTP `200`. |
 | `POST /reversals` | Solicitar explícitamente el extorno de una venta aprobada. | `GET /reversals/{operationNumber}`, incluso con HTTP `200`. |
 
 Las [combinaciones de cancelación por método](/procesamiento-fisico/alignet-transit/cancelacion#resultados-por-m%C3%A9todo) no son resultados del extorno explícito.
@@ -20,9 +20,9 @@ Las [combinaciones de cancelación por método](/procesamiento-fisico/alignet-tr
 | Método | Requisito |
 | --- | --- |
 | CARD | Venta `APPROVED/00` y cobro vigente. Presenta la tarjeta cuando la solicite el PinPAD. Confirma durante certificación si la versión exige siempre la tarjeta original y los pasos de lectura. |
-| QR | Confirma que `/reversals` esté habilitado; su soporte no está verificado. Si no lo está, utiliza el mecanismo QR acordado con Alignet. No aplica presentación de tarjeta. |
+| QR | `/cancel` no ejecuta extornos. Revertir un pago aprobado requiere un procedimiento separado confirmado para QR; no presupongas soporte de `/reversals`. No aplica presentación de tarjeta. |
 
-Antes del POST, verifica que no exista un extorno completado o en curso. Si no puedes comprobar el extorno interno de una cancelación previa, concilia primero con Alignet. No generalices los requisitos de tarjeta del extorno explícito al interno de CARD.
+Antes del POST, verifica que no exista un extorno completado o en curso. Si no puedes comprobar el extorno interno CARD de una cancelación previa, concilia primero con Alignet. No generalices los requisitos de tarjeta del extorno explícito al interno de CARD.
 
 ## Solicitud
 
@@ -93,7 +93,7 @@ Respuesta de extorno aprobado:
 | `404` | No existe solicitud registrada con esa referencia. | Verificar terminal y referencia; no deducir un resultado financiero. |
 | `502` | Resultado `UNKNOWN` documentado. | Escalar con evidencia, sin reintentos en bucle. |
 
-La autorización y el extorno pueden conservar registros separados. Encontrar `APPROVED` en `GET /payments/{operationNumber}` no confirma ni descarta el extorno. Tampoco está verificado que esta consulta de extornos exponga el extorno interno de `/cancel`; sigue su [procedimiento de verificación](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
+La autorización y el extorno pueden conservar registros separados. Encontrar `APPROVED` en `GET /payments/{operationNumber}` no confirma ni descarta el extorno. Tampoco está verificado que esta consulta de extornos exponga el extorno interno CARD de `/cancel`; sigue su [procedimiento de verificación](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
 
 ## Estados del extorno
 

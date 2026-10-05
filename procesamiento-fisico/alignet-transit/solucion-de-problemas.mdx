@@ -24,8 +24,8 @@ Usa el código HTTP, `status`, `resultCode` y `operationNumber` para diagnostica
 | `DENIED` con HTTP `200` | Rechazo o cancelación CARD, según código y mensaje. | Aplica la [combinación por método](/procesamiento-fisico/alignet-transit/cancelacion#resultados-por-m%C3%A9todo). |
 | Pantalla cerrada después de cancelar | El flujo visual se cortó; no determina el resultado financiero. | Consulta siempre el pago, incluso después de `200`. |
 | `APPROVED/00` después de cancelar CARD | La autorización puede tener un registro separado del extorno interno. | Verifica si terminó o está en curso; si no puedes comprobarlo, concilia antes de enviar otra reversa. |
-| Pago QR confirmado durante cancelación | La transacción existía desde la generación del QR. | Consulta y resuelve con el mecanismo QR habilitado. No presupongas extorno interno o soporte de `/reversals`. |
-| `404` en consulta de extorno después de `/cancel` | La exposición del extorno interno en esa ruta no está verificada. | No concluyas que falta el extorno ni generes uno duplicado. |
+| Pago QR confirmado durante cancelación | La transacción existía desde la generación del QR. | Consulta siempre; `/cancel` no extorna QR. Si aparece aprobado, aplica un procedimiento separado confirmado para QR, sin presuponer `/reversals`. |
+| `404` en consulta de extorno después de `/cancel` CARD | La exposición del extorno interno CARD en esa ruta no está verificada. | No concluyas que falta el extorno ni generes uno duplicado. |
 | `202 PENDING` tardío de `/authorize` | Venció la espera de esa solicitud. | Conserva el resultado final confirmado y consulta si queda una discrepancia. |
 
 ## `GET /health` no responde
@@ -65,7 +65,7 @@ Conserva el `resultMessage` para saber qué validación falló. No lo muestres s
 
 Un timeout describe la conexión del sistema central, no el resultado financiero.
 
-El siguiente flujo corresponde a `POST /authorize`. Para una cancelación, conserva la referencia y aplica el [procedimiento de `/cancel`](/procesamiento-fisico/alignet-transit/cancelacion#manejo-de-202-y-p%C3%A9rdida-de-conexi%C3%B3n); no presupongas que el extorno interno aparece en `GET /reversals/{operationNumber}`.
+El siguiente flujo corresponde a `POST /authorize`. Para una cancelación, conserva la referencia y aplica el [procedimiento de `/cancel`](/procesamiento-fisico/alignet-transit/cancelacion#manejo-de-202-y-p%C3%A9rdida-de-conexi%C3%B3n); no presupongas que el extorno interno CARD aparece en `GET /reversals/{operationNumber}`.
 
 ```text
 POST sin respuesta
