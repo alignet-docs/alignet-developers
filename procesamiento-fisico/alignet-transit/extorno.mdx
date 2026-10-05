@@ -4,7 +4,7 @@ description: "Extorno explícito CARD y consulta de resultados; QR no admite ext
 icon: "rotate-left"
 ---
 
-Usa `POST /reversals` para solicitar el **extorno total de una venta CARD aprobada**. Conserva el `operationNumber` original.
+`POST /reversals` aplica **solo a CARD** y solicita el extorno total de una venta aprobada. Conserva el `operationNumber` original.
 
 ## Cancelación y extorno
 
@@ -13,7 +13,7 @@ Usa `POST /reversals` para solicitar el **extorno total de una venta CARD aproba
 | `POST /cancel` | Resolver una autorización en curso. CARD puede incluir un extorno interno si el cobro se aprueba durante la cancelación. En QR solo cancela o inhabilita el código; no devuelve pagos. | Siempre `GET /payments/{operationNumber}`, incluso con HTTP `200`. |
 | `POST /reversals` | Solicitar explícitamente el extorno de una venta CARD aprobada. | `GET /reversals/{operationNumber}`, incluso con HTTP `200`. |
 
-QR no admite extornos ni devoluciones mediante `/cancel` o refund. No uses `/reversals` para QR. Si aparece `APPROVED/00` después de solicitar cancelación, conserva el pago aprobado y registra la discrepancia para revisión.
+En **QR**, únicamente cancelas o inhabilitas el código generado. Ni `/cancel` ni refund devuelven un monto pagado; `/reversals` no aplica. Si aparece `APPROVED/00` después de solicitar cancelación, conserva el pago aprobado y registra la discrepancia para revisión.
 
 Las [combinaciones de cancelación por método](/procesamiento-fisico/alignet-transit/cancelacion#resultados-por-m%C3%A9todo) no son resultados del extorno explícito.
 
