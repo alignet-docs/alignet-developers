@@ -6,4 +6,4 @@ icon: "ethernet"
 
 Usa el mismo contrato HTTP de Transit para integrar el SPD con el P5L. Consulta los [ejemplos de integración](/procesamiento-fisico/alignet-transit/ejemplos-de-integracion), los [parámetros](/procesamiento-fisico/alignet-transit/parametros-de-envio) y los [flujos CARD y QR](/procesamiento-fisico/alignet-transit/cancelacion).
 
-Después de cancelar, consulta siempre el pago y verifica cualquier cobro vigente antes de cerrar la operación.
+Después de solicitar cancelación, consulta siempre el pago, incluso con HTTP `200`. En CARD verifica el extorno; en QR conserva `APPROVED/00` como pago aprobado y registra la discrepancia, sin refund ni reversa.

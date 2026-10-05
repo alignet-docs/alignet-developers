@@ -167,9 +167,9 @@ Respuesta de una operación inexistente:
 
 | `status` | Final | Significado | Acción |
 | --- | --- | --- | --- |
-| `APPROVED` | Sí para la autorización | Pago aprobado. | Con `00`, confirma en el flujo normal. Después de cancelar: CARD requiere verificar el extorno; QR no fue extornado por `/cancel` y necesita una reversión separada confirmada. |
+| `APPROVED` | Sí para la autorización | Pago aprobado. | Con `00`, confirma en el flujo normal. Después de cancelar: CARD requiere verificar el extorno; QR conserva el pago aprobado; registra la discrepancia sin generar refund ni reversa. |
 | `DENIED` | Sí, con combinación confirmada | Rechazo; en CARD, `14` + `Operación cancelada` identifica cancelación completada. | Evalúa estado, código y mensaje. Después de cancelar, consulta antes de cerrar. |
-| `CANCELLED` | Sí, con combinación validada | Cancelación de la transacción QR pendiente, observada con `00`; contrastar con la versión vigente. | No acredita un extorno: `/cancel` no revierte pagos QR aprobados. Consulta siempre después de cancelar. |
+| `CANCELLED` | Sí, con combinación validada | QR generado cancelado o inhabilitado, observado con `00`; contrastar con la versión vigente. | No devuelve un monto pagado. Consulta siempre después de solicitar cancelación; conserva `APPROVED/00` como pago aprobado. |
 | `PENDING` | No | Venció la espera, pero el cobro puede continuar. | Consulta; no inicies otro cobro. |
 | `PROCESSING` | No | El cobro se está procesando. | Consulta; no inicies otro cobro. |
 | `UNKNOWN` | No | El resultado es incierto, por ejemplo después de un reinicio durante el proceso. | Mantén la operación abierta y consulta. |
@@ -179,7 +179,7 @@ Respuesta de una operación inexistente:
 
 | `resultCode` | Contexto | Significado |
 | --- | --- | --- |
-| `00` | Según estado y operación | Pago aprobado solo con `APPROVED`; extorno explícito con `REVERSED`; cancelación QR observada con `CANCELLED`. |
+| `00` | Según estado y operación | Pago aprobado solo con `APPROVED`; extorno explícito CARD con `REVERSED`; cancelación QR observada con `CANCELLED`. |
 | `14` | Cancelación CARD | Con `DENIED` y `Operación cancelada`: interrupción antes del cobro o extorno interno completado. |
 | `01` | Financiero, ejemplo verificado | Petición rechazada por el procesador. |
 | `WAITING_RESULT` | Operativo | La operación sigue pendiente; consulta su estado. |
@@ -200,7 +200,7 @@ Respuesta de una operación inexistente:
 
 | Respuesta | Decisión |
 | --- | --- |
-| `200` + `APPROVED` + `00` | Confirmar en el flujo normal. Después de cancelar: verificar extorno CARD; resolver QR mediante un procedimiento separado confirmado, sin asumir `/reversals`. |
+| `200` + `APPROVED` + `00` | Confirmar en el flujo normal. Después de cancelar: verificar extorno CARD; conservar QR aprobado y registrar la discrepancia, sin refund ni reversa. |
 | `200` + cancelación completada por método | Consultar siempre el pago antes de cerrar como cancelado; no usar esta respuesta para ocultar un fallo interno. |
 | `200` + denegación confirmada | Cerrar como no aprobado; distinguir rechazo de cancelación. |
 | `202` + `PENDING` | Mantener la operación abierta y consultar. |
@@ -211,4 +211,4 @@ Respuesta de una operación inexistente:
 
 ## Consulta después de cancelar
 
-Siempre usa `GET /payments/{operationNumber}` después de solicitar cancelación, incluso tras HTTP `200` de `/cancel`. Una aprobación posterior no confirma cancelación ni extorno. Si falla la conexión, no puedes asegurar recepción ni cierre visual; un fallo interno debe reflejarse en el POST. El contrato de errores requiere [confirmación de desarrollo](/procesamiento-fisico/alignet-transit/datos-por-validar). Si aparece una autorización, aplica la [resolución por método](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). La autorización original no acredita el estado de un extorno separado. Un `202 PENDING` tardío de `/authorize` no sustituye un resultado final confirmado.
+Siempre usa `GET /payments/{operationNumber}` después de solicitar cancelación, incluso tras HTTP `200` de `/cancel`. En QR, una aprobación posterior conserva el pago aprobado: no es cancelación, devolución ni extorno. Ni `/cancel` ni refund devuelven pagos QR. Si falla la conexión, no puedes asegurar recepción ni cierre visual; un fallo interno debe reflejarse en el POST. El contrato de errores requiere [confirmación de desarrollo](/procesamiento-fisico/alignet-transit/datos-por-validar). Si aparece una autorización, aplica la [resolución por método](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). La autorización original no acredita el estado de un extorno separado. Un `202 PENDING` tardío de `/authorize` no sustituye un resultado final confirmado.

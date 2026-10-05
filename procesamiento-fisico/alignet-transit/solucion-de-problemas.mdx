@@ -18,16 +18,16 @@ Usa el código HTTP, `status`, `resultCode` y `operationNumber` para diagnostica
 | `503 POS_NOT_AVAILABLE` | Pay-me PinPAD o el SDK de pagos no está listo. | El operador debe abrir la aplicación y dejarla en estado **Listo**. |
 | El sistema central pierde la respuesta de autorización | Timeout menor que la duración del cobro o pérdida de red. | No inicies otro cobro. Consulta el `operationNumber` original mediante `GET /payments/{operationNumber}`. |
 | `202 PENDING` en autorización o extorno | Venció la espera, pero la operación puede seguir activa. | Usa el GET correspondiente y respeta `Retry-After`. |
-| `202` en cancelación | Venció la espera de `/cancel`, sin resultado final. | Consulta `GET /payments/{operationNumber}` y respeta `Retry-After`; no lo registres como cancelado. |
+| `202` o timeout en cancelación | No hay cancelación confirmada. | Muestra **Cancelación no confirmada**, consulta `GET /payments/{operationNumber}` y respeta `Retry-After`. |
 | `404 NOT_FOUND` al consultar | La referencia no existe o no coincide con la enviada. | Verifica el valor exacto y el terminal consultado. No asumas rechazo financiero. |
 | Estado `UNKNOWN` | El terminal se reinició durante el proceso. | Mantén la operación abierta, consulta y aplica el escalamiento acordado. |
 | `DENIED` con HTTP `200` | Rechazo o cancelación CARD, según código y mensaje. | Aplica la [combinación por método](/procesamiento-fisico/alignet-transit/cancelacion#resultados-por-m%C3%A9todo). |
 | Pantalla cerrada tras procesar cancelación | El cierre visual no determina el resultado financiero. | Consulta siempre el pago, incluso después de `200`; no clasifiques un fallo interno como cancelación completada. |
-| Falla de conexión durante `/cancel` | No hay certeza de que el PinPAD recibió la solicitud o cerró la pantalla. | Recupera conexión y consulta la referencia original, sin repetir automáticamente el POST. |
-| Fallo interno de `/cancel` | La pantalla puede haberse cerrado sin resolver la cancelación financiera. | El POST debe reflejar el fallo o pendiente real; el contrato de errores requiere confirmación de desarrollo. |
+| Falla de conexión durante `/cancel` | No hay certeza de que el PinPAD recibió la solicitud o cerró la pantalla. | Muestra **Cancelación no confirmada**, recupera conexión y consulta la referencia original, sin repetir automáticamente el POST. |
+| Fallo interno de `/cancel` | La pantalla puede haberse cerrado sin resolver la cancelación financiera. | Muestra **Cancelación no confirmada** y consulta el estado. El POST debe reflejar el fallo o pendiente real; el contrato de errores requiere confirmación de desarrollo. |
 | QR `APPROVED/00` sin solicitud de cancelación | Pago normal aprobado. | Confirmar pago y ejecutar la acción de negocio; no iniciar reversión. |
 | `APPROVED/00` después de cancelar CARD | La autorización puede tener un registro separado del extorno interno. | Verifica si terminó o está en curso; si no puedes comprobarlo, concilia antes de enviar otra reversa. |
-| Pago QR confirmado durante cancelación | La transacción existía desde la generación del QR. | Consulta siempre; `/cancel` no extorna QR. Si aparece aprobado, aplica un procedimiento separado confirmado para QR, sin presuponer `/reversals`. |
+| Pago QR confirmado durante cancelación | La transacción existía desde la generación del QR. | Consulta siempre. Si aparece `APPROVED/00`, conserva el pago aprobado y registra la discrepancia, sin refund ni reversa. |
 | `404` en consulta de extorno después de `/cancel` CARD | La exposición del extorno interno CARD en esa ruta no está verificada. | No concluyas que falta el extorno ni generes uno duplicado. |
 | `202 PENDING` tardío de `/authorize` | Venció la espera de esa solicitud. | Conserva el resultado final confirmado y consulta si queda una discrepancia. |
 

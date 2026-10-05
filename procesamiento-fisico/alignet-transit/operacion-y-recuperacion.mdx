@@ -15,7 +15,9 @@ El POST espera un resultado hasta agotar su tiempo de espera. La transacción QR
 
 ## Después de cancelar
 
-Para ambos métodos, el PinPAD corta el flujo visual cuando recibe y procesa `/cancel`. Si falla la conexión, no puedes asegurar recepción ni cierre visual. Siempre consulta `GET /payments/{operationNumber}`, incluso después de HTTP `200`. Si CARD aparece autorizado, verifica el extorno interno antes de solicitar otro. Si QR aparece aprobado después de solicitar cancelación, `/cancel` no lo extornó: requiere un procedimiento separado confirmado para QR, sin presuponer soporte de `/reversals`. Aplica la [tabla de resolución](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
+Para ambos métodos, el PinPAD corta el flujo visual cuando recibe y procesa `/cancel`. Si falla la conexión, no puedes asegurar recepción ni cierre visual. Siempre consulta `GET /payments/{operationNumber}`, incluso después de HTTP `200`. Si CARD aparece autorizado, verifica el extorno interno antes de solicitar otro. Si QR aparece `APPROVED/00` después de solicitar cancelación, conserva el pago aprobado y registra la discrepancia; no solicites refund ni reversa. Aplica la [tabla de resolución](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
+
+En QR, la cancelación solo inhabilita el código; ni `/cancel` ni refund devuelven un monto pagado. Ante timeout, desconexión o fallo del backend, el frontend muestra **Cancelación no confirmada** y consulta el estado.
 
 Sin solicitud de cancelación, un QR `APPROVED/00` confirma el pago y permite ejecutar la acción de negocio. Los ciclos de consulta repiten únicamente el GET; no reenvían `/cancel`.
 
@@ -42,7 +44,7 @@ El valor definitivo de la espera interna, el timeout del sistema central y el ti
 
 ## Recuperación de una operación incierta
 
-Usa `GET /payments/{operationNumber}` para recuperar autorización o cancelación. Para un extorno explícito, usa `GET /reversals/{operationNumber}`. No está verificada la consulta separada del extorno interno de CARD.
+Usa `GET /payments/{operationNumber}` para recuperar autorización o cancelación. Para un extorno explícito CARD, usa `GET /reversals/{operationNumber}`. No está verificada la consulta separada del extorno interno de CARD.
 
 Consulta cuando ocurra cualquiera de estos casos:
 
@@ -117,7 +119,8 @@ La operación en curso queda en `UNKNOWN`. No la marques como aprobada ni rechaz
 3. POST /authorize con timeout de al menos 100–110 s.
 4. Evaluar el código HTTP, status y resultCode.
 5. Confirmar solo 200 + APPROVED + 00 en el flujo normal.
-   Si hubo cancelación, resolver el cobro según el método y verificar el resultado.
+   Tras solicitar cancelación, verificar extorno CARD o conservar QR aprobado
+   y registrar la discrepancia sin refund ni reversa.
 6. Ante 202, timeout o desconexión, consultar la referencia original.
 7. Reintentar una operación final DENIED o CANCELLED solo como una nueva venta,
    con un operationNumber nuevo y después de la decisión del usuario.

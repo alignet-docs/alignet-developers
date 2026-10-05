@@ -48,7 +48,7 @@ Antes de ejecutar casos:
 | --- | --- | --- |
 | Pago aprobado | HTTP `200`, `APPROVED`, `00`, código de autorización y fecha final. | Confirmar y aplicar la regla de apertura. |
 | Pago rechazado | HTTP `200`, `DENIED` y código distinto de `00`. | No confirmar. |
-| Extorno explícito aprobado, método habilitado | `POST /reversals` devuelve HTTP `200`, `REVERSED` y `00`. | Consultar `GET /reversals/{operationNumber}` y registrar el resultado verificado. |
+| Extorno explícito CARD aprobado | `POST /reversals` devuelve HTTP `200`, `REVERSED` y `00`. | Consultar `GET /reversals/{operationNumber}` y registrar el resultado verificado. |
 | Extorno pendiente | HTTP `202`, `PENDING`, `WAITING_RESULT`. | Consultar `GET /reversals/{operationNumber}`. |
 | Extorno denegado | HTTP `200`, `DENIED` y código distinto de `00`. | No registrar como extornado ni reintentar automáticamente. |
 | Espera agotada | HTTP `202`, `PENDING`, `WAITING_RESULT`. | Consultar, sin nuevo cobro. |
@@ -74,17 +74,18 @@ En todos los casos, consulta `GET /payments/{operationNumber}`, incluso después
 
 ## Cancelación QR
 
-`/cancel` no ejecuta extornos en QR. Contrasta `CANCELLED/00` y valida el procedimiento separado de reversión con la versión ECR de pruebas.
+`/cancel` no ejecuta extornos en QR. Ni `/cancel` ni refund devuelven pagos QR. Contrasta `CANCELLED/00` con la versión ECR de pruebas.
 
 | Caso | Estímulo | Validación esperada |
 | --- | --- | --- |
 | Pago normal | Obtener `APPROVED/00` sin solicitar cancelación. | Confirmar el pago y ejecutar la acción de negocio; no gestionar reversión. |
 | Generación sin escaneo | Generar QR sin escanearlo. | Ya existe transacción pendiente asociada a `operationNumber`; no registrar cobro aprobado. |
 | Antes del pago | El PinPAD recibe y procesa `/cancel` sobre el QR pendiente. | Verificar cancelación completada, cierre visual y consulta, incluso con `200`; contrastar `CANCELLED/00` y mensaje real antes de cerrar como cancelado. |
-| Pago durante cancelación | Coordinar confirmación de pago con `/cancel`. | Consultar siempre. Si aparece `APPROVED/00`, no considerarlo extornado: `/cancel` no revierte pagos QR aprobados. |
-| Autorización detectada después de cancelar | Consulta devuelve `APPROVED/00`. | Usar un procedimiento separado confirmado para QR y verificar su resultado, sin presuponer `/reversals`. Sin procedimiento confirmado, mantener abierta y escalar. |
+| Pago durante cancelación | Coordinar confirmación de pago con `/cancel`. | Consultar siempre. Si aparece `APPROVED/00`, conservar el pago aprobado y registrar la discrepancia, sin refund ni reversa. |
+| Autorización detectada después de cancelar | Consulta devuelve `APPROVED/00`. | Conservar pago aprobado, sin marcar cancelación, devolución o extorno; registrar discrepancia para revisión. |
 | Sin extorno desde cancelación | Revisar el flujo QR de `/cancel`. | No ejecuta extornos ni acredita reversión de un pago aprobado. |
-| Reversión QR separada | Aplicar el procedimiento confirmado fuera de `/cancel`. | Verificar resultado y evitar duplicados; no ejecutar `/reversals` por analogía con CARD. |
+| Sin devolución QR | Consultar un QR ya pagado después de pedir cancelación. | No generar refund ni reversa; cancelar o inhabilitar el código no devuelve el monto. |
+| Cancelación incierta | Simular timeout, desconexión o fallo del backend. | Frontend indica **Cancelación no confirmada** y consulta el estado; enviar el POST o cerrar pantalla no acredita cancelación. |
 | Fallo interno | Recibir `/cancel` y provocar un fallo interno controlado. | La respuesta debe reflejar fallo o pendiente real; el cierre visual y la consulta posterior no justifican devolver `CANCELLED/00`. |
 | Pendiente | `/cancel` responde `202` o la consulta queda pendiente. | Respetar `Retry-After`, continuar consultando, sin aprobación, cancelación o extorno asumidos. |
 | Respuesta tardía | `/authorize` devuelve `202 PENDING` después de cancelación confirmada. | No reemplazar el resultado final confirmado; conservar los eventos. |
@@ -129,7 +130,7 @@ Para ambos métodos, prueba fallo de conexión antes de la recepción, pérdida 
 </Check>
 
 <Check>
-  El sistema central supera por separado los casos CARD y QR. Consulta siempre después de cancelar y verifica cualquier reversión antes de cerrar.
+  El sistema central supera por separado los casos CARD y QR. Consulta siempre después de solicitar cancelación; verifica el extorno CARD y conserva aprobaciones QR sin devolución.
 </Check>
 
 <Check>
@@ -169,7 +170,7 @@ Para ambos métodos, prueba fallo de conexión antes de la recepción, pérdida 
 </Check>
 
 <Check>
-  Se verificó cómo observar el extorno interno CARD, qué resolución soporta QR y cuándo se solicita tarjeta en un extorno explícito.
+  Se verificó cómo observar el extorno interno CARD, cómo registrar discrepancias de cancelación QR sin devolver el pago y cuándo se solicita tarjeta en el extorno explícito CARD.
 </Check>
 
 ## Criterio de aceptación

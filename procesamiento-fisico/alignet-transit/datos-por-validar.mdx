@@ -43,7 +43,7 @@ Esta página reúne la información ambigua, incompleta o dependiente de cada im
 | Punto | Referencia disponible | Validación requerida |
 | --- | --- | --- |
 | Extorno interno CARD | `/cancel` localiza la autorización y extorna si se aprobó durante la cancelación. | Cómo observar el proceso y resultado; no está verificado que aparezca en `GET /reversals`. |
-| Reversión QR separada | `/cancel` cancela la transacción pendiente; no ejecuta extornos ni revierte pagos QR aprobados. | Procedimiento separado confirmado para QR, consulta e idempotencia; no presuponer soporte de `/reversals`. |
+| Discrepancia de cancelación QR | Solo se cancela o inhabilita el código. Ni `/cancel` ni refund devuelven pagos QR; `APPROVED/00` se conserva como aprobado. | Definir evidencias, responsables y revisión de discrepancias; no generar refund ni reversa. |
 | Presentación de tarjeta | El extorno explícito puede requerir interacción con el PinPAD. | Obligatoriedad por versión, uso de tarjeta original y pasos reales; distinguirlos del extorno interno. |
 | Prevención de duplicados | No extornar si hay un extorno completado o en curso. | Evidencia y consulta para descartar ambos antes de una reversa adicional. |
 

@@ -1,19 +1,19 @@
 ---
-title: "Extorno de una venta aprobada"
-description: "Extorno explícito, requisitos por método y consulta de resultados."
+title: "Extorno de una venta CARD aprobada"
+description: "Extorno explícito CARD y consulta de resultados; QR no admite extornos ni devoluciones."
 icon: "rotate-left"
 ---
 
-Usa `POST /reversals` para solicitar el **extorno total de una venta aprobada**. Conserva el `operationNumber` original.
+Usa `POST /reversals` para solicitar el **extorno total de una venta CARD aprobada**. Conserva el `operationNumber` original.
 
 ## Cancelación y extorno
 
 | Flujo | Uso | Verificación |
 | --- | --- | --- |
-| `POST /cancel` | Resolver una autorización en curso. CARD puede incluir un extorno interno si el cobro se aprueba durante la cancelación. En QR solicita cancelar la transacción pendiente; no extorna pagos aprobados. | Siempre `GET /payments/{operationNumber}`, incluso con HTTP `200`. |
-| `POST /reversals` | Solicitar explícitamente el extorno de una venta aprobada. | `GET /reversals/{operationNumber}`, incluso con HTTP `200`. |
+| `POST /cancel` | Resolver una autorización en curso. CARD puede incluir un extorno interno si el cobro se aprueba durante la cancelación. En QR solo cancela o inhabilita el código; no devuelve pagos. | Siempre `GET /payments/{operationNumber}`, incluso con HTTP `200`. |
+| `POST /reversals` | Solicitar explícitamente el extorno de una venta CARD aprobada. | `GET /reversals/{operationNumber}`, incluso con HTTP `200`. |
 
-Sin solicitud de cancelación, un pago QR `APPROVED/00` se confirma; no requiere reversión por el solo hecho de estar aprobado. Después de solicitar cancelación, su resolución requiere el procedimiento QR separado.
+QR no admite extornos ni devoluciones mediante `/cancel` o refund. No uses `/reversals` para QR. Si aparece `APPROVED/00` después de solicitar cancelación, conserva el pago aprobado y registra la discrepancia para revisión.
 
 Las [combinaciones de cancelación por método](/procesamiento-fisico/alignet-transit/cancelacion#resultados-por-m%C3%A9todo) no son resultados del extorno explícito.
 
@@ -22,7 +22,7 @@ Las [combinaciones de cancelación por método](/procesamiento-fisico/alignet-tr
 | Método | Requisito |
 | --- | --- |
 | CARD | Venta `APPROVED/00` y cobro vigente. Presenta la tarjeta cuando la solicite el PinPAD. Confirma durante certificación si la versión exige siempre la tarjeta original y los pasos de lectura. |
-| QR | `/cancel` no ejecuta extornos. Revertir un pago aprobado requiere un procedimiento separado confirmado para QR; no presupongas soporte de `/reversals`. No aplica presentación de tarjeta. |
+| QR | No aplica este flujo: solo puedes cancelar o inhabilitar el código, sin devolver un monto pagado. |
 
 Antes del POST, verifica que no exista un extorno completado o en curso. Si no puedes comprobar el extorno interno CARD de una cancelación previa, concilia primero con Alignet. No generalices los requisitos de tarjeta del extorno explícito al interno de CARD.
 
