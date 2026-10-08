@@ -23,17 +23,17 @@ icon: "people-arrows"
 - Implementa `GET /health`, `POST /authorize`, `GET /payments/{operationNumber}`, `POST /cancel`, `POST /reversals` y `GET /reversals/{operationNumber}`.
 - Envía `Content-Type: application/json` en la autorización, la cancelación y el extorno.
 - Configura al menos 100 a 110 segundos de timeout para `POST /authorize`, `POST /cancel` y `POST /reversals` con la espera de desarrollo actual.
-- Lee el código HTTP, el cuerpo JSON y `Retry-After` cuando esté disponible.
-- Maneja `200`, `202`, `400`, `404`, `409`, `502` y `503` según la operación.
+- Lee el HTTP y el JSON; verifica `Cache-Control: no-store` y respeta `Retry-After: 2` en HTTP `202`.
+- Maneja `200`, `202`, `400`, `404`, `405`, `409`, `502` y `503` según la operación.
 - Mantén una cola o bloqueo por terminal para no enviar cobros concurrentes.
 
 ### Estado transaccional
 
 - Persiste la referencia y los datos del cobro antes del envío.
-- Confirma el cobro normal solo con `APPROVED` + `00`; si hubo cancelación, verifica el extorno CARD o conserva QR aprobado y registra la discrepancia.
-- Consulta siempre el pago después de cancelar CARD o QR, incluso con HTTP `200`.
+- Confirma el cobro solo con `APPROVED/00`. Ante cancelación fallida, evalúa un extorno independiente solo en CARD; conserva QR aprobado sin devolución.
+- Interpreta `/cancel` por su respuesta. Ante fallo, timeout o incertidumbre, consulta el cobro original; no existe un GET de cancelación.
 - Solo en CARD, verifica el extorno completado o en curso antes de solicitar otro; conserva abiertas las operaciones cuya resolución no puedas comprobar.
-- Conserva como abiertas las operaciones `PENDING`, `PROCESSING` o `UNKNOWN`.
+- Sigue consultando cobros `PROCESSING`, `PENDING` o `UNKNOWN`. Un extorno `UNKNOWN` con HTTP `502` requiere revisión; no confirma éxito.
 - Recupera las operaciones abiertas después de un reinicio del sistema central.
 - No conviertas un timeout o `404` de consulta en rechazo financiero.
 
@@ -83,7 +83,7 @@ Alignet y el operador deben:
 </Check>
 
 <Check>
-  La decisión de negocio está definida para todos los estados finales y no finales.
+  Está definido qué hacer ante un pago aprobado, rechazado o cuyo resultado aún no se conoce.
 </Check>
 
 <Check>

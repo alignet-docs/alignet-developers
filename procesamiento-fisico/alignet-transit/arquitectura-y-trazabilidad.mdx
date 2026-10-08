@@ -85,7 +85,7 @@ Por cada intento, registra únicamente información no sensible:
 - fecha y hora del envío, la respuesta y las consultas;
 - timeouts, pérdidas de conexión y reintentos de consulta;
 - solicitud de cancelación, cierre visual y consultas posteriores;
-- evidencia de extorno interno o explícito, registrada por separado de la autorización.
+- resultado de cancelación y evidencia del extorno CARD independiente, registrados por separado del cobro.
 
 El contrato vigente no devuelve `transactionID`, información de `paymentMethod`, `stateReason`, `processor` ni un historial `lifecycle`. No diseñes la integración dependiendo de esos campos.
 

@@ -15,7 +15,7 @@ El POST espera un resultado hasta agotar su tiempo de espera. La transacción QR
 
 ## Después de cancelar
 
-Para ambos métodos, el PinPAD corta el flujo visual cuando recibe y procesa `/cancel`. Si falla la conexión, no puedes asegurar recepción ni cierre visual. Siempre consulta `GET /payments/{operationNumber}`, incluso después de HTTP `200`. Si CARD aparece autorizado, verifica el extorno interno antes de solicitar otro. Si QR aparece `APPROVED/00` después de solicitar cancelación, conserva el pago aprobado y registra la discrepancia; no solicites refund ni reversa. Aplica la [tabla de resolución](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
+Para ambos métodos, el PinPAD corta el flujo visual cuando recibe y procesa `/cancel`. Si falla la conexión, no puedes asegurar recepción ni cierre visual. Reconoce la cancelación confirmada y validada en la respuesta del POST. Ante fallo, timeout o incertidumbre, consulta el cobro original con `GET /payments/{operationNumber}`. Un cobro CARD aprobado permite evaluar un extorno independiente. Si QR aparece `APPROVED/00` después de solicitar cancelación, conserva el pago aprobado y registra la discrepancia; no solicites refund ni reversa. Aplica la [tabla de resolución](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
 
 En QR, la cancelación solo inhabilita el código; ni `/cancel` ni refund devuelven un monto pagado. Ante timeout, desconexión o fallo del backend, el frontend muestra **Cancelación no confirmada** y consulta el estado.
 
@@ -44,11 +44,11 @@ El valor definitivo de la espera interna, el timeout del sistema central y el ti
 
 ## Recuperación de una operación incierta
 
-Usa `GET /payments/{operationNumber}` para recuperar autorización o cancelación. Para un extorno explícito CARD, usa `GET /reversals/{operationNumber}`. No está verificada la consulta separada del extorno interno de CARD.
+Usa `GET /payments/{operationNumber}` para recuperar el cobro original. No existe consulta de cancelación. Para un extorno CARD, usa `GET /reversals/{operationNumber}`; HTTP `502 UNKNOWN` termina esa solicitud sin confirmar éxito y requiere revisión financiera.
 
 Consulta cuando ocurra cualquiera de estos casos:
 
-- `POST /authorize` devuelve HTTP `202` con `status: "PENDING"`;
+- `POST /authorize` devuelve HTTP `202` con `PROCESSING`, `PENDING` o `UNKNOWN`;
 - el timeout del cliente HTTP vence sin recibir respuesta;
 - la conexión se interrumpe durante el cobro;
 - el sistema central se reinicia con una operación abierta;
@@ -56,11 +56,11 @@ Consulta cuando ocurra cualquiera de estos casos:
 
 ```mermaid
 flowchart TD
-    A[Conservar referencia] --> B[Consultar operación]
-    B -->|Final confirmado| C[Resolver resultado]
-    B -->|Pendiente| D[Esperar Retry-After]
+    A[Guardar referencia] --> B[Consultar cobro]
+    B -->|Aprobado o rechazado| C[Registrar resultado]
+    B -->|Sin confirmar| D[Esperar 2 segundos]
     D --> B
-    B -->|Error o indeterminado| E[Verificar y escalar]
+    B -->|Error de consulta| E[Revisar con Alignet]
 ```
 
 Procedimiento:
@@ -69,8 +69,8 @@ Procedimiento:
 2. Mantén la operación como no resuelta en el sistema central.
 3. No ejecutes la acción de negocio asociada ni marques un rechazo definitivo.
 4. Ejecuta `GET /payments/{operationNumber}`.
-5. Si recibes `202`, respeta `Retry-After`; si el header no está disponible, usa aproximadamente 2 segundos como referencia inicial.
-6. Continúa hasta recibir un resultado final o alcanzar el límite operativo acordado.
+5. Si recibes `202`, espera los dos segundos indicados por `Retry-After: 2`.
+6. Sigue consultando hasta conocer el resultado del cobro o alcanzar el límite de espera acordado.
 7. Si alcanzas ese límite con `PENDING`, `PROCESSING` o `UNKNOWN`, escala la operación para resolución. No inicies automáticamente otro cobro.
 
 ## Idempotencia
@@ -105,11 +105,11 @@ Si varios procesos pueden enviar pagos al mismo Wiseasy P5L, coordínalos median
 
 ### Reinicio del sistema central
 
-Al iniciar, recupera de almacenamiento persistente todas las operaciones sin resultado final y consulta cada `operationNumber` antes de aceptar una decisión financiera.
+Al iniciar, recupera las operaciones guardadas cuyo resultado aún no conoces y consulta cada `operationNumber` antes de decidir si hubo cobro.
 
 ### Reinicio del Wiseasy P5L durante el cobro
 
-La operación en curso queda en `UNKNOWN`. No la marques como aprobada ni rechazada. Consulta la referencia y aplica el procedimiento de escalamiento si no alcanza un estado final.
+La operación en curso queda en `UNKNOWN`. No la marques como aprobada ni rechazada. Consulta la referencia y solicita revisión si no logras conocer el resultado dentro del límite de espera acordado.
 
 ## Flujo recomendado del sistema central
 
@@ -119,16 +119,17 @@ La operación en curso queda en `UNKNOWN`. No la marques como aprobada ni rechaz
 3. POST /authorize con timeout de al menos 100–110 s.
 4. Evaluar el código HTTP, status y resultCode.
 5. Confirmar solo 200 + APPROVED + 00 en el flujo normal.
-   Tras solicitar cancelación, verificar extorno CARD o conservar QR aprobado
-   y registrar la discrepancia sin refund ni reversa.
+   Reconocer cancelación validada en la respuesta de POST /cancel.
+   Si falla y el cobro CARD está aprobado, evaluar un extorno independiente.
+   Conservar QR aprobado sin refund ni reversa; registrar la discrepancia.
 6. Ante 202, timeout o desconexión, consultar la referencia original.
-7. Reintentar una operación final DENIED o CANCELLED solo como una nueva venta,
+7. Reintentar una operación DENIED o CANCELLED solo como una nueva venta,
    con un operationNumber nuevo y después de la decisión del usuario.
 ```
 
 ## Decisión de negocio
 
-Define antes de producción qué hará el comercio ante resultados no finales. La regla segura es no confirmar la venta ni ejecutar una acción irreversible —por ejemplo, abrir una barrera— hasta recibir `APPROVED` con `resultCode: "00"`.
+Define antes de producción qué hará el comercio cuando todavía no sabe si se cobró. No confirmes la venta ni ejecutes una acción irreversible —por ejemplo, abrir una barrera— hasta recibir `APPROVED` con `resultCode: "00"`.
 
 La política final para `PENDING` y `UNKNOWN`, incluido el escalamiento manual, requiere acuerdo entre el integrador y Alignet.
 

@@ -18,14 +18,16 @@ El puerto predeterminado es `8080`. Confirma la IP y el puerto de cada terminal 
 | --- | --- | --- | --- |
 | `GET` | `/health` | Verificar que Pay-me PinPAD esté accesible. | `200` |
 | `POST` | `/authorize` | Iniciar CARD o QR; generar el QR crea la transacción pendiente. | `200`, `202`, `400`, `409`, `503` |
-| `GET` | `/payments/{operationNumber}` | Consultar autorización o cancelación. | `200`, `202`, `404` |
-| `POST` | `/cancel` | Cancelar una autorización que continúa en curso. | `200`, `202`, `404`, `503` |
+| `GET` | `/payments/{operationNumber}` | Consultar el cobro original. | `200`, `202`, `400`, `404` |
+| `POST` | `/cancel` | Solicitar cancelar una autorización activa. | `200`, `202`, `400`, `404`, `409`, `503` |
 | `POST` | `/reversals` | Solicitar un extorno explícito de una venta CARD aprobada. No aplica a QR. | `200`, `202`, `400`, `404`, `409`, `502`, `503` |
-| `GET` | `/reversals/{operationNumber}` | Verificar un extorno explícito CARD. | `200`, `202`, `404`, `502` |
+| `GET` | `/reversals/{operationNumber}` | Consultar el extorno CARD. | `200`, `202`, `400`, `404`, `502` |
 
 <Note>
   `POST /cancel` y `POST /reversals` son operaciones distintas. Ambas usan el `operationNumber` de la autorización original y se consumen en el mismo host y puerto que `POST /authorize`.
 </Note>
+
+No existe un endpoint de consulta de cancelación. Su desenlace se devuelve solo en `POST /cancel`; `/payments` consulta el cobro original. Todas las respuestas incluyen `Cache-Control: no-store` y HTTP `202` añade `Retry-After: 2`.
 
 ## Verificar disponibilidad
 
@@ -60,21 +62,21 @@ curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528"
 
 ## Cancelar una autorización activa
 
-`POST /cancel` requiere el `operationNumber` de la autorización en curso. En CARD y QR, el PinPAD corta el flujo visual cuando recibe y procesa la solicitud; una falla de conexión no garantiza recepción ni cierre. Siempre consulta después `GET /payments/{operationNumber}`, incluso si el POST responde HTTP `200`. Consulta [Cancelación de una autorización en curso](/procesamiento-fisico/alignet-transit/cancelacion) para revisar el contrato y el manejo de `202`.
+`POST /cancel` recibe el `operationNumber` original. Reconoce cancelación exitosa solo con `CANCELLED` y `00`, `16` o `17`, validada por el servicio. HTTP `200` con `DENIED`, incluido `14`, no confirma éxito.
 
-En CARD, `/cancel` puede ejecutar un extorno interno si el cobro se aprueba durante su procesamiento. En QR solo cancela o inhabilita el código generado; ni `/cancel` ni refund devuelven pagos QR. Si la consulta devuelve `APPROVED/00`, conserva el pago aprobado y registra la discrepancia, sin generar refund ni reversa.
+Ante fallo, timeout o incertidumbre, consulta el cobro original; no hay un GET de cancelación. El cierre de pantalla no acredita el resultado. Revisa las [respuestas y acciones de cancelación](/procesamiento-fisico/alignet-transit/cancelacion).
 
-Solo un procesamiento completado permite responder cancelación exitosa. Un fallo interno o resultado incierto debe reflejar su resultado real; HTTP, códigos y cuerpos de error siguen pendientes de confirmar con desarrollo.
-
-Las combinaciones de cancelación de CARD y QR se definen en la página de cancelación. No confundas el cierre de pantalla con el cierre financiero.
+En QR solo se cancela o inhabilita el código; ni `/cancel` ni refund devuelven pagos. Un QR `APPROVED/00` conserva el pago aprobado, sin reversa.
 
 ## Extornar una venta aprobada
 
-`POST /reversals` requiere el `operationNumber` de la venta CARD aprobada; no lo uses para QR. HTTP `200` entrega el resultado final en la misma respuesta. Consulta [Extorno de una venta aprobada](/procesamiento-fisico/alignet-transit/extorno) para revisar el contrato completo.
+`POST /reversals` solicita un extorno independiente y total de una venta CARD aprobada. No aplica a QR. Usa `GET /reversals/{operationNumber}` ante espera, timeout o pérdida de respuesta. Encontrar el cobro original no determina el resultado del extorno.
 
-Consulta `GET /reversals/{operationNumber}` después del extorno explícito, incluso con HTTP `200`, y ante `202`, timeout o desconexión. La autorización original puede conservar un registro separado. La exposición del extorno interno de CARD en esta ruta no está verificada.
+Consulta [Extorno de una venta CARD aprobada](/procesamiento-fisico/alignet-transit/extorno) para interpretar `REVERSED`, `DENIED` y el cuerpo compacto de `502 UNKNOWN`.
 
 ## Rutas fuera del contrato vigente
+
+Una ruta válida con método incorrecto devuelve HTTP `405` y `METHOD_NOT_ALLOWED`; una ruta desconocida devuelve HTTP `404` y `NOT_FOUND`.
 
 No uses `/payment`, `/api/v1/payments`, `/api/v1/payments/{operationNumber}` ni `DELETE /charges` para esta integración. Tampoco diseñes el cliente alrededor de una respuesta anidada en `result.state`, los códigos locales `P01–P21` o campos como `transactionID`: pertenecen a especificaciones anteriores o a otros productos.
 

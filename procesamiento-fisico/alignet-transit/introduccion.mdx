@@ -11,7 +11,7 @@ Alignet Transit conecta tu sistema central con Pay-me PinPAD en el Wiseasy P5L m
 | CARD | `POST /authorize` solicita la tarjeta. | Pago aprobado con `APPROVED` + `00`. |
 | QR | `POST /authorize` genera el QR y crea una transacción pendiente. | Confirmación del pago; mostrar el QR no confirma el cobro. |
 
-Cancela una autorización en curso con `POST /cancel`. Cuando el PinPAD recibe y procesa la solicitud, corta el flujo visual. **Siempre consulta el pago después de solicitar cancelación**, incluso con HTTP `200`; perder la conexión no garantiza recepción ni cierre de pantalla. CARD puede incluir un extorno interno; QR solo cancela o inhabilita el código; ni `/cancel` ni refund devuelven pagos QR. Un QR aprobado sin solicitud de cancelación se confirma. Si aparece aprobado después de solicitar cancelación, conserva el pago aprobado y registra la discrepancia, sin refund ni reversa.
+`POST /cancel` solicita cancelar una autorización activa y devuelve su resultado. Ante fallo, timeout o incertidumbre, consulta el cobro original; el cierre de pantalla no confirma cancelación. El [extorno](/procesamiento-fisico/alignet-transit/extorno) es independiente y aplica solo a CARD. En QR solo cancelas o inhabilitas el código, sin devolver un monto pagado.
 
 <CardGroup cols={2}>
   <Card title="Autorizar" icon="file-export" href="/procesamiento-fisico/alignet-transit/parametros-de-envio">

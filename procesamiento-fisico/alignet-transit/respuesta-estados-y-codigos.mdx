@@ -1,214 +1,128 @@
 ---
 title: "Respuestas, consulta y códigos"
-description: "Estructura de respuesta, estados transaccionales, códigos HTTP y consulta por operationNumber."
+description: "Esquemas JSON, códigos SDK y respuestas HTTP de cobro, cancelación y extorno."
 icon: "code"
 ---
 
-Pay-me PinPAD diferencia los **resultados de negocio** de los **errores operativos** mediante el código HTTP y el cuerpo JSON.
+Interpreta el HTTP, `status` y `resultCode` según el endpoint. HTTP `200` o el mensaje por sí solos no confirman éxito.
 
-<Warning>
-  Un pago rechazado por el procesador devuelve HTTP `200` con `status: "DENIED"`. No interpretes todos los HTTP `200` como aprobación.
-</Warning>
+Todas las respuestas incluyen `Cache-Control: no-store`. HTTP `202` añade `Retry-After: 2`.
 
 ## Estructura de respuesta de pago
 
+Cobro, cancelación y extorno utilizan esta forma normal. El bloque describe tipos, no una respuesta de prueba:
+
 ```json
 {
-  "operationNumber": "44992528",
-  "status": "APPROVED",
-  "resultCode": "00",
-  "resultMessage": "Aprobado",
-  "authorizationCode": "123456",
-  "completedAt": "2026-08-27T20:12:48Z"
+  "operationNumber": "string",
+  "status": "string",
+  "resultCode": "string|null",
+  "resultMessage": "string",
+  "authorizationCode": "string|null",
+  "completedAt": "string|null"
 }
 ```
 
-| Campo | Tipo | Descripción |
-| --- | --- | --- |
-| `operationNumber` | String | Referencia recibida desde el sistema central. Puede faltar en errores de validación donde no fue posible identificarla. |
-| `status` | String | Estado transaccional u operativo. |
-| `resultCode` | String o null | Código financiero u operativo. `"00"` requiere contexto: `APPROVED` para pago, `REVERSED` para extorno explícito o `CANCELLED` para la cancelación QR observada. |
-| `resultMessage` | String | Mensaje asociado al resultado. Evalúalo junto con estado y código para distinguir cancelación de rechazo; nunca lo uses solo. |
-| `authorizationCode` | String o null | Código del procesador cuando el pago fue aprobado. |
-| `completedAt` | String o null | Fecha y hora final en ISO 8601 UTC (`yyyy-MM-ddTHH:mm:ssZ`). Es `null` mientras no existe un resultado final. |
+| Campo | Uso |
+| --- | --- |
+| `operationNumber` | Referencia de la operación. |
+| `status` | Estado de cobro, cancelación o extorno. |
+| `resultCode` | Código SDK conservado o código propio de la app. |
+| `resultMessage` | Mensaje recibido; no sustituye la interpretación del estado y código. |
+| `authorizationCode` | Código de autorización o `null`. |
+| `completedAt` | Fecha UTC en formato `yyyy-MM-dd'T'HH:mm:ss'Z'`, solo cuando la operación terminó; en espera es `null`. |
+
+Extorno `UNKNOWN` con HTTP `502` utiliza una forma compacta distinta:
+
+```json
+{
+  "operationNumber": "string",
+  "status": "UNKNOWN",
+  "message": "string"
+}
+```
+
+Esta forma no incluye `resultCode`, `resultMessage`, `authorizationCode` ni `completedAt`. La clave del mensaje es `message`.
 
 ## Respuestas de `POST /authorize`
 
-### Pago aprobado — `200 OK`
+| HTTP | `status` | `resultCode` | Acción |
+| --- | --- | --- | --- |
+| `200` | `APPROVED` | `00` | Confirmar el pago y ejecutar la acción de negocio. |
+| `200` | `DENIED` | Código SDK | Cerrar el cobro como no aprobado. |
+| `202` | `PROCESSING`, `PENDING`, `UNKNOWN` | `PROCESSING`, `WAITING_RESULT`, `UNKNOWN` | Esperar dos segundos y consultar el cobro con la misma referencia. |
+| `400` | `ERROR` | `BAD_REQUEST` | Corregir JSON o monto fuera del límite. |
+| `409` | `ERROR` | `POS_BUSY` | Esperar a que termine la operación activa. |
+| `503` | `ERROR` | `POS_NOT_AVAILABLE` | Restablecer SDK o pantalla disponible antes de reintentar. |
 
-```json
-{
-  "operationNumber": "44992528",
-  "status": "APPROVED",
-  "resultCode": "00",
-  "resultMessage": "Aprobado",
-  "authorizationCode": "123456",
-  "completedAt": "2026-08-27T20:12:48Z"
-}
-```
-
-Confirma la venta —y ejecuta la acción de negocio asociada— únicamente cuando se cumplan ambas condiciones:
-
-```text
-status = APPROVED
-resultCode = 00
-```
-
-### Pago rechazado — `200 OK`
-
-```json
-{
-  "operationNumber": "44992528",
-  "status": "DENIED",
-  "resultCode": "01",
-  "resultMessage": "Peticion rechazada por el Procesador",
-  "authorizationCode": null,
-  "completedAt": "2026-08-27T20:12:48Z"
-}
-```
-
-El rechazo es final para esa operación. Si el usuario desea volver a pagar, crea una operación nueva con otro `operationNumber`.
-
-### Resultado pendiente — `202 Accepted`
-
-```http
-Retry-After: 2
-```
-
-```json
-{
-  "operationNumber": "44992528",
-  "status": "PENDING",
-  "resultCode": "WAITING_RESULT",
-  "resultMessage": "Consulte el estado antes de reintentar",
-  "authorizationCode": null,
-  "completedAt": null
-}
-```
-
-No vuelvas a cobrar. Consulta la operación y respeta `Retry-After` cuando esté presente.
-
-### Terminal ocupado — `409 Conflict`
-
-```json
-{
-  "operationNumber": "44992530",
-  "status": "ERROR",
-  "resultCode": "POS_BUSY",
-  "resultMessage": "El Pinpad está procesando otra operación",
-  "authorizationCode": null,
-  "completedAt": null
-}
-```
-
-Pay-me PinPAD procesa una operación a la vez. Espera a que finalice la operación activa antes de reintentar la solicitud rechazada por concurrencia.
-
-### Terminal no disponible — `503 Service Unavailable`
-
-```json
-{
-  "operationNumber": "44992528",
-  "status": "ERROR",
-  "resultCode": "POS_NOT_AVAILABLE",
-  "resultMessage": "El SDK de pagos no está disponible",
-  "authorizationCode": null,
-  "completedAt": null
-}
-```
-
-El operador debe dejar Pay-me PinPAD abierta y en estado listo. Reintenta cuando el terminal vuelva a estar disponible.
-
-### Solicitud inválida — `400 Bad Request`
-
-```json
-{
-  "status": "ERROR",
-  "resultCode": "BAD_REQUEST",
-  "resultMessage": "amount inválido: debe ser un entero positivo en unidades menores"
-}
-```
-
-Corrige la solicitud. No clasifiques este caso como un rechazo del procesador.
+HTTP `202` puede corresponder a una solicitud duplicada aún en curso, al tiempo de espera agotado o al control de tiempo del servicio. No inicies otro cobro.
 
 ## Consulta de estado
 
-Usa la misma referencia que enviaste en la autorización:
+`GET /payments/{operationNumber}` consulta **el cobro original**, no el resultado de `/cancel`.
 
-```http
-GET /payments/{operationNumber}
-```
-
-Ejemplo:
-
-```http
-GET http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528
-```
-
-| Código HTTP | Significado | Acción del sistema central |
+| HTTP | Resultado | Acción |
 | --- | --- | --- |
-| `200 OK` | La operación tiene un resultado final. | Evalúa `status` y `resultCode`. |
-| `202 Accepted` | La operación todavía está en curso o pendiente. | Consulta nuevamente y respeta `Retry-After` si está presente. |
-| `404 Not Found` | No existe una operación con esa referencia. | Verifica que la referencia sea exactamente la enviada. No asumas que el pago fue rechazado. |
-
-Respuesta de una operación inexistente:
-
-```json
-{
-  "operationNumber": "27423555",
-  "status": "ERROR",
-  "resultCode": "NOT_FOUND",
-  "resultMessage": "Operación no encontrada",
-  "authorizationCode": null,
-  "completedAt": null
-}
-```
+| `200` | Resultado guardado con `APPROVED`, `DENIED`, `CANCELLED` o `ERROR`. | Evaluar estado y código; un error no confirma aprobación. |
+| `202` | `PROCESSING`, `PENDING` o `UNKNOWN`. | Seguir consultando con `Retry-After: 2`, sin otro cobro. |
+| `404` | `ERROR/NOT_FOUND` | Verificar referencia y terminal; no asumir rechazo financiero. |
+| `400` | `ERROR/BAD_REQUEST` | Corregir el segmento vacío o inválido de la ruta. |
 
 ## Estados
 
-| `status` | Final | Significado | Acción |
-| --- | --- | --- | --- |
-| `APPROVED` | Sí para la autorización | Pago aprobado. | Con `00`, confirma en el flujo normal. Después de cancelar: CARD requiere verificar el extorno; QR conserva el pago aprobado; registra la discrepancia sin generar refund ni reversa. |
-| `DENIED` | Sí, con combinación confirmada | Rechazo; en CARD, `14` + `Operación cancelada` identifica cancelación completada. | Evalúa estado, código y mensaje. Después de cancelar, consulta antes de cerrar. |
-| `CANCELLED` | Sí, con combinación validada | QR generado cancelado o inhabilitado, observado con `00`; contrastar con la versión vigente. | No devuelve un monto pagado. Consulta siempre después de solicitar cancelación; conserva `APPROVED/00` como pago aprobado. |
-| `PENDING` | No | Venció la espera, pero el cobro puede continuar. | Consulta; no inicies otro cobro. |
-| `PROCESSING` | No | El cobro se está procesando. | Consulta; no inicies otro cobro. |
-| `UNKNOWN` | No | El resultado es incierto, por ejemplo después de un reinicio durante el proceso. | Mantén la operación abierta y consulta. |
-| `ERROR` | Depende del código HTTP y `resultCode` | Error operativo, de validación o de consulta. | Aplica el tratamiento del código recibido. |
+| Operación | Sigue esperando un resultado | La solicitud terminó |
+| --- | --- | --- |
+| Cobro y cancelación (`PaymentStatus`) | `PROCESSING`, `PENDING`, `UNKNOWN` | `APPROVED`, `DENIED`, `CANCELLED`, `ERROR` |
+| Extorno (`ReversalStatus`) | `SEARCHING`, `PROCESSING`, `PENDING` | `REVERSED`, `DENIED`, `UNKNOWN`, `ERROR` |
+
+En la forma normal, `completedAt` se informa solo en los estados de la última columna. Un estado `ERROR` significa que terminó con error, no que hubo éxito.
+
+`UNKNOWN` en cobro devuelve HTTP `202`: todavía no se sabe si se cobró y debes seguir consultando. En extorno devuelve HTTP `502` con el cuerpo compacto: revisa si se ejecutó con Alignet, sin asumir éxito ni reenviar automáticamente.
 
 ## Códigos confirmados
 
-| `resultCode` | Contexto | Significado |
-| --- | --- | --- |
-| `00` | Según estado y operación | Pago aprobado solo con `APPROVED`; extorno explícito CARD con `REVERSED`; cancelación QR observada con `CANCELLED`. |
-| `14` | Cancelación CARD | Con `DENIED` y `Operación cancelada`: interrupción antes del cobro o extorno interno completado. |
-| `01` | Financiero, ejemplo verificado | Petición rechazada por el procesador. |
-| `WAITING_RESULT` | Operativo | La operación sigue pendiente; consulta su estado. |
-| `POS_BUSY` | Operativo | Ya existe otra operación activa. |
-| `POS_NOT_AVAILABLE` | Operativo | El SDK de pagos no está disponible. |
-| `BAD_REQUEST` | Validación | El JSON o uno de sus campos no cumple el contrato. |
-| `NOT_FOUND` | Consulta | No existe una operación con esa referencia. |
+### Mapeo de códigos SDK
 
-<Note>
-  No se ha confirmado el catálogo completo de códigos del procesador. Trata únicamente `APPROVED` junto con `"00"` como aprobación. Conserva cualquier código desconocido y escálalo sin asignarle un significado.
-</Note>
+| Código SDK | Cobro | Cancelación | Extorno CARD |
+| --- | --- | --- | --- |
+| `00` | `APPROVED` | `CANCELLED` | `REVERSED` |
+| `16`, `17` | `DENIED` | `CANCELLED`, éxito equivalente | `REVERSED`, éxito equivalente |
+| `P22` | `DENIED` | `PENDING` | `PENDING` |
+| `05`, `07` | `DENIED` | HTTP `404` | HTTP `404` |
+| `14`, `15`, `18`, `19`, `20`, `01`, `03` y otros | `DENIED` | `DENIED` | `DENIED` |
 
-<Note>
-  La combinación CARD `DENIED/14/Operación cancelada` corresponde a cancelación completada. No asignes significado al código `15` ni a otros códigos sin confirmación. El contrato observado de QR requiere contraste por versión.
-</Note>
+Conserva los códigos SDK; no los reemplaces por `00` ni por un código inventado. Si el SDK devuelve un código vacío, la app utiliza el nombre del `status`, por ejemplo `DENIED` o `APPROVED`.
+
+### Códigos propios de la app
+
+| Código | Significado |
+| --- | --- |
+| `BAD_REQUEST` | JSON, campos o segmento de ruta inválidos. |
+| `NOT_FOUND` | Operación o ruta no encontrada. |
+| `POS_NOT_AVAILABLE` | SDK no listo o pantalla no disponible. |
+| `POS_BUSY` | Terminal ocupado. |
+| `CANCELLATION_IN_PROGRESS` | Ya existe una cancelación en curso para esa referencia. |
+| `PROCESSING`, `SEARCHING` | Operación o búsqueda en curso. |
+| `WAITING_RESULT` | Tiempo de espera agotado, sin resultado confirmado. |
+| `UNKNOWN` | Resultado desconocido; su HTTP y cuerpo dependen de la operación. |
+| `METHOD_NOT_ALLOWED` | Ruta válida con método HTTP incorrecto. |
 
 ## Matriz de decisión
 
-| Respuesta | Decisión |
-| --- | --- |
-| `200` + `APPROVED` + `00` | Confirmar en el flujo normal. Después de cancelar: verificar extorno CARD; conservar QR aprobado y registrar la discrepancia, sin refund ni reversa. |
-| `200` + cancelación completada por método | Consultar siempre el pago antes de cerrar como cancelado; no usar esta respuesta para ocultar un fallo interno. |
-| `200` + denegación confirmada | Cerrar como no aprobado; distinguir rechazo de cancelación. |
-| `202` + `PENDING` | Mantener la operación abierta y consultar. |
-| `409` + `POS_BUSY` | Esperar a que el terminal se libere. |
-| `503` + `POS_NOT_AVAILABLE` | Restablecer la disponibilidad del terminal y reintentar. |
-| `400` + `BAD_REQUEST` | Corregir la solicitud. |
-| Timeout o conexión interrumpida | Consultar la referencia original antes de cualquier nuevo cobro. |
+| Endpoint | Qué informa | Acción |
+| --- | --- | --- |
+| `POST /authorize` | Resultado del cobro. | Confirmar únicamente `APPROVED/00`. |
+| `GET /payments/{operationNumber}` | Estado del cobro original. | Consultar ante espera, timeout o incertidumbre. |
+| `POST /cancel` | Resultado de esa solicitud de cancelación. | Éxito solo con `CANCELLED` y `00`, `16` o `17`, validado por el servicio. `DENIED/14` no confirma cancelación. |
+| `POST /reversals` | Resultado de un extorno CARD independiente. | Éxito con `REVERSED` y `00`, `16` o `17`. |
+| `GET /reversals/{operationNumber}` | Resultado del extorno CARD. | Consultar cuando corresponda; HTTP `502 UNKNOWN` exige revisión. |
+
+Una ruta válida con método incorrecto devuelve HTTP `405` y `METHOD_NOT_ALLOWED`. Una ruta desconocida devuelve HTTP `404` y `NOT_FOUND`.
 
 ## Consulta después de cancelar
 
-Siempre usa `GET /payments/{operationNumber}` después de solicitar cancelación, incluso tras HTTP `200` de `/cancel`. En QR, una aprobación posterior conserva el pago aprobado: no es cancelación, devolución ni extorno. Ni `/cancel` ni refund devuelven pagos QR. Si falla la conexión, no puedes asegurar recepción ni cierre visual; un fallo interno debe reflejarse en el POST. El contrato de errores requiere [confirmación de desarrollo](/procesamiento-fisico/alignet-transit/datos-por-validar). Si aparece una autorización, aplica la [resolución por método](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). La autorización original no acredita el estado de un extorno separado. Un `202 PENDING` tardío de `/authorize` no sustituye un resultado final confirmado.
+No existe un endpoint de consulta de cancelación: su desenlace se devuelve solo en `POST /cancel`. Si confirma una cancelación validada, no exige otro GET para reconocerla.
+
+Ante fallo, timeout o incertidumbre, consulta el cobro original y aplica la [decisión por método](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). Un pago CARD aprobado permite evaluar un extorno independiente; un pago QR aprobado se conserva sin devolución.
+
+No sustituyas un resultado confirmado por un `202 PENDING` tardío ni uses el cierre de pantalla como prueba de cancelación.

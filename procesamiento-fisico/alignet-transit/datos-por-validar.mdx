@@ -16,10 +16,10 @@ Esta página reúne la información ambigua, incompleta o dependiente de cada im
 | --- | --- | --- |
 | Espera interna de Pay-me PinPAD | `90` segundos en desarrollo. | Valor definitivo por ambiente. |
 | Timeout del cliente HTTP | Al menos `100–110` segundos con la espera de referencia. | Valor definitivo, siempre superior a la espera del terminal. |
-| Frecuencia de consulta | Header `Retry-After`; aproximadamente `2` segundos si no está presente. | Intervalo, backoff y tiempo máximo de consulta. |
+| Frecuencia de consulta | HTTP `202` incluye `Retry-After: 2`. | Backoff y tiempo máximo de consulta por ambiente. |
 | Operación no resuelta | No iniciar otro cobro ante `PENDING`, `PROCESSING` o `UNKNOWN`. | Procedimiento de inmovilización, escalamiento y decisión de negocio. |
 | Reinicio durante un extorno | Puede producir `UNKNOWN`. | Confirmar si el procesador recibió la reversa y cómo conciliarla. |
-| Cancelación con resultado incierto | `POST /cancel` puede responder `202` con `Retry-After`, o perderse la conexión antes de recibir el resultado. | Consultar siempre `GET /payments/{operationNumber}`. Confirmar conciliación cuando esa vista no resuelva el cobro o el extorno interno CARD. |
+| Cancelación con resultado incierto | `POST /cancel` puede responder `202` con `Retry-After`, o perderse la conexión antes de recibir el resultado. | Consultar el cobro original con `GET /payments/{operationNumber}`; no existe consulta de cancelación. Acordar revisión si el cobro continúa sin resolver. |
 
 ## Contrato y habilitación
 
@@ -31,20 +31,20 @@ Esta página reúne la información ambigua, incompleta o dependiente de cada im
 | Monedas | PEN usa `currency: "604"`. | Otras monedas habilitadas para el comercio y el ambiente. |
 | Métodos de pago | El contrato admite `CARD` y `QR`, uno por solicitud. | Métodos efectivamente habilitados para el comercio y el ambiente. |
 | Códigos financieros | `APPROVED/00` es aprobación; `01` es ejemplo de rechazo. | Catálogo completo por operación y método; `00` aislado no confirma un cobro. |
-| Cancelación CARD | `DENIED/14/Operación cancelada` identifica interrupción antes del cobro o extorno interno completado. | Cuerpos reales de pendientes y fallos, sin asignar éxito al procesamiento fallido. |
-| Errores de `/cancel` | La respuesta exitosa corresponde solo a procesamiento completado; la consulta posterior no justifica éxito ante un fallo interno. | Confirmar con desarrollo HTTP, estados, códigos y cuerpos reales para fallos internos y pendientes, por método. El contrato de errores no está cerrado. |
+| Cancelación validada | `CANCELLED` con `00`, `16` o `17`; `DENIED/14` no confirma éxito. | Verificar que la versión instalada aplique el [mapeo vigente](/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos#c%C3%B3digos-confirmados). |
+| Validación fallida de `/cancel` | Si no se ejecutó o el resultado pertenece a otra operación, devolver error, sin informar éxito. | La matriz recibida no especifica HTTP, código ni cuerpo de este error de validación; desarrollo debe definirlos. |
+| SDK `05` o `07` en cancelación/extorno | Se clasifican como HTTP `404`. La matriz de cancelación indica `NOT_FOUND`, pero la regla general conserva códigos SDK. | Confirmar qué `resultCode` entrega el cuerpo; no normalizarlo en el cliente. |
 | Recepción y corte visual | El PinPAD corta el flujo visual cuando recibe y procesa la solicitud. | Validar fallos de conexión sin presumir recepción o cierre; distinguirlos de fallos internos tras la recepción. |
-| Cancelación QR | Respuesta observada `CANCELLED/00`. | Contrastar estado, código, mensaje y persistencia en `GET /payments` con la versión vigente. |
-| Código `15` | Sin significado verificado. | No usarlo en decisiones hasta confirmar. |
+| Cancelación QR | Solo inhabilita el código; no devuelve pagos. | Evidencia de cancelación ejecutada y correspondencia con la referencia solicitada. |
 | `tollData` | Datos estructurados del peaje, con campos String definidos en parámetros. | Confirmar aceptación y restricciones adicionales; no trasladar sus campos a `additionalFields`. |
 
 ## Extornos
 
 | Punto | Referencia disponible | Validación requerida |
 | --- | --- | --- |
-| Extorno interno CARD | `/cancel` localiza la autorización y extorna si se aprobó durante la cancelación. | Cómo observar el proceso y resultado; no está verificado que aparezca en `GET /reversals`. |
+| Extorno tras cancelación fallida | Si el cobro CARD está `APPROVED`, se evalúa `POST /reversals` como acción independiente. | Evidencia del extorno y conciliación cuando no se confirma éxito. |
 | Discrepancia de cancelación QR | Solo se cancela o inhabilita el código. Ni `/cancel` ni refund devuelven pagos QR; `APPROVED/00` se conserva como aprobado. | Definir evidencias, responsables y revisión de discrepancias; no generar refund ni reversa. |
-| Presentación de tarjeta | El extorno explícito puede requerir interacción con el PinPAD. | Obligatoriedad por versión, uso de tarjeta original y pasos reales; distinguirlos del extorno interno. |
+| Presentación de tarjeta | El extorno explícito puede requerir interacción con el PinPAD. | Obligatoriedad por versión, uso de tarjeta original y pasos reales. |
 | Prevención de duplicados | No extornar si hay un extorno completado o en curso. | Evidencia y consulta para descartar ambos antes de una reversa adicional. |
 
 Confirma también:
@@ -63,7 +63,7 @@ Completa por ambiente:
 - la IP, el puerto y la asociación entre sistema central y Wiseasy P5L;
 - la versión aprobada de Pay-me PinPAD;
 - los contactos, horarios, severidades y procedimiento de soporte;
-- los responsables de la decisión operativa ante estados no finales;
+- los responsables de decidir qué hacer cuando el resultado aún no está confirmado;
 - cualquier requisito adicional de seguridad de red.
 
 ## Registro de decisión

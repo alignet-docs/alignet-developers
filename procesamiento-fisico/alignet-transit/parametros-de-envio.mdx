@@ -10,7 +10,7 @@ Mientras la autorización continúa en curso, puedes solicitar su [cancelación]
 
 Si la conexión falla al solicitar cancelación, no puedes asegurar que el PinPAD la recibió ni que cerró la pantalla. Consulta siempre la referencia original; sin solicitud de cancelación, un QR `APPROVED/00` confirma el pago.
 
-Si posteriormente `/authorize` responde HTTP `202` con `status: "PENDING"`, significa que venció la espera de esa solicitud. Esta respuesta no invalida una cancelación confirmada ni determina por sí sola el estado final de la transacción. Consulta `GET /payments/{operationNumber}` para verificar el resultado actualizado.
+Si posteriormente `/authorize` responde HTTP `202` con `status: "PENDING"`, significa que venció la espera de esa solicitud. Esta respuesta no invalida una cancelación confirmada. Si aún no conoces el resultado del cobro, consulta `GET /payments/{operationNumber}`.
 
 ```http
 POST /authorize
@@ -30,7 +30,7 @@ http://<IP_DEL_PINPAD>:<PUERTO>/authorize
 | CARD | El PinPAD solicita la tarjeta después de `POST /authorize`. | Resultado `APPROVED` + `00`. |
 | QR | `POST /authorize` genera el QR y crea una transacción pendiente asociada a `operationNumber`. | Confirmación de pago con `APPROVED` + `00`; mostrar o escanear el QR no basta. |
 
-Consulta los [diagramas y la resolución después de cancelar](/procesamiento-fisico/alignet-transit/cancelacion). Siempre consulta el pago después de `/cancel`, incluso con HTTP `200`.
+Consulta los [diagramas y las respuestas de cancelación](/procesamiento-fisico/alignet-transit/cancelacion). Si la cancelación falla o no está confirmada, consulta el cobro original; no existe una consulta de cancelación.
 
 ## Solicitud mínima
 
@@ -203,52 +203,22 @@ Reemplaza `<IP_DEL_PINPAD>` y `<PUERTO>` por los valores configurados en tu term
 
 ## Respuestas de autorización
 
-Cuando `POST /authorize` responde HTTP `200`, evalúa `status` y `resultCode` del cuerpo. Al finalizar el flujo, consulta `GET /payments/{operationNumber}` para verificar el resultado actualizado antes de confirmar, cerrar, reintentar o solicitar otra acción.
+Evalúa el HTTP, `status` y `resultCode` del cuerpo. Todas las respuestas incluyen `Cache-Control: no-store`.
 
 | HTTP | Resultado | Acción del sistema central |
 | --- | --- | --- |
-| `200` | `APPROVED` + `00` | Guarda el código de autorización y verifica el estado actualizado antes de confirmar el pago. |
-| `200` | Cancelación CARD o QR | Aplica la [combinación por método](/procesamiento-fisico/alignet-transit/cancelacion#resultados-por-m%C3%A9todo) y consulta siempre el pago. |
-| `200` | Otros resultados `DENIED` | No confirmes el pago ni los clasifiques automáticamente como cancelación. Consulta antes de decidir un nuevo intento. |
-| `202` | `PENDING` | Venció la espera de la solicitud. Conserva la referencia, respeta `Retry-After` cuando se incluya y consulta el resultado actualizado. |
-| `400` | `BAD_REQUEST` | Corrige la solicitud antes de reenviarla. |
-| `409` | `POS_BUSY` | Espera a que el terminal termine la operación activa. |
-| `503` | `POS_NOT_AVAILABLE` | Restablece la disponibilidad del PinPAD antes de reintentar. |
+| `200` | `APPROVED/00` | Confirmar el pago y guardar el código de autorización. |
+| `200` | `DENIED` con otro código SDK | Cerrar como no aprobado; no confundirlo con el resultado de `/cancel`. |
+| `202` | `PROCESSING`, `PENDING` o `UNKNOWN` | Esperar `Retry-After: 2` y consultar el cobro con la misma referencia, sin otra venta. |
+| `400` | `ERROR/BAD_REQUEST` | Corregir JSON o monto fuera del límite. |
+| `409` | `ERROR/POS_BUSY` | Esperar a que termine la operación activa. |
+| `503` | `ERROR/POS_NOT_AVAILABLE` | Restablecer SDK o pantalla disponible antes de reintentar. |
 
-<Warning>
-  Un HTTP `200` no significa necesariamente que el pago fue aprobado. Confirma únicamente `status: "APPROVED"` junto con `resultCode: "00"`.
-</Warning>
-
-Consulta los cuerpos de respuesta en [Respuestas, consulta y códigos](/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos). Los ejemplos de cancelación por método están en [Cancelación](/procesamiento-fisico/alignet-transit/cancelacion).
+Consulta el [esquema JSON y los códigos](/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos). La respuesta de `/cancel` se interpreta por separado en [Cancelación](/procesamiento-fisico/alignet-transit/cancelacion).
 
 ## Verificar el resultado final
 
-1. Conserva el `operationNumber` y consulta `GET /payments/{operationNumber}` al finalizar la autorización o su cancelación.
-2. Evalúa el estado actualizado antes de confirmar, cerrar, reintentar o solicitar otra acción. Si la consulta sigue mostrando un resultado pendiente o indeterminado, mantén la operación pendiente y respeta `Retry-After` cuando corresponda.
-3. No sobrescribas un resultado final ya confirmado con una respuesta tardía `PENDING` de `/authorize`. El fin de la espera HTTP y la salida de la pantalla de pago no determinan por sí solos el resultado financiero.
-4. Si aparece `APPROVED` después de cancelar, aplica la [resolución de cobros autorizados](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). Evita extornos duplicados. En CARD, verifica el extorno interno antes de solicitar uno explícito. En QR, conserva `APPROVED/00` como pago aprobado y registra la discrepancia; no generes refund ni reversa.
-
-## Antes de producción
-
-Confirma las monedas y medios de pago habilitados, el soporte de `transactionDateTime`, la convención de `shiftId`, el timeout definitivo y el comportamiento de una referencia reutilizada con otro body. Si los componentes de `shiftId` se utilizarán en reportes, confirma también la regla de extracción y la fecha operativa que corresponde a los turnos que cruzan la medianoche. Consulta el registro centralizado de [Datos por validar](/procesamiento-fisico/alignet-transit/datos-por-validar).
-
-Hasta confirmar el último punto, consulta primero con el `operationNumber` original cuando no hayas recibido el resultado. Si corresponde reenviar, conserva exactamente el mismo cuerpo y referencia.
-
-## Lista de verificación
-
-Antes de enviar la solicitud, verifica lo siguiente:
-
-* `operationNumber` está almacenado, es único y contiene únicamente entre 6 y 12 dígitos.
-* `amount` es un String numérico de hasta 12 dígitos que representa un entero positivo en unidades menores.
-* `currency` es un String numérico de exactamente tres dígitos.
-* `paymentMethod` está presente y contiene exactamente un valor: `CARD` o `QR`, en mayúsculas.
-* Si envías `tollData`, sus campos son String y los importes cumplen `amount = tollAmount + withholdingAmount`.
-* `direction`, `vehicleClass` y `axleCount`, si se envían, están dentro de `tollData`.
-* Si envías `transactionDateTime`, incluye la zona horaria. Si `shiftId` tiene componentes acordados, comprueba su coherencia con el punto y la vía enviados por separado.
-* Todos los valores de `additionalFields`, si envías el objeto, son cadenas.
-* La solicitud utiliza `Content-Type: application/json`.
-* El timeout del cliente HTTP es el acordado para el ambiente.
-
-<Card title="Respuestas, consulta y códigos" icon="code" href="/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos">
-  Implementa los códigos HTTP, los estados y la consulta de operaciones.
-</Card>
+1. Conserva el `operationNumber`; ante espera, timeout o incertidumbre, consulta el cobro original con `GET /payments/{operationNumber}`.
+2. Mientras recibas `PROCESSING`, `PENDING` o `UNKNOWN`, sigue consultando según `Retry-After: 2`, sin otro cobro.
+3. No sustituyas un resultado confirmado por un `202 PENDING` tardío ni decidas por el cierre de pantalla.
+4. Tras una cancelación fallida, un cobro CARD `APPROVED/00` permite evaluar un extorno independiente. Un QR aprobado se conserva sin refund ni reversa. Aplica la [decisión por método](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).

@@ -51,9 +51,9 @@ Alignet debe confirmar antes de la salida a producción:
 - recomendación definitiva de timeout del sistema central;
 - intervalo, backoff y límite de consulta;
 - catálogo aplicable de códigos por método y operación;
-- contrato QR `CANCELLED/00` observado y tratamiento de pago durante cancelación;
-- HTTP, estados, códigos y cuerpos reales de `/cancel` ante fallos internos o resultado incierto;
-- mecanismo para consultar el extorno interno CARD y descartar duplicados;
+- versión instalada conforme al mapeo de códigos de cobro, cancelación y extorno;
+- HTTP, código y cuerpo del error cuando la cancelación no se ejecutó o corresponde a otra operación;
+- `resultCode` del cuerpo HTTP `404` ante códigos SDK `05` o `07` en cancelación y extorno;
 - evidencia y revisión de discrepancias cuando QR sigue aprobado tras solicitar cancelación, sin refund ni reversa;
 - presentación de tarjeta en el extorno explícito CARD;
 - monedas y medios de pago habilitados;
@@ -85,11 +85,11 @@ El registro completo, incluida la semántica pendiente de extornos y referencias
 - terminal y sistema central utilizados;
 - `operationNumber` y método CARD o QR;
 - evidencia de recepción de `/cancel`, fallo de conexión o fallo interno, y cierre visual observado;
-- consultas posteriores y evidencia del extorno interno CARD o del pago QR aprobado;
+- resultado de `/cancel`, consultas del cobro ante fallo o incertidumbre y resultado del extorno CARD independiente, si se solicitó;
 - mensaje **Cancelación no confirmada** ante timeout, desconexión o fallo del backend;
 - solicitud y respuesta sanitizadas;
-- código HTTP y header `Retry-After`, cuando corresponda;
-- `status`, `resultCode`, `resultMessage`, `authorizationCode` y `completedAt`;
+- código HTTP, `Cache-Control: no-store` y `Retry-After: 2` en HTTP `202`;
+- campos del cuerpo normal; en extorno `502 UNKNOWN`, solo `operationNumber`, `status` y `message`;
 - tiempos de inicio, respuesta y consultas;
 - resultado esperado, resultado observado y conformidad.
 

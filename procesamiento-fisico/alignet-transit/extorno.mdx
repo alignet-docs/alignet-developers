@@ -10,21 +10,21 @@ icon: "rotate-left"
 
 | Flujo | Uso | Verificación |
 | --- | --- | --- |
-| `POST /cancel` | Resolver una autorización en curso. CARD puede incluir un extorno interno si el cobro se aprueba durante la cancelación. En QR solo cancela o inhabilita el código; no devuelve pagos. | Siempre `GET /payments/{operationNumber}`, incluso con HTTP `200`. |
-| `POST /reversals` | Solicitar explícitamente el extorno de una venta CARD aprobada. | `GET /reversals/{operationNumber}`, incluso con HTTP `200`. |
+| `POST /cancel` | Solicitar cancelar una autorización activa. | Su respuesta informa el resultado de la cancelación. Ante fallo o incertidumbre, consulta el cobro original. |
+| `POST /reversals` | Solicitar un extorno independiente de una venta CARD aprobada. | `GET /reversals/{operationNumber}` cuando el resultado no esté confirmado. |
 
 En **QR**, únicamente cancelas o inhabilitas el código generado. Ni `/cancel` ni refund devuelven un monto pagado; `/reversals` no aplica. Si aparece `APPROVED/00` después de solicitar cancelación, conserva el pago aprobado y registra la discrepancia para revisión.
 
-Las [combinaciones de cancelación por método](/procesamiento-fisico/alignet-transit/cancelacion#resultados-por-m%C3%A9todo) no son resultados del extorno explícito.
+Una cancelación fallida permite evaluar el extorno cuando `GET /payments/{operationNumber}` confirma el cobro CARD como `APPROVED/00`. Usa el `operationNumber` de esa venta; el error de cancelación no genera un extorno automático.
 
 ## Requisitos por método
 
 | Método | Requisito |
 | --- | --- |
-| CARD | Venta `APPROVED/00` y cobro vigente. Presenta la tarjeta cuando la solicite el PinPAD. Confirma durante certificación si la versión exige siempre la tarjeta original y los pasos de lectura. |
+| CARD | Venta `APPROVED/00` y cobro vigente. Presenta la tarjeta cuando la solicite el PinPAD. |
 | QR | No aplica este flujo: solo puedes cancelar o inhabilitar el código, sin devolver un monto pagado. |
 
-Antes del POST, verifica que no exista un extorno completado o en curso. Si no puedes comprobar el extorno interno CARD de una cancelación previa, concilia primero con Alignet. No generalices los requisitos de tarjeta del extorno explícito al interno de CARD.
+Antes del POST, verifica que no exista un extorno completado o en curso. No dupliques la solicitud mientras falte resolución.
 
 ## Solicitud
 
@@ -52,26 +52,30 @@ curl --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/reversals" \
   --header "Content-Type: application/json" \
   --max-time 110 \
   --data '{"operationNumber":"44992528"}'
+```
 
+Si el resultado no está confirmado o se pierde la respuesta, consulta el extorno:
+
+```bash
 curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/reversals/44992528"
 ```
 
-Si recibes `Retry-After`, espera antes de consultar. La espera interna de desarrollo es de 90 segundos; el timeout de referencia del POST es de 100–110 segundos. Confirma valores definitivos por ambiente.
+Todas las respuestas incluyen `Cache-Control: no-store`. HTTP `202` añade `Retry-After: 2`; espera dos segundos antes de consultar el extorno.
 
 ## Respuestas del POST
 
 | HTTP | Resultado documentado | Acción |
 | --- | --- | --- |
-| `200` | `REVERSED` + `00` | Consultar el extorno y cerrar solo con resultado verificado. |
-| `200` | `DENIED` | No registrar como extornado; consultar y conservar código y mensaje. No reintentar automáticamente. |
-| `202` | `PENDING`, `WAITING_RESULT` | Respetar `Retry-After` y consultar; no duplicar. |
+| `200` | `REVERSED` con `00`, `16` o `17` | Registrar extorno confirmado o éxito equivalente. |
+| `200` | `DENIED` con `14`, `15`, `18`, `19`, `20`, `01`, `03` u otro código SDK | No registrar éxito; conservar código y mensaje. No reintentar automáticamente. |
+| `202` | `SEARCHING`, `PROCESSING` o `PENDING`; códigos `SEARCHING`, `WAITING_RESULT` o `P22` | Respetar `Retry-After: 2` y consultar; no duplicar. |
 | `400` | `BAD_REQUEST` | Corregir el cuerpo. No es un rechazo financiero. |
 | `404` | `NOT_FOUND` | Verificar referencia y terminal; no confirma ausencia de cobro. |
 | `409` | `POS_BUSY` | Esperar a que termine la operación activa antes de reintentar la solicitud no aceptada. |
-| `502` | `UNKNOWN` | Conservar evidencia y escalar; no reintentar en bucle. |
+| `502` | `UNKNOWN`, cuerpo compacto con `message`; sin `resultCode` | Búsqueda ambigua o control de tiempo agotado. Revisar con Alignet; no registrar éxito ni reenviar automáticamente. |
 | `503` | `POS_NOT_AVAILABLE` | Restablecer disponibilidad y consultar antes de decidir otro envío. |
 
-Respuesta de extorno aprobado:
+Ejemplo de extorno aprobado; no representa una prueba ejecutada:
 
 ```json
 {
@@ -84,31 +88,42 @@ Respuesta de extorno aprobado:
 }
 ```
 
-`00` aislado no basta. El ejemplo documentado de rechazo usa `DENIED/01` y mensaje `Extorno denegado`; el catálogo completo de códigos sigue pendiente.
+El código aislado no basta: el éxito exige `REVERSED` con `00`, `16` o `17`. Conserva los códigos SDK sin normalizaciones adicionales. El cuerpo compacto de `UNKNOWN` utiliza `message`, no `resultMessage`.
+
+Forma compacta de HTTP `502` (esquema, no evidencia de prueba):
+
+```json
+{
+  "operationNumber": "string",
+  "status": "UNKNOWN",
+  "message": "string"
+}
+```
 
 ## Consulta del extorno explícito
 
 | HTTP de `GET /reversals/{operationNumber}` | Significado | Acción |
 | --- | --- | --- |
-| `200` | Resultado final como `REVERSED` o `DENIED`. | Evaluar estado y código; confirmar extorno solo con `REVERSED/00`. |
-| `202` | Extorno en curso. | Respetar `Retry-After` y continuar consultando. |
+| `200` | `REVERSED`, `DENIED` o `ERROR` guardado. | Reconocer éxito solo con `REVERSED` y `00`, `16` o `17`. |
+| `202` | Extorno en curso. | Respetar `Retry-After: 2` y continuar consultando. |
 | `404` | No existe solicitud registrada con esa referencia. | Verificar terminal y referencia; no deducir un resultado financiero. |
-| `502` | Resultado `UNKNOWN` documentado. | Escalar con evidencia, sin reintentos en bucle. |
+| `400` | `ERROR/BAD_REQUEST`: segmento vacío o inválido. | Corregir la referencia en la ruta. |
+| `502` | `UNKNOWN`: la solicitud terminó con error. | Revisar si se ejecutó el extorno con Alignet; no registrar éxito. |
 
-La autorización y el extorno pueden conservar registros separados. Encontrar `APPROVED` en `GET /payments/{operationNumber}` no confirma ni descarta el extorno. Tampoco está verificado que esta consulta de extornos exponga el extorno interno CARD de `/cancel`; sigue su [procedimiento de verificación](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
+El cobro y el extorno son resultados independientes. Encontrar `APPROVED` en `GET /payments/{operationNumber}` no confirma ni descarta el extorno; consulta este último en `/reversals/{operationNumber}`.
 
 ## Estados del extorno
 
 | Estado | Interpretación |
 | --- | --- |
-| `RECEIVED`, `SEARCHING` | Solicitud recibida o búsqueda de venta original; no final. |
+| `SEARCHING` | Se está buscando la venta original. Sigue consultando el extorno. |
 | `PROCESSING`, `PENDING` | Extorno en proceso o espera HTTP agotada; continuar consultando. |
-| `REVERSED` + `00` | Extorno aprobado; verificar por consulta. |
-| `DENIED` | Rechazo confirmado; no extornado. |
-| `UNKNOWN` | Requiere revisión según el punto del flujo. |
+| `REVERSED` con `00`, `16` o `17` | Extorno confirmado o éxito equivalente. |
+| `DENIED` | Solicitud denegada; no registres extorno exitoso. |
+| `UNKNOWN` | La solicitud terminó con HTTP `502`, pero no se sabe si se ejecutó el extorno. Revisa el caso con Alignet. |
 | `ERROR` | Evaluar HTTP, código y mensaje; no equivale a extorno. |
 
-Durante la búsqueda de la venta, el `502 UNKNOWN` documentado significa que no se inició la reversa. Un reinicio durante su ejecución puede dejar `UNKNOWN` sin certeza de que el procesador la recibió. No generalices ambos casos como extornado o no extornado.
+`DENIED`, `ERROR` y `UNKNOWN` no confirman un extorno exitoso. `UNKNOWN` no debe tratarse como un pendiente de cobro con HTTP `202`.
 
 ## Recuperación e idempotencia
 
@@ -116,6 +131,4 @@ Durante la búsqueda de la venta, el `502 UNKNOWN` documentado significa que no 
 - Si el mismo extorno sigue en proceso, el POST devuelve `202`; si terminó, devuelve el resultado guardado sin repetir la acción.
 - Otra referencia activa devuelve `409 POS_BUSY`. Serializa operaciones por terminal.
 - No reenvíes en paralelo ni cambies el cuerpo. Consulta antes de cualquier reenvío permitido.
-- No sustituyas un resultado final confirmado por un `PENDING` tardío ni inicies otra venta mientras falte resolución.
-
-La ventana de extorno, ventas liquidadas, respuesta ante extorno previo, efecto contable y reflejo para el cliente requieren [confirmación](/procesamiento-fisico/alignet-transit/datos-por-validar).
+- No sustituyas un resultado confirmado por un `PENDING` tardío ni inicies otra venta mientras no conozcas el resultado anterior.
