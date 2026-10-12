@@ -15,7 +15,7 @@ Antes de ejecutar casos:
 - configura una IP estable y el puerto del terminal;
 - ejecuta `GET /health` desde el sistema central;
 - completa la verificación de llaves en el terminal;
-- configura el timeout de autorización en al menos 100 a 110 segundos para las pruebas;
+- configura 110 segundos para los POST y 20 segundos para la consulta del cobro; abre una conexión por petición, sin keep-alive;
 - habilita persistencia y logs sanitizados;
 - acuerda referencias, montos y medios de pago de prueba.
 
@@ -24,43 +24,58 @@ Antes de ejecutar casos:
 | Caso | Estímulo | Resultado esperado |
 | --- | --- | --- |
 | Disponibilidad | `GET /health` | HTTP `200`, `status: "UP"`, `service: "Alignet ECR"`. |
-| Solicitud mínima | `operationNumber`, `amount`, `currency` y `paymentMethod` válidos | La autorización se procesa sin error de validación. |
+| Solicitud mínima | Solo `operationNumber` y `amount` válidos | Se procesa con moneda `604` y método `CARD` predeterminados. |
 | Solicitud completa | Incluye campos obligatorios, `tollData` y `additionalFields` con valores String | La autorización se procesa sin error de validación. |
 | Referencia numérica | `operationNumber: "44992528"` | Se acepta como String numérico. |
-| Referencia con caracteres no numéricos | Incluye letras, guiones, espacios u otros caracteres | HTTP `400` con `BAD_REQUEST`. |
+| Referencia alfanumérica | `operationNumber: "CAJA-01_A"` | Se acepta: 1–64 caracteres sin espacios; no se exige que sea numérica. |
+| Límites de referencia | Cadenas de 1 y 64 caracteres; vacía, de 65 o con espacios | Aceptar las dos primeras; las otras devuelven `400 BAD_REQUEST`. |
 | Monto como cadena | `amount: "100"` | Se acepta como String numérico en unidades menores. |
-| Monto como número JSON | `amount: 100` | HTTP `400` con `BAD_REQUEST`. |
+| Monto como número JSON | `amount: 100` | Se acepta como entero positivo en unidades menores. |
 | Moneda como cadena | `currency: "604"` | Se acepta como String numérico de tres dígitos. |
-| Moneda como número JSON | `currency: 604` | HTTP `400` con `BAD_REQUEST`. |
-| Moneda ausente | No incluye `currency` | HTTP `400` con `BAD_REQUEST`. |
+| Moneda como número JSON | `currency: 604` | Se acepta como número de tres dígitos. |
+| Moneda ausente | No incluye `currency` | Se usa `604`. |
 | Método de pago | Ejecuta solicitudes independientes con `paymentMethod: "CARD"` y `paymentMethod: "QR"` | Cada valor se acepta por separado. |
-| Método de pago ausente | No incluye `paymentMethod` | HTTP `400` con `BAD_REQUEST`. |
+| Método de pago ausente | No incluye `paymentMethod` | Se usa `CARD`. |
+| Método sin distinguir mayúsculas | `card` o `qr` en solicitudes independientes | Se acepta cada valor. |
 | Métodos de pago simultáneos | Envía `CARD` y `QR` juntos, como arreglo o valor combinado | HTTP `400` con `BAD_REQUEST`. |
 | Método de pago inválido | Envía un valor distinto de `CARD` o `QR` | HTTP `400` con `BAD_REQUEST`. |
-| Referencia inválida | Vacía o no numérica; prueba límites según la tabla de parámetros tras contrastarla con ECR | HTTP `400` con `BAD_REQUEST`. |
+| Referencia inválida | Vacía, de más de 64 caracteres o con espacios | HTTP `400` con `BAD_REQUEST`. |
 | Monto inválido | Cero, negativo, decimal, no numérico o mayor de 12 dígitos | HTTP `400` con `BAD_REQUEST`. |
 | Moneda inválida | No contiene exactamente tres dígitos | HTTP `400` con `BAD_REQUEST`. |
+| Colisión de datos | Misma clave con valores diferentes en `tollData` y `additionalFields` | Prevalece el valor de `tollData` en los campos fusionados. |
 | Campo adicional inválido | Valor que no es String | HTTP `400` con `BAD_REQUEST`. |
 
 ## Casos transaccionales
 
 | Caso | Resultado esperado | Decisión del sistema central |
 | --- | --- | --- |
-| Pago aprobado | HTTP `200`, `APPROVED`, `00`, código de autorización y fecha final. | Confirmar y aplicar la regla de apertura. |
-| Pago rechazado | HTTP `200`, `DENIED` y código distinto de `00`. | No confirmar. |
+| Pago aprobado | HTTP `200`, `success: true`, `resultCode: "00"`, `result.state: "AUTORIZADO"`, sin `status` propio. | Confirmar y aplicar la regla de apertura. |
+| Pago rechazado | HTTP `200`, `success: false`, código SDK distinto de `00` y `result.state` crudo de la pasarela. | No confirmar. |
 | Extorno explícito CARD aprobado | HTTP `200`, `REVERSED` con `00`, `16` o `17`. | Registrar extorno confirmado o éxito equivalente. |
 | Extorno pendiente | HTTP `202`; `SEARCHING`, `PROCESSING` o `PENDING`. `P22` se clasifica como `PENDING`. | Esperar `Retry-After: 2` y consultar `GET /reversals/{operationNumber}`. |
 | Extorno denegado | HTTP `200`, `DENIED`. | No registrar como extornado ni reintentar automáticamente. |
-| Cobro sin confirmar | HTTP `202`, `UNKNOWN`: aún no se sabe si se cobró. | Seguir consultando con la misma referencia, sin otro cobro. |
+| Cobro sin confirmar | HTTP `202`, `success: false`, `WAITING_RESULT`, `result: null`, sin `status`. | Seguir consultando con la misma referencia, sin otro cobro. |
 | Extorno sin confirmar | HTTP `502`, `UNKNOWN`: la solicitud terminó con error. El cuerpo incluye solo `operationNumber`, `status` y `message`. | Revisar si se ejecutó el extorno; no registrar éxito ni reenviar automáticamente. |
-| Código SDK vacío | El SDK no entrega `resultCode`. | La app utiliza el nombre del estado; no inventar otro código. |
 | Método incorrecto | Usar un método no admitido en una ruta válida. | HTTP `405`, `METHOD_NOT_ALLOWED`. |
-| Consulta inválida | Consultar `/payments` o `/reversals` con segmento vacío o inválido. | HTTP `400`, `ERROR`, `BAD_REQUEST`. |
-| Headers de respuesta | Todas incluyen `Cache-Control: no-store`; HTTP `202` añade `Retry-After: 2`. | Comprobar headers y respetar el intervalo de consulta. |
-| Espera agotada | HTTP `202`, `PENDING`, `WAITING_RESULT`. | Consultar, sin nuevo cobro. |
+| Consulta inválida | Consultar `/payments` o `/reversals` con segmento vacío o inválido. | HTTP `400` según el error de ruta; no inferir un resultado financiero. |
+| Headers de respuesta | Todas incluyen `Connection: close` y `Cache-Control: no-store`; HTTP `202` añade `Retry-After: 2`. | Comprobar headers y respetar el intervalo de consulta. |
+| Espera agotada | Autorización: HTTP `202`, `success: false`, `WAITING_RESULT`, `result: null`. | Consultar, sin nuevo cobro. |
 | Terminal ocupado | Otra referencia durante un cobro activo devuelve `409 POS_BUSY`. | Esperar y reintentar cuando se libere. |
 | Terminal no listo | HTTP `503 POS_NOT_AVAILABLE`. | Recuperar disponibilidad antes de reintentar. |
-| Referencia inexistente | La consulta devuelve `404 NOT_FOUND`. | Verificar la referencia; no asumir rechazo financiero. |
+| Referencia inexistente | La consulta del cobro devuelve `404/05`, `success: false`, `transaction: null`. | Verificar la referencia; no asumir rechazo financiero. |
+
+## Consulta del cobro en la pasarela
+
+Comprueba esta forma en todas las respuestas: `operationNumber`, `success`, `resultCode`, `resultMessage` y `transaction`, sin `status` propio. El GET no devuelve `202` ni estados locales.
+
+| Caso | Resultado esperado | Decisión |
+| --- | --- | --- |
+| Operación encontrada | `200/00`, `success: true`, `transaction.state` crudo | `00` significa encontrada. `AUTORIZADO` confirma aprobación; `CANCELADO` confirma cancelación del cobro. |
+| Operación no encontrada | `404/05`, `success: false`, `transaction: null` | Verificar referencia y terminal; no confirmar rechazo ni habilitar otro cobro. |
+| SDK no inicializado o terminal sin disponibilidad | `503/P04` o `POS_NOT_AVAILABLE`, `success: false`, `transaction: null` | Restablecer disponibilidad y consultar de nuevo. |
+| Espera interna agotada | `504/SEARCH_TIMEOUT`, `success: false`, `transaction: null` | Cobro no verificado; consultar de nuevo o escalar. |
+| Servicio incierto | `200/03`, `success: false`, `transaction: null` | No confirmar rechazo ni iniciar otro cobro. |
+| Consulta lenta | Respuesta en aproximadamente 12–15 segundos | El timeout de ejemplo de 20 segundos permite leerla; una desconexión conserva la operación sin resolver. |
 
 ## Validación de cancelación
 
@@ -68,23 +83,23 @@ Aplica estos casos a CARD y QR. El servicio valida ejecución y correspondencia 
 
 | Caso | Estímulo | Resultado esperado |
 | --- | --- | --- |
-| Cancelación rechazada con `14` | Recibir `DENIED/14`, incluso con mensaje `Operación cancelada`. | No reconocer cancelación exitosa; consultar el cobro original. |
+| Cancelación abandonada con `14/15` | Recibir `DENIED/14` o `DENIED/15`. | No reconocer cancelación exitosa; consultar el cobro original. |
 | Cancelación confirmada | Cancelar una autorización activa y obtener un resultado de esa operación. | `CANCELLED` con `00`, `16` o `17`, validado por el servicio; reconocer el resultado sin consulta obligatoria. |
 | Éxito equivalente de cancelación | Recibir HTTP `200`, `CANCELLED` con `16` o `17`. | Reconocer cancelación validada; conservar el código SDK sin convertirlo a `00`. |
 | Cancelación no ejecutada | Simular un fallo que impida ejecutar la cancelación. | Respuesta de error, sin informar éxito; consultar el cobro original. No se anticipan HTTP, código ni mensaje del nuevo error. |
 | Resultado de otra operación | Entregar al servicio un resultado que no corresponda al `operationNumber` solicitado. | Rechazarlo con una respuesta de error; no cerrar la operación como cancelada. |
 | Cancelación denegada | Obtener `DENIED` con `14`, `15`, `18`, `19`, `20`, `01`, `03` u otro código SDK. | Cancelación rechazada o abandonada; recuperar el cobro original sin asumir su resultado. |
 | Segunda cancelación concurrente | Enviar otro `/cancel` para la misma referencia mientras se procesa el primero. | HTTP `409`, `ERROR`, `CANCELLATION_IN_PROGRESS`; no repetir el POST. |
-| Venta no encontrada | Obtener `05` o `07` del SDK en cancelación. | HTTP `404`; no inferir el resultado financiero del cobro. Verificar el código del cuerpo conforme al [pendiente técnico](/procesamiento-fisico/alignet-transit/datos-por-validar#contrato-y-habilitaci%C3%B3n). |
-| Timeout o incertidumbre | Perder la respuesta o recibir HTTP `202`, `PENDING` con `P22` o `WAITING_RESULT`. | Mostrar **Cancelación no confirmada**; consultar el cobro original, respetando `Retry-After: 2` en HTTP `202`. |
+| Venta no encontrada | Obtener `05` o `07` del SDK en cancelación. | HTTP `404`; no inferir el resultado financiero del cobro. El cuerpo usa `status: "ERROR"`, `resultCode: "NOT_FOUND"`. |
+| Timeout o incertidumbre | Perder la respuesta o recibir HTTP `202`, `PENDING` con `P22`. | Mostrar **Cancelación no confirmada**; consultar el cobro original, respetando `Retry-After: 2` en HTTP `202`. |
 
-Comprueba que `GET /payments/{operationNumber}` informa el cobro original, no el resultado de la solicitud de cancelación. Si devuelve `PROCESSING`, `PENDING` o `UNKNOWN`, conserva la referencia y no habilites otro cobro. Los ciclos repiten solo el GET.
+Comprueba que `GET /payments/{operationNumber}` informa el cobro original, no el resultado de la solicitud de cancelación. Consulta la pasarela, sin `status` propio ni HTTP `202`. Ante `200/03`, `404/05`, `503` o `504`, conserva la referencia y no habilites otro cobro. Los ciclos repiten solo el GET.
 
 ## Cancelación CARD
 
 | Caso | Estímulo | Resultado esperado |
 | --- | --- | --- |
-| Cobro aprobado tras cancelación fallida | Recuperar `APPROVED/00` en el cobro original. | Evaluar un extorno independiente con `POST /reversals` y el `operationNumber` de la venta, sin duplicados. Reconocer éxito con `REVERSED` y `00`, `16` o `17`; consultar `/reversals/{operationNumber}` si no está confirmado. |
+| Cobro aprobado tras cancelación fallida | Recuperar `200/00` con `transaction.state: "AUTORIZADO"` en el cobro original. | Evaluar un extorno independiente con `POST /reversals` y el `operationNumber` de la venta, sin duplicados. Reconocer éxito con `REVERSED` y `00`, `16` o `17`; consultar `/reversals/{operationNumber}` si no está confirmado. |
 
 No debe generarse un extorno automático ante cualquier error de cancelación. Presenta la tarjeta cuando el PinPAD la solicite en el extorno.
 
@@ -94,20 +109,23 @@ No debe generarse un extorno automático ante cualquier error de cancelación. P
 | --- | --- | --- |
 | QR pendiente | Generar el QR sin pagar. | Ya existe la transacción pendiente asociada al `operationNumber`; mostrar o escanear no confirma el pago. |
 | Cancelación validada | Cancelar o inhabilitar el QR pendiente. | Reconocer `CANCELLED` con `00`, `16` o `17`, sujeto a la validación del servicio. |
-| Pago aprobado tras cancelación fallida | Recuperar `APPROVED/00` en el cobro original. | Conservar el pago aprobado y registrar la discrepancia. Ni `/cancel` ni refund devuelven el monto; no enviar `/reversals`. |
+| Pago aprobado tras cancelación fallida | Recuperar `200/00` con `transaction.state: "AUTORIZADO"` en el cobro original. | Conservar el pago aprobado y registrar la discrepancia. Ni `/cancel` ni refund devuelven el monto; no enviar `/reversals`. |
 
 ## Casos de idempotencia y recuperación
 
 | Caso | Validación esperada |
 | --- | --- |
-| Misma referencia durante el proceso | El segundo envío no inicia otro cobro y devuelve `202` con el estado actual. |
+| Misma referencia durante el proceso | El segundo envío no inicia otro cobro y devuelve `202 WAITING_RESULT`, `success: false`, `result: null`, sin `status` propio. |
 | Misma referencia finalizada | Devuelve `200` con el resultado guardado sin otro cargo. |
 | Otra referencia concurrente | Devuelve `409 POS_BUSY`. |
 | Timeout del sistema central | El sistema central consulta la referencia original antes de aceptar otro intento. |
 | Pérdida de red | Al reconectar, el sistema central consulta las operaciones abiertas. |
 | Reinicio del sistema central | Recupera las referencias guardadas y consulta los cobros cuyo resultado aún no conoce. |
-| Reinicio del P5L durante el cobro | `UNKNOWN` devuelve HTTP `202`: sigue consultando; no marques el cobro como aprobado ni rechazado. |
-| `202` repetido | El sistema central respeta `Retry-After` y aplica el límite de consulta acordado. |
+| Reinicio del P5L durante el cobro | Consultar la pasarela con la referencia original; no anticipar un estado local de respuesta ni concluir rechazo. |
+| `202` de POST o de consulta local de extorno | Respetar `Retry-After: 2`; el GET del cobro no devuelve `202`. |
+| Extorno exitoso o en curso repetido | `REVERSED` devuelve `200` guardado; `SEARCHING`/`PROCESSING`/`PENDING` devuelve `202`, sin otro intento. |
+| Extorno previo `NOT_FOUND` | Otro POST devuelve `404` sin ejecutar otro intento. |
+| Nuevo extorno tras `DENIED`, `UNKNOWN` o `ERROR` final | Tras consulta y decisión controlada, el POST puede ejecutar otro intento real. No activar reintento automático por incertidumbre. |
 
 ## Verificaciones de seguridad
 
@@ -146,7 +164,7 @@ No debe generarse un extorno automático ante cualquier error de cancelación. P
 </Check>
 
 <Check>
-  El sistema central confirma únicamente `200` + `APPROVED` + `00`.
+  La autorización se confirma con `200`, `success: true`, `00` y `result.state: "AUTORIZADO"`; en consulta `200/00`, se interpreta `transaction.state`.
 </Check>
 
 <Check>
@@ -154,7 +172,7 @@ No debe generarse un extorno automático ante cualquier error de cancelación. P
 </Check>
 
 <Check>
-  La decisión de negocio para `PENDING` y `UNKNOWN` está aprobada.
+  La decisión de negocio para resultados inciertos y estados propios de cancelación/extorno está aprobada.
 </Check>
 
 <Check>
@@ -179,4 +197,4 @@ No debe generarse un extorno automático ante cualquier error de cancelación. P
 
 ## Criterio de aceptación
 
-No habilites producción mientras exista riesgo de interpretar `PENDING`, `UNKNOWN`, timeout o `404` como rechazo y generar un cobro adicional. La salida requiere demostrar que toda operación incierta conserva su referencia original hasta resolverse o escalarse.
+No habilites producción mientras exista riesgo de interpretar una consulta incierta, un timeout o `404/05` como rechazo y generar un cobro adicional. La salida requiere demostrar que toda operación incierta conserva su referencia original hasta resolverse o escalarse.

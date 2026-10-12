@@ -8,13 +8,14 @@ El sistema central del comercio inicia el procesamiento del pago mediante `POST 
 
 Mientras la autorización continúa en curso, puedes solicitar su [cancelación](/procesamiento-fisico/alignet-transit/cancelacion) mediante `POST /cancel` con el mismo `operationNumber`. La solicitud original de `/authorize` puede seguir abierta hasta completar su tiempo de espera, aunque la cancelación ya se haya procesado y el PINPAD haya salido de la pantalla de pago.
 
-Si la conexión falla al solicitar cancelación, no puedes asegurar que el PinPAD la recibió ni que cerró la pantalla. Consulta siempre la referencia original; sin solicitud de cancelación, un QR `APPROVED/00` confirma el pago.
+Si la conexión falla al solicitar cancelación, no puedes asegurar que el PinPAD la recibió ni que cerró la pantalla. Consulta siempre la referencia original; sin solicitud de cancelación, un QR con `transaction.state: "AUTORIZADO"` en una consulta `200/00` confirma el pago.
 
-Si posteriormente `/authorize` responde HTTP `202` con `status: "PENDING"`, significa que venció la espera de esa solicitud. Esta respuesta no invalida una cancelación confirmada. Si aún no conoces el resultado del cobro, consulta `GET /payments/{operationNumber}`.
+Si posteriormente `/authorize` responde HTTP `202` con `success: false`, `resultCode: "WAITING_RESULT"` y `result: null`, significa que venció la espera de esa solicitud. Esta respuesta no invalida una cancelación confirmada. Si aún no conoces el resultado del cobro, consulta `GET /payments/{operationNumber}`.
 
 ```http
 POST /authorize
 Content-Type: application/json
+Connection: close
 ```
 
 Construye la URL con la dirección IP y el puerto configurados en el terminal:
@@ -27,14 +28,14 @@ http://<IP_DEL_PINPAD>:<PUERTO>/authorize
 
 | Método | Inicio | Confirmación del cobro |
 | --- | --- | --- |
-| CARD | El PinPAD solicita la tarjeta después de `POST /authorize`. | Resultado `APPROVED` + `00`. |
-| QR | `POST /authorize` genera el QR y crea una transacción pendiente asociada a `operationNumber`. | Confirmación de pago con `APPROVED` + `00`; mostrar o escanear el QR no basta. |
+| CARD | El PinPAD solicita la tarjeta después de `POST /authorize`. | `success: true`, `resultCode: "00"` y `result.state: "AUTORIZADO"`. |
+| QR | `POST /authorize` genera el QR y crea una transacción pendiente asociada a `operationNumber`. | La misma aprobación de autorización; mostrar o escanear el QR no basta. |
 
 Consulta los [diagramas y las respuestas de cancelación](/procesamiento-fisico/alignet-transit/cancelacion). Si la cancelación falla o no está confirmada, consulta el cobro original; no existe una consulta de cancelación.
 
 ## Solicitud mínima
 
-Envía los cuatro campos obligatorios en el cuerpo JSON:
+Solo `operationNumber` y `amount` son obligatorios. Este ejemplo también indica moneda y método:
 
 ```json
 {
@@ -49,14 +50,14 @@ Envía los cuatro campos obligatorios en el cuerpo JSON:
 
 | Campo              | Tipo JSON | Obligatorio | Validación                                                                                          | Descripción                                                                                                          |
 | ------------------ | --------- | ----------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `operationNumber`  | String    | Sí          | Cadena numérica de 6 a 12 dígitos.                                                                  | Identificador único generado por el sistema central. Se utiliza como clave de idempotencia y referencia de consulta. |
-| `amount`           | String    | Sí          | Cadena numérica que representa un entero positivo de 1 a 12 dígitos, expresado en unidades menores. | Importe total del pago. Por ejemplo, `"1500"` representa S/ 15.00.                                                   |
-| `currency`         | String    | Sí          | Cadena numérica de exactamente 3 dígitos.                                                           | Código numérico ISO 4217 de la moneda. Para soles peruanos, envía `"604"`.                                           |
-| `paymentMethod`    | String    | Sí          | Debe contener un único valor: `CARD` o `QR`.                                                        | Método con el que Pay-me PinPAD procesará el pago.                                                                   |
+| `operationNumber`  | String    | Sí          | Cadena de 1 a 64 caracteres sin espacios (`^\S{1,64}$`).                                                                  | Identificador único generado por el sistema central. Se utiliza como clave de idempotencia y referencia de consulta. |
+| `amount`           | Entero o String numérico | Sí          | Cadena numérica que representa un entero positivo de 1 a 12 dígitos, expresado en unidades menores. | Importe total del pago. Por ejemplo, `"1500"` representa S/ 15.00.                                                   |
+| `currency`         | Número o String | No          | Exactamente 3 dígitos (`^\d{3}$`); predeterminado `604`.                                                           | Código numérico ISO 4217 de la moneda. Para soles peruanos, envía `"604"`.                                           |
+| `paymentMethod`    | String    | No          | `CARD` o `QR`, sin distinguir mayúsculas; predeterminado `CARD`.                                                        | Método con el que Pay-me PinPAD procesará el pago.                                                                   |
 | `tollData`         | Object    | No          | Sus campos deben enviarse como String.                                                              | Datos de la operación de peaje. Pueden enviarse para fines de trazabilidad.                                          |
 | `additionalFields` | Object    | No          | Todos los valores deben ser String.                                                                 | Información complementaria asociada al pago.                                                                         |
 
-Respeta los nombres, los tipos JSON y el uso de mayúsculas de cada campo. Por ejemplo, envía `paymentMethod`, no `payment_method`.
+Respeta los nombres y los tipos JSON de cada campo. Por ejemplo, envía `paymentMethod`, no `payment_method`.
 
 ## Detalle de los parámetros
 
@@ -64,8 +65,7 @@ Respeta los nombres, los tipos JSON y el uso de mayúsculas de cada campo. Por e
 
 Genera un `operationNumber` nuevo para cada pago y almacénalo antes de llamar a `POST /authorize`. El valor debe cumplir estas condiciones:
 
-* ser una cadena de entre 6 y 12 dígitos;
-* contener únicamente dígitos del `0` al `9`;
+* ser una cadena de 1 a 64 caracteres sin espacios;
 * ser único para una operación real de pago;
 * permanecer asociado a la operación hasta obtener un resultado final.
 
@@ -86,28 +86,28 @@ Expresa el importe en unidades menores, sin símbolo de moneda, separadores ni d
 | S/ 15.00  |                 `"1500"` |
 | S/ 125.40 |                `"12540"` |
 
-Envía `amount` como String. No utilices números JSON, valores decimales, signos, espacios ni separadores.
+Envía `amount` como entero JSON o String numérico positivo de 1 a 12 dígitos (`^\d{1,12}$`). No utilices decimales, signos, espacios ni separadores. El servidor puede aplicar un máximo configurado; el ejemplo S/ 500.00 de la guía no establece un límite universal.
 
 ### `currency`
 
-Envía `currency` como un String de tres dígitos que contenga el código numérico ISO 4217 de la moneda.
+`currency` es opcional: acepta un número de tres dígitos o su String. Si lo omites, se usa `604`.
 
 Para pagos en soles peruanos, utiliza `"604"`. Confirma con Alignet cualquier moneda distinta de PEN antes de habilitarla en producción.
 
 ### `paymentMethod`
 
-Envía exactamente uno de los siguientes valores en mayúsculas:
+Si envías `paymentMethod`, usa uno de estos valores, sin distinguir mayúsculas. Si lo omites, se usa `CARD`:
 
 | Valor  | Método de pago               |
 | ------ | ---------------------------- |
 | `CARD` | Tarjeta de crédito o débito. |
 | `QR`   | Código QR.                   |
 
-Cada solicitud admite un solo método de pago. No envíes `CARD` y `QR` juntos, arreglos, valores combinados como `"CARD,QR"`, variantes como `card` o `qr`, ni valores diferentes de los documentados.
+Cada solicitud admite un solo método de pago. No envíes `CARD` y `QR` juntos, arreglos, valores combinados como `"CARD,QR"`, ni valores diferentes de los documentados. `card` y `qr` son válidos.
 
 ### `tollData`
 
-Utiliza `tollData` para enviar datos de la operación de peaje con fines de trazabilidad. El objeto y todos sus campos son opcionales.
+Utiliza `tollData` para enviar datos de la operación de peaje con fines de trazabilidad. El objeto y todos sus campos son opcionales. Se fusiona con `additionalFields`; ante claves coincidentes prevalece `tollData`. Las claves siguientes son convenciones de peaje, no un catálogo de restricciones del servidor.
 
 | Campo                 | Tipo JSON | Obligatorio | Descripción                                                                                                                               |
 | --------------------- | --------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
@@ -123,7 +123,7 @@ Utiliza `tollData` para enviar datos de la operación de peaje con fines de traz
 | `vehicleClass`        | String    | No          | Categoría del vehículo.                                                                                                                   |
 | `axleCount`           | String    | No          | Número de ejes.                                                                                                                           |
 
-Cuando envíes los importes de peaje y retención, deben cumplir esta relación:
+Como recomendación de conciliación para el comercio, relaciona los importes de peaje y retención así; la guía no documenta esta igualdad como validación del servidor:
 
 ```text
 amount = tollAmount + withholdingAmount
@@ -140,7 +140,7 @@ El formato de `shiftId` se acuerda para cada integración. Por ejemplo, si el fo
 | Turno | `N` | Código del turno según la convención acordada. |
 | Fecha operativa | `20260710` | Fecha asociada al turno en formato `AAAAMMDD`. |
 
-Con la convención acordada, estos componentes pueden usarse como filtros y columnas del reporte de conciliación. **No agregues `shift` ni `shiftDate` al request**: son valores derivados de `shiftId`. Define también cómo interpretar la fecha operativa cuando un turno cruza la medianoche; puede ser distinta del día indicado por `transactionDateTime`.
+Con la convención acordada, estos componentes pueden usarse como filtros y columnas del reporte de conciliación. En esta convención, deriva `shift` y `shiftDate` de `shiftId` para reportes; no necesitas duplicarlos en el request. Define también cómo interpretar la fecha operativa cuando un turno cruza la medianoche; puede ser distinta del día indicado por `transactionDateTime`.
 
 Si el formato del identificador es diferente, define la regla de extracción antes de usarlo en reportes. No apliques el formato ilustrativo a todas las integraciones.
 
@@ -188,7 +188,7 @@ El siguiente ejemplo ilustra los datos de la operación de peaje con identificad
 Este ejemplo envía una solicitud mínima:
 
 ```bash
-curl --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/authorize" \
+curl --header "Connection: close" --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/authorize" \
   --header "Content-Type: application/json" \
   --max-time 110 \
   --data '{
@@ -203,22 +203,11 @@ Reemplaza `<IP_DEL_PINPAD>` y `<PUERTO>` por los valores configurados en tu term
 
 ## Respuestas de autorización
 
-Evalúa el HTTP, `status` y `resultCode` del cuerpo. Todas las respuestas incluyen `Cache-Control: no-store`.
-
-| HTTP | Resultado | Acción del sistema central |
-| --- | --- | --- |
-| `200` | `APPROVED/00` | Confirmar el pago y guardar el código de autorización. |
-| `200` | `DENIED` con otro código SDK | Cerrar como no aprobado; no confundirlo con el resultado de `/cancel`. |
-| `202` | `PROCESSING`, `PENDING` o `UNKNOWN` | Esperar `Retry-After: 2` y consultar el cobro con la misma referencia, sin otra venta. |
-| `400` | `ERROR/BAD_REQUEST` | Corregir JSON o monto fuera del límite. |
-| `409` | `ERROR/POS_BUSY` | Esperar a que termine la operación activa. |
-| `503` | `ERROR/POS_NOT_AVAILABLE` | Restablecer SDK o pantalla disponible antes de reintentar. |
-
-Consulta el [esquema JSON y los códigos](/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos). La respuesta de `/cancel` se interpreta por separado en [Cancelación](/procesamiento-fisico/alignet-transit/cancelacion).
+Interpreta `success`, `resultCode`, `resultMessage` y `result`; este endpoint no devuelve `status` propio. Consulta el [contrato, los ejemplos y la tabla HTTP](/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos#respuestas-de-post-%2Fauthorize). La respuesta de `/cancel` se interpreta por separado en [Cancelación](/procesamiento-fisico/alignet-transit/cancelacion).
 
 ## Verificar el resultado final
 
-1. Conserva el `operationNumber`; ante espera, timeout o incertidumbre, consulta el cobro original con `GET /payments/{operationNumber}`.
-2. Mientras recibas `PROCESSING`, `PENDING` o `UNKNOWN`, sigue consultando según `Retry-After: 2`, sin otro cobro.
-3. No sustituyas un resultado confirmado por un `202 PENDING` tardío ni decidas por el cierre de pantalla.
-4. Tras una cancelación fallida, un cobro CARD `APPROVED/00` permite evaluar un extorno independiente. Un QR aprobado se conserva sin refund ni reversa. Aplica la [decisión por método](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
+1. Conserva `operationNumber`; ante HTTP `202 WAITING_RESULT`, timeout o incertidumbre, consulta la pasarela con `GET /payments/{operationNumber}`.
+2. En una consulta `200/00`, interpreta `transaction.state`; `00` solo indica que la operación fue encontrada.
+3. Una consulta `200/03`, `404/05`, `503` o `504` no confirma rechazo ni permite otro cobro. Mantén la operación sin resolver y consulta o escala.
+4. No sustituyas un resultado confirmado por un `202 WAITING_RESULT` tardío ni decidas por el cierre de pantalla. Tras cancelación fallida, un CARD autorizado permite evaluar un extorno independiente; conserva QR autorizado sin devolución.

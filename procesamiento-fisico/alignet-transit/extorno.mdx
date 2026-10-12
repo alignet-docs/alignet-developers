@@ -13,15 +13,15 @@ icon: "rotate-left"
 | `POST /cancel` | Solicitar cancelar una autorización activa. | Su respuesta informa el resultado de la cancelación. Ante fallo o incertidumbre, consulta el cobro original. |
 | `POST /reversals` | Solicitar un extorno independiente de una venta CARD aprobada. | `GET /reversals/{operationNumber}` cuando el resultado no esté confirmado. |
 
-En **QR**, únicamente cancelas o inhabilitas el código generado. Ni `/cancel` ni refund devuelven un monto pagado; `/reversals` no aplica. Si aparece `APPROVED/00` después de solicitar cancelación, conserva el pago aprobado y registra la discrepancia para revisión.
+En **QR**, únicamente cancelas o inhabilitas el código generado. Ni `/cancel` ni refund devuelven un monto pagado; `/reversals` no aplica. Si aparece `transaction.state: "AUTORIZADO"` en una consulta `200/00` después de solicitar cancelación, conserva el pago aprobado y registra la discrepancia para revisión.
 
-Una cancelación fallida permite evaluar el extorno cuando `GET /payments/{operationNumber}` confirma el cobro CARD como `APPROVED/00`. Usa el `operationNumber` de esa venta; el error de cancelación no genera un extorno automático.
+Una cancelación fallida permite evaluar el extorno cuando `GET /payments/{operationNumber}` confirma el cobro CARD como `transaction.state: "AUTORIZADO"` en una consulta `200/00`. Usa el `operationNumber` de esa venta; el error de cancelación no genera un extorno automático.
 
 ## Requisitos por método
 
 | Método | Requisito |
 | --- | --- |
-| CARD | Venta `APPROVED/00` y cobro vigente. Presenta la tarjeta cuando la solicite el PinPAD. |
+| CARD | Venta encontrada con `transaction.state: "AUTORIZADO"` y cobro vigente. Presenta la tarjeta cuando la solicite el PinPAD. |
 | QR | No aplica este flujo: solo puedes cancelar o inhabilitar el código, sin devolver un monto pagado. |
 
 Antes del POST, verifica que no exista un extorno completado o en curso. No dupliques la solicitud mientras falte resolución.
@@ -33,6 +33,7 @@ Envía al mismo host y puerto de la autorización:
 ```http
 POST /reversals
 Content-Type: application/json
+Connection: close
 ```
 
 ```json
@@ -48,7 +49,7 @@ Content-Type: application/json
 No envíes monto, moneda, método ni datos de tarjeta. El extorno es total.
 
 ```bash
-curl --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/reversals" \
+curl --header "Connection: close" --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/reversals" \
   --header "Content-Type: application/json" \
   --max-time 110 \
   --data '{"operationNumber":"44992528"}'
@@ -57,10 +58,10 @@ curl --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/reversals" \
 Si el resultado no está confirmado o se pierde la respuesta, consulta el extorno:
 
 ```bash
-curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/reversals/44992528"
+curl --header "Connection: close" -i "http://<IP_DEL_PINPAD>:<PUERTO>/reversals/44992528"
 ```
 
-Todas las respuestas incluyen `Cache-Control: no-store`. HTTP `202` añade `Retry-After: 2`; espera dos segundos antes de consultar el extorno.
+Todas las respuestas incluyen `Connection: close` y `Cache-Control: no-store`. Abre una conexión por petición. HTTP `202` añade `Retry-After: 2`; espera dos segundos antes de consultar el extorno.
 
 ## Respuestas del POST
 
@@ -75,7 +76,7 @@ Todas las respuestas incluyen `Cache-Control: no-store`. HTTP `202` añade `Retr
 | `502` | `UNKNOWN`, cuerpo compacto con `message`; sin `resultCode` | Búsqueda ambigua o control de tiempo agotado. Revisar con Alignet; no registrar éxito ni reenviar automáticamente. |
 | `503` | `POS_NOT_AVAILABLE` | Restablecer disponibilidad y consultar antes de decidir otro envío. |
 
-Ejemplo de extorno aprobado; no representa una prueba ejecutada:
+La forma normal conserva `operationNumber`, `status`, `resultCode`, `resultMessage`, `authorizationCode` y `completedAt` (fecha ISO 8601 UTC o `null` si no aplica). Ejemplo de extorno aprobado; no representa una prueba ejecutada:
 
 ```json
 {
@@ -106,11 +107,11 @@ Forma compacta de HTTP `502` (esquema, no evidencia de prueba):
 | --- | --- | --- |
 | `200` | `REVERSED`, `DENIED` o `ERROR` guardado. | Reconocer éxito solo con `REVERSED` y `00`, `16` o `17`. |
 | `202` | Extorno en curso. | Respetar `Retry-After: 2` y continuar consultando. |
-| `404` | No existe solicitud registrada con esa referencia. | Verificar terminal y referencia; no deducir un resultado financiero. |
+| `404` | No existe solicitud registrada o la venta original no fue encontrada. | Verificar terminal y referencia; no deducir un resultado financiero. |
 | `400` | `ERROR/BAD_REQUEST`: segmento vacío o inválido. | Corregir la referencia en la ruta. |
 | `502` | `UNKNOWN`: la solicitud terminó con error. | Revisar si se ejecutó el extorno con Alignet; no registrar éxito. |
 
-El cobro y el extorno son resultados independientes. Encontrar `APPROVED` en `GET /payments/{operationNumber}` no confirma ni descarta el extorno; consulta este último en `/reversals/{operationNumber}`.
+`GET /reversals/{operationNumber}` consulta el estado **local** guardado por la app. El cobro y el extorno son resultados independientes. Encontrar `transaction.state: "AUTORIZADO"` en `GET /payments/{operationNumber}` no confirma ni descarta el extorno; consulta este último en `/reversals/{operationNumber}`.
 
 ## Estados del extorno
 
@@ -128,7 +129,9 @@ El cobro y el extorno son resultados independientes. Encontrar `APPROVED` en `GE
 ## Recuperación e idempotencia
 
 - Ante timeout o desconexión, consulta la misma referencia: el timeout no determina el resultado financiero.
-- Si el mismo extorno sigue en proceso, el POST devuelve `202`; si terminó, devuelve el resultado guardado sin repetir la acción.
+- Si el mismo extorno está `SEARCHING`, `PROCESSING` o `PENDING`, el POST devuelve `202` sin iniciar otro.
+- Si ya fue `REVERSED`, devuelve `200` con el resultado guardado sin repetir el extorno; si fue `NOT_FOUND`, devuelve `404` sin otro intento.
+- Tras un resultado final `DENIED`, `UNKNOWN` o `ERROR`, un nuevo `POST /reversals` con la misma referencia **puede ejecutar otro intento real**. Esta capacidad no autoriza reintentos automáticos ante incertidumbre: consulta, revisa el resultado financiero y decide antes de reenviar.
 - Otra referencia activa devuelve `409 POS_BUSY`. Serializa operaciones por terminal.
 - No reenvíes en paralelo ni cambies el cuerpo. Consulta antes de cualquier reenvío permitido.
 - No sustituyas un resultado confirmado por un `PENDING` tardío ni inicies otra venta mientras no conozcas el resultado anterior.

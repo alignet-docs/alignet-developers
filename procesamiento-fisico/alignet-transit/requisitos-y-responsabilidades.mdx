@@ -23,17 +23,19 @@ icon: "people-arrows"
 - Implementa `GET /health`, `POST /authorize`, `GET /payments/{operationNumber}`, `POST /cancel`, `POST /reversals` y `GET /reversals/{operationNumber}`.
 - Envía `Content-Type: application/json` en la autorización, la cancelación y el extorno.
 - Configura al menos 100 a 110 segundos de timeout para `POST /authorize`, `POST /cancel` y `POST /reversals` con la espera de desarrollo actual.
+- Abre una conexión por petición: todas las respuestas usan `Connection: close`; no reutilices keep-alive.
+- Configura la consulta del cobro para cubrir aproximadamente 12–15 segundos, por ejemplo con timeout de 20 segundos.
 - Lee el HTTP y el JSON; verifica `Cache-Control: no-store` y respeta `Retry-After: 2` en HTTP `202`.
-- Maneja `200`, `202`, `400`, `404`, `405`, `409`, `502` y `503` según la operación.
+- Maneja `200`, `202`, `400`, `404`, `405`, `409`, `502`, `503` y `504` según la operación.
 - Mantén una cola o bloqueo por terminal para no enviar cobros concurrentes.
 
 ### Estado transaccional
 
 - Persiste la referencia y los datos del cobro antes del envío.
-- Confirma el cobro solo con `APPROVED/00`. Ante cancelación fallida, evalúa un extorno independiente solo en CARD; conserva QR aprobado sin devolución.
+- Confirma autorización con `success: true`, `resultCode: "00"` y `result.state: "AUTORIZADO"`. En consulta `200/00`, interpreta `transaction.state`. Ante cancelación fallida, evalúa un extorno independiente solo en CARD; conserva QR aprobado sin devolución.
 - Interpreta `/cancel` por su respuesta. Ante fallo, timeout o incertidumbre, consulta el cobro original; no existe un GET de cancelación.
 - Solo en CARD, verifica el extorno completado o en curso antes de solicitar otro; conserva abiertas las operaciones cuya resolución no puedas comprobar.
-- Sigue consultando cobros `PROCESSING`, `PENDING` o `UNKNOWN`. Un extorno `UNKNOWN` con HTTP `502` requiere revisión; no confirma éxito.
+- Consulta la pasarela ante cobros sin verificar; `200/03`, `404/05`, `503` o `504` no confirman rechazo ni permiten otro cargo. Un extorno `UNKNOWN` con HTTP `502` requiere revisión; no confirma éxito.
 - Recupera las operaciones abiertas después de un reinicio del sistema central.
 - No conviertas un timeout o `404` de consulta en rechazo financiero.
 
@@ -75,7 +77,7 @@ Alignet y el operador deben:
 </Check>
 
 <Check>
-  `operationNumber`, `amount` y `currency` se envían como Strings numéricos. `amount` representa un entero positivo en unidades menores.
+  `operationNumber` es un String de 1–64 caracteres sin espacios. `amount` es entero o String numérico positivo en unidades menores. Moneda y método son opcionales, con valores predeterminados `604` y `CARD`.
 </Check>
 
 <Check>

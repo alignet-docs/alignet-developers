@@ -12,15 +12,16 @@ icon: "ban"
 
 ## CARD
 
-`POST /authorize` inicia el cobro y el PinPAD solicita la tarjeta. Si la cancelación falla y el cobro original queda `APPROVED/00`, puedes evaluar un [extorno independiente](/procesamiento-fisico/alignet-transit/extorno). Un error de `/cancel` no ejecuta automáticamente `/reversals`.
+`POST /authorize` inicia el cobro y el PinPAD solicita la tarjeta. Si la cancelación falla y el cobro original queda `transaction.state: "AUTORIZADO"` en una consulta `200/00`, puedes evaluar un [extorno independiente](/procesamiento-fisico/alignet-transit/extorno). Un error de `/cancel` no ejecuta automáticamente `/reversals`.
 
 ```mermaid
 flowchart TD
     A[Cobro con tarjeta] --> B[Solicitar cancelación]
     B -->|Confirmada| C[Operación cancelada]
-    B -->|No se confirmó| D[Consultar cobro]
-    D -->|Pago aprobado| E[Evaluar extorno CARD]
-    D -->|Pago rechazado| F[Cobro no aprobado]
+    B -->|No se confirmó| D[Consultar pasarela: transaction.state]
+    D -->|200 y 00: AUTORIZADO| E[Evaluar extorno CARD]
+    D -->|Otro desenlace financiero confirmado| F[Registrar desenlace]
+    D -->|03 o 05 o 503 o 504| G[Consultar de nuevo o escalar]
     D -->|Sin confirmar| D
 ```
 
@@ -36,13 +37,14 @@ flowchart TD
     B -->|Pago aprobado| C[Pago aprobado]
     B --> D[Solicitar cancelación]
     D -->|Confirmada| E[QR cancelado]
-    D -->|No se confirmó| F[Consultar cobro]
-    F -->|Pago aprobado| C
-    F -->|Pago rechazado| G[Cobro no aprobado]
+    D -->|No se confirmó| F[Consultar pasarela: transaction.state]
+    F -->|200 y 00: AUTORIZADO| C
+    F -->|Otro desenlace financiero confirmado| G[Registrar desenlace]
+    F -->|03 o 05 o 503 o 504| H[Consultar de nuevo o escalar]
     F -->|Sin confirmar| F
 ```
 
-Si recuperas un QR `APPROVED/00`, conserva el pago aprobado. No lo marques como cancelado, devuelto ni extornado; registra la discrepancia para revisión.
+Si recuperas un QR `transaction.state: "AUTORIZADO"` en una consulta `200/00`, conserva el pago aprobado. No lo marques como cancelado, devuelto ni extornado; registra la discrepancia para revisión.
 
 ## Solicitud
 
@@ -51,6 +53,7 @@ Envía al mismo PinPAD de la autorización original:
 ```http
 POST /cancel
 Content-Type: application/json
+Connection: close
 ```
 
 ```json
@@ -61,12 +64,12 @@ Content-Type: application/json
 
 | Campo | Tipo | Obligatorio | Uso |
 | --- | --- | --- | --- |
-| `operationNumber` | String | Sí | Referencia original de la autorización activa. |
+| `operationNumber` | String | Sí | Referencia original: 1–64 caracteres sin espacios (`^\S{1,64}$`). |
 
 No generes otra referencia ni envíes monto, moneda, método o datos de tarjeta.
 
 ```bash
-curl -i --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/cancel" \
+curl --header "Connection: close" -i --request POST "http://<IP_DEL_PINPAD>:<PUERTO>/cancel" \
   --header "Content-Type: application/json" \
   --max-time 110 \
   --data '{"operationNumber":"44992528"}'
@@ -80,17 +83,19 @@ Estas reglas aplican a CARD y QR. Evalúa el estado, el código y la validación
 | --- | --- | --- |
 | `200` | `CANCELLED` con `00`, `16` o `17` | Cancelación confirmada o éxito equivalente, validado por el servicio. No exige otra consulta para reconocerla. |
 | `200` | `DENIED` con `14`, `15`, `18`, `19`, `20`, `01`, `03` u otro código SDK | Cancelación rechazada o abandonada. Consulta el cobro original; no marques cancelación exitosa. |
-| `202` | `PENDING` con `P22` o `WAITING_RESULT` | Resultado todavía no confirmado. Consulta el cobro original; este GET no informa el desenlace de `/cancel`. |
+| `202` | `PENDING` con `P22` | Resultado todavía no confirmado. Consulta el cobro original; este GET no informa el desenlace de `/cancel`. |
 | `404` | `ERROR/NOT_FOUND` | Venta inexistente o resultado SDK `05/07`. Verifica referencia y terminal. |
 | `409` | `ERROR/CANCELLATION_IN_PROGRESS` | Ya hay una cancelación de esa referencia en curso. No envíes otra. |
 | `503` | `ERROR/POS_NOT_AVAILABLE` | Restablece SDK o pantalla disponible; consulta el cobro antes de decidir otro envío. |
 | `400` | `ERROR/BAD_REQUEST` | Corrige el JSON. |
 
+Reenviar una cancelación ya finalizada devuelve el resultado guardado; una segunda cancelación en curso devuelve `409 CANCELLATION_IN_PROGRESS`.
+
 Ejemplos de campos de decisión, sin representar pruebas ejecutadas:
 
 <CodeGroup>
 
-```json Cancelación rechazada con 14
+```json Abandono con 14
 {
   "operationNumber": "44992528",
   "status": "DENIED",
@@ -108,22 +113,21 @@ Ejemplos de campos de decisión, sin representar pruebas ejecutadas:
 
 </CodeGroup>
 
-`DENIED/14` no confirma cancelación. Decide con estado y código. No normalices `16` o `17` a `00`.
+`DENIED/14` indica abandono por cierre de autorización en curso; `15` indica abandono con intento (QR cancelado). No confirman cancelación aprobada ni son rechazo típico de tarjeta. Decide con estado y código. No normalices `16` o `17` a `00`.
 
 ## Verificar el resultado final
 
-No existe un endpoint de consulta de cancelación. La respuesta de `POST /cancel` informa el resultado de esa solicitud. Ante fallo, timeout o incertidumbre, `GET /payments/{operationNumber}` permite conocer **el estado del cobro original**:
+No existe un endpoint de consulta de cancelación. La respuesta de `POST /cancel` informa el resultado de esa solicitud. Ante fallo, timeout o incertidumbre, `GET /payments/{operationNumber}` consulta **la pasarela** y devuelve `success`, `resultCode`, `resultMessage` y `transaction`, sin `status` propio. `00` significa encontrada: lee `transaction.state`. Este GET no devuelve `202`. Aplica el [contrato de consulta](/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos#consulta-de-estado):
 
 | Estado del cobro | Acción |
 | --- | --- |
-| CARD: `APPROVED/00` | Tras una cancelación fallida, evalúa `POST /reversals` con la referencia original, sin duplicar extornos. |
-| QR: `APPROVED/00` | Conserva el pago aprobado, sin refund ni reversa. |
-| `DENIED` | Cierra el cobro como no aprobado; no lo confundas con una cancelación validada. |
-| `CANCELLED` | El cobro original está registrado como cancelado; no es una consulta del desenlace de `/cancel`. |
-| `PROCESSING`, `PENDING` o `UNKNOWN` | Todavía no sabes si se cobró. Sigue consultando y no inicies otro cobro. |
-| Error de consulta | Conserva la referencia y resuelve la causa; no deduzcas el estado financiero. |
+| CARD: `transaction.state: "AUTORIZADO"` en una consulta `200/00` | Tras una cancelación fallida, evalúa `POST /reversals` con la referencia original, sin duplicar extornos. |
+| QR: `transaction.state: "AUTORIZADO"` en una consulta `200/00` | Conserva el pago aprobado, sin refund ni reversa. |
+| `200/00` con `transaction.state: "CANCELADO"` | La pasarela registra el cobro cancelado; no es una consulta del desenlace de `/cancel`. |
+| `200/00` con otro `transaction.state` | Interpreta el literal financiero del SDK; la guía no enumera todos los estados. |
+| `200/03`, `404/05`, `503/P04` o `POS_NOT_AVAILABLE`, `504/SEARCH_TIMEOUT` | Cobro no verificado. Conserva la referencia, vuelve a consultar o escala; no deduzcas rechazo ni habilites otra venta. |
 
-En los ciclos del gráfico, repite únicamente el GET. No reenvíes `/cancel` ni generes otra venta mientras no conozcas el resultado del cobro. Un `202 PENDING` tardío de `/authorize` no sustituye un resultado confirmado.
+En los ciclos del gráfico, repite únicamente el GET. No reenvíes `/cancel` ni generes otra venta mientras no conozcas el resultado del cobro. Un `202 WAITING_RESULT` tardío de `/authorize` no sustituye un resultado confirmado.
 
 ## Fallos de cancelación
 

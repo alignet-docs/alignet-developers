@@ -11,10 +11,11 @@ flowchart TD
     CENTRAL[Sistema central] -->|HTTP local| PINPAD[Pay-me PinPAD]
     PINPAD --> SDK[SDK del P5L]
     SDK --> INTERACTION[Tarjeta o QR]
-    SDK --> PLATFORM[Procesador]
+    SDK --> PLATFORM[Pasarela y procesador]
+    CENTRAL -->|GET payments: consulta a pasarela| PINPAD
 ```
 
-El sistema central inicia todas las llamadas hacia la IP y el puerto configurados en el Wiseasy P5L. Pay-me PinPAD muestra la pantalla de pago, coordina la tarjeta o genera el QR con su transacción pendiente, procesa el pago y devuelve un resultado normalizado.
+El sistema central inicia todas las llamadas hacia la IP y el puerto configurados en el Wiseasy P5L. Pay-me PinPAD muestra la pantalla de pago, coordina la tarjeta o genera el QR con su transacción pendiente, procesa el pago y devuelve la respuesta cruda del SDK en autorización. La consulta del cobro lee la pasarela; cancelación y extorno usan modelos propios con `status`.
 
 La comunicación de Pay-me PinPAD con el procesador o banco es transparente para el sistema central.
 
@@ -60,7 +61,7 @@ Primero verifica alcance IP y después la aplicación:
 
 ```bash
 ping "<IP_DEL_PINPAD>"
-curl "http://<IP_DEL_PINPAD>:<PUERTO>/health"
+curl --header "Connection: close" "http://<IP_DEL_PINPAD>:<PUERTO>/health"
 ```
 
 Una respuesta válida de la aplicación es:
@@ -73,6 +74,8 @@ Si `ping` responde pero `GET /health` no, revisa el puerto, el firewall y que Pa
 
 La [configuración inicial](/procesamiento-fisico/alignet-transit/configuracion#configurar-pay-me-pinpad) se realiza una vez por terminal e incluye la IP, el puerto, la verificación de conectividad y la inyección de llaves.
 
+Todas las respuestas usan `Connection: close`: abre una conexión por petición y no reutilices keep-alive. Usa un timeout superior a aproximadamente 90 segundos en los POST y cubre los 12–15 segundos de la consulta a la pasarela.
+
 ## Trazabilidad
 
 Por cada intento, registra únicamente información no sensible:
@@ -80,14 +83,15 @@ Por cada intento, registra únicamente información no sensible:
 - `operationNumber`;
 - `amount`, `currency` y `paymentMethod` enviados;
 - código HTTP recibido;
-- `status`, `resultCode` y `resultMessage`;
-- `authorizationCode` y `completedAt`, cuando existan;
+- `success`, `resultCode`, `resultMessage` y `result.state` o `transaction.state` en cobro;
+- `status`, `authorizationCode` y `completedAt` en cancelación o extorno, cuando existan;
+- `transactionID` de autorización o `transactionId` y `authorizationCode` de consulta, cuando existan;
 - fecha y hora del envío, la respuesta y las consultas;
 - timeouts, pérdidas de conexión y reintentos de consulta;
 - solicitud de cancelación, cierre visual y consultas posteriores;
 - resultado de cancelación y evidencia del extorno CARD independiente, registrados por separado del cobro.
 
-El contrato vigente no devuelve `transactionID`, información de `paymentMethod`, `stateReason`, `processor` ni un historial `lifecycle`. No diseñes la integración dependiendo de esos campos.
+La autorización puede incluir `transactionID`, `paymentMethod`, `stateReason`, `processorResponse` y `lifecycle` dentro de `result`. La consulta devuelve `transaction` y no expone `processorResponse` ni `methodDetail` crudos. Consulta el [contrato por endpoint](/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos) y sanitiza las evidencias.
 
 ## Seguridad y protección de datos
 

@@ -4,13 +4,13 @@ description: "Esquemas JSON, códigos SDK y respuestas HTTP de cobro, cancelaci�
 icon: "code"
 ---
 
-Interpreta el HTTP, `status` y `resultCode` según el endpoint. HTTP `200` o el mensaje por sí solos no confirman éxito.
+En Pay-me PinPAD **1.3.25**, autorización y consulta usan `success`, `resultCode` y `result.state` / `transaction.state`, sin `status` propio. Cancelación y extorno conservan `status`. HTTP `200` o el mensaje por sí solos no confirman éxito.
 
-Todas las respuestas incluyen `Cache-Control: no-store`. HTTP `202` añade `Retry-After: 2`.
+Todas las respuestas incluyen `Connection: close` y `Cache-Control: no-store`. Abre una conexión por petición, sin reutilizar keep-alive. HTTP `202` añade `Retry-After: 2`.
 
 ## Estructura de respuesta de pago
 
-Cobro, cancelación y extorno utilizan esta forma normal. El bloque describe tipos, no una respuesta de prueba:
+Cancelación y extorno utilizan esta forma normal. El bloque describe tipos, no una respuesta de prueba:
 
 ```json
 {
@@ -26,7 +26,7 @@ Cobro, cancelación y extorno utilizan esta forma normal. El bloque describe tip
 | Campo | Uso |
 | --- | --- |
 | `operationNumber` | Referencia de la operación. |
-| `status` | Estado de cobro, cancelación o extorno. |
+| `status` | Estado propio de cancelación o extorno. |
 | `resultCode` | Código SDK conservado o código propio de la app. |
 | `resultMessage` | Mensaje recibido; no sustituye la interpretación del estado y código. |
 | `authorizationCode` | Código de autorización o `null`. |
@@ -46,76 +46,110 @@ Esta forma no incluye `resultCode`, `resultMessage`, `authorizationCode` ni `com
 
 ## Respuestas de `POST /authorize`
 
-| HTTP | `status` | `resultCode` | Acción |
-| --- | --- | --- | --- |
-| `200` | `APPROVED` | `00` | Confirmar el pago y ejecutar la acción de negocio. |
-| `200` | `DENIED` | Código SDK | Cerrar el cobro como no aprobado. |
-| `202` | `PROCESSING`, `PENDING`, `UNKNOWN` | `PROCESSING`, `WAITING_RESULT`, `UNKNOWN` | Esperar dos segundos y consultar el cobro con la misma referencia. |
-| `400` | `ERROR` | `BAD_REQUEST` | Corregir JSON o monto fuera del límite. |
-| `409` | `ERROR` | `POS_BUSY` | Esperar a que termine la operación activa. |
-| `503` | `ERROR` | `POS_NOT_AVAILABLE` | Restablecer SDK o pantalla disponible antes de reintentar. |
+La respuesta contiene `operationNumber`, `success`, `resultCode`, `resultMessage` y `result`, sin `status` propio. Ejemplo sintético mínimo:
+
+```json
+{
+  "operationNumber": "44992528",
+  "success": true,
+  "resultCode": "00",
+  "resultMessage": "Operación autorizada",
+  "result": { "transactionID": "a1b2c3d4-0001", "state": "AUTORIZADO", "amount": "100", "currency": "604" }
+}
+```
+
+`result` puede incluir `stateReason`, `additionalFields`, `paymentMethod` (con `name` y `methodDetail` ofuscado), `processorResponse` como String crudo y `lifecycle`. Estos campos pertenecen al contrato vigente; `authorization_code` puede llegar dentro de `processorResponse`.
+
+| HTTP | Campos de decisión | Acción |
+| --- | --- | --- |
+| `200` | `success: true`, `00`, `result.state: "AUTORIZADO"` | Confirmar el cobro. |
+| `200` | `success: false`, código SDK y `result.state` crudo | Interpretar el desenlace del SDK; no decidir solo por HTTP. |
+| `202` | `success: false`, `WAITING_RESULT`, `result: null` | Esperar dos segundos y consultar el cobro. |
+| `400` | `success: false`, `BAD_REQUEST`, `result: null` | Corregir JSON o monto fuera del máximo configurado. |
+| `409` | `success: false`, `POS_BUSY`, `result: null` | Esperar a que termine la operación activa. |
+| `503` | `success: false`, `POS_NOT_AVAILABLE`, `result: null` | Restablecer disponibilidad. |
+
+```json
+{ "operationNumber": "44992528", "success": false, "resultCode": "WAITING_RESULT", "resultMessage": "Consulte el estado antes de reintentar", "result": null }
+```
 
 HTTP `202` puede corresponder a una solicitud duplicada aún en curso, al tiempo de espera agotado o al control de tiempo del servicio. No inicies otro cobro.
 
 ## Consulta de estado
 
-`GET /payments/{operationNumber}` consulta **el cobro original**, no el resultado de `/cancel`.
+`GET /payments/{operationNumber}` consulta **la pasarela**, no el estado local ni el resultado de `/cancel`. Devuelve `operationNumber`, `success`, `resultCode`, `resultMessage` y `transaction`, sin `status` propio. Puede tardar 12–15 segundos; usa un timeout de cliente que cubra esa espera, por ejemplo 20 segundos.
 
-| HTTP | Resultado | Acción |
+```json
+{
+  "operationNumber": "44992528",
+  "success": true,
+  "resultCode": "00",
+  "resultMessage": "Operación encontrada",
+  "transaction": { "transactionId": "a1b2c3d4-0001", "state": "AUTORIZADO", "amount": "100", "currency": "604", "authorizationCode": "123456" }
+}
+```
+
+`00` significa **operación encontrada**; interpreta el resultado financiero mediante `transaction.state` (por ejemplo, `AUTORIZADO` o `CANCELADO`). `transaction` puede incluir `stateReason` y `lifecycle`; no expone `processorResponse` ni `methodDetail` crudos. La consulta usa `transactionId`, mientras la autorización usa `transactionID`.
+
+| HTTP | `resultCode` | Resultado y acción |
 | --- | --- | --- |
-| `200` | Resultado guardado con `APPROVED`, `DENIED`, `CANCELLED` o `ERROR`. | Evaluar estado y código; un error no confirma aprobación. |
-| `202` | `PROCESSING`, `PENDING` o `UNKNOWN`. | Seguir consultando con `Retry-After: 2`, sin otro cobro. |
-| `404` | `ERROR/NOT_FOUND` | Verificar referencia y terminal; no asumir rechazo financiero. |
-| `400` | `ERROR/BAD_REQUEST` | Corregir el segmento vacío o inválido de la ruta. |
+| `200` | `00` | `success: true`, `transaction` encontrada; leer `transaction.state`. |
+| `404` | `05` | `success: false`, `transaction: null`; verificar referencia y terminal. |
+| `503` | `P04` o `POS_NOT_AVAILABLE` | `success: false`, `transaction: null`; restablecer SDK o disponibilidad. |
+| `504` | `SEARCH_TIMEOUT` | `success: false`, `transaction: null`; no verificado a tiempo, consultar de nuevo. |
+| `200` | `03` | `success: false`, `transaction: null`; consulta incierta del servicio. |
+
+Otros códigos SDK se reportan tal cual con `200`, según el mapeo específico de la guía. Este GET no devuelve `202` ni estados locales. Una consulta fallida, incierta o no encontrada no confirma rechazo ni permite otro cobro.
 
 ## Estados
 
 | Operación | Sigue esperando un resultado | La solicitud terminó |
 | --- | --- | --- |
-| Cobro y cancelación (`PaymentStatus`) | `PROCESSING`, `PENDING`, `UNKNOWN` | `APPROVED`, `DENIED`, `CANCELLED`, `ERROR` |
+| Cancelación (`PaymentStatus`) | `PENDING` | `CANCELLED`, `DENIED`, `ERROR` |
 | Extorno (`ReversalStatus`) | `SEARCHING`, `PROCESSING`, `PENDING` | `REVERSED`, `DENIED`, `UNKNOWN`, `ERROR` |
 
 En la forma normal, `completedAt` se informa solo en los estados de la última columna. Un estado `ERROR` significa que terminó con error, no que hubo éxito.
 
-`UNKNOWN` en cobro devuelve HTTP `202`: todavía no se sabe si se cobró y debes seguir consultando. En extorno devuelve HTTP `502` con el cuerpo compacto: revisa si se ejecutó con Alignet, sin asumir éxito ni reenviar automáticamente.
+`UNKNOWN` en extorno es final y devuelve HTTP `502` con el cuerpo compacto: revisa si se ejecutó con Alignet, sin asumir éxito ni reenviar automáticamente.
 
 ## Códigos confirmados
 
 ### Mapeo de códigos SDK
 
-| Código SDK | Cobro | Cancelación | Extorno CARD |
-| --- | --- | --- | --- |
-| `00` | `APPROVED` | `CANCELLED` | `REVERSED` |
-| `16`, `17` | `DENIED` | `CANCELLED`, éxito equivalente | `REVERSED`, éxito equivalente |
-| `P22` | `DENIED` | `PENDING` | `PENDING` |
-| `05`, `07` | `DENIED` | HTTP `404` | HTTP `404` |
-| `14`, `15`, `18`, `19`, `20`, `01`, `03` y otros | `DENIED` | `DENIED` | `DENIED` |
+| Código SDK | Cancelación | Extorno CARD |
+| --- | --- | --- |
+| `00` | `CANCELLED` | `REVERSED` |
+| `16`, `17` | `CANCELLED`, éxito equivalente | `REVERSED`, éxito equivalente |
+| `P22` | `PENDING`, HTTP `202` | `PENDING`, HTTP `202` |
+| `05`, `07` | HTTP `404`, `ERROR/NOT_FOUND` | HTTP `404`, `ERROR/NOT_FOUND` |
+| `14`, `15`, `18`, `19`, `20`, `01`, `03` y otros | `DENIED` | `DENIED` |
 
-Conserva los códigos SDK; no los reemplaces por `00` ni por un código inventado. Si el SDK devuelve un código vacío, la app utiliza el nombre del `status`, por ejemplo `DENIED` o `APPROVED`.
+Conserva los códigos SDK; no los reemplaces por `00` ni por un código inventado. `14` significa abandono por cierre de autorización en curso; `15`, abandono con intento (QR cancelado). No confirman cancelación aprobada ni rechazo típico de tarjeta.
 
 ### Códigos propios de la app
 
 | Código | Significado |
 | --- | --- |
 | `BAD_REQUEST` | JSON, campos o segmento de ruta inválidos. |
-| `NOT_FOUND` | Operación o ruta no encontrada. |
+| `NOT_FOUND` | Cancelación, extorno o ruta no encontrados; la consulta del cobro usa `05`. |
 | `POS_NOT_AVAILABLE` | SDK no listo o pantalla no disponible. |
 | `POS_BUSY` | Terminal ocupado. |
 | `CANCELLATION_IN_PROGRESS` | Ya existe una cancelación en curso para esa referencia. |
-| `PROCESSING`, `SEARCHING` | Operación o búsqueda en curso. |
+| `PROCESSING`, `SEARCHING` | Fases locales del extorno en curso; no son estados de `/payments`. |
 | `WAITING_RESULT` | Tiempo de espera agotado, sin resultado confirmado. |
-| `UNKNOWN` | Resultado desconocido; su HTTP y cuerpo dependen de la operación. |
+| `SEARCH_TIMEOUT` | Consulta del cobro no verificada a tiempo; HTTP `504`. |
+| `UNKNOWN` | Extorno incierto final; HTTP `502`, cuerpo compacto con `message`. |
 | `METHOD_NOT_ALLOWED` | Ruta válida con método HTTP incorrecto. |
 
 ## Matriz de decisión
 
 | Endpoint | Qué informa | Acción |
 | --- | --- | --- |
-| `POST /authorize` | Resultado del cobro. | Confirmar únicamente `APPROVED/00`. |
-| `GET /payments/{operationNumber}` | Estado del cobro original. | Consultar ante espera, timeout o incertidumbre. |
+| `POST /authorize` | Resultado del cobro. | Confirmar `success: true`, `00` y `result.state: "AUTORIZADO"`. |
+| `GET /payments/{operationNumber}` | Cobro en la pasarela. | `00` significa encontrada; interpretar `transaction.state`. |
 | `POST /cancel` | Resultado de esa solicitud de cancelación. | Éxito solo con `CANCELLED` y `00`, `16` o `17`, validado por el servicio. `DENIED/14` no confirma cancelación. |
 | `POST /reversals` | Resultado de un extorno CARD independiente. | Éxito con `REVERSED` y `00`, `16` o `17`. |
-| `GET /reversals/{operationNumber}` | Resultado del extorno CARD. | Consultar cuando corresponda; HTTP `502 UNKNOWN` exige revisión. |
+| `GET /reversals/{operationNumber}` | Estado local del extorno CARD. | Consultar cuando corresponda; HTTP `502 UNKNOWN` exige revisión. |
 
 Una ruta válida con método incorrecto devuelve HTTP `405` y `METHOD_NOT_ALLOWED`. Una ruta desconocida devuelve HTTP `404` y `NOT_FOUND`.
 
@@ -123,6 +157,6 @@ Una ruta válida con método incorrecto devuelve HTTP `405` y `METHOD_NOT_ALLOWE
 
 No existe un endpoint de consulta de cancelación: su desenlace se devuelve solo en `POST /cancel`. Si confirma una cancelación validada, no exige otro GET para reconocerla.
 
-Ante fallo, timeout o incertidumbre, consulta el cobro original y aplica la [decisión por método](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). Un pago CARD aprobado permite evaluar un extorno independiente; un pago QR aprobado se conserva sin devolución.
+Ante fallo, timeout o incertidumbre, consulta el cobro original y aplica la [decisión por método](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final). Un pago CARD encontrado con `transaction.state: "AUTORIZADO"` permite evaluar un extorno independiente; un pago QR aprobado se conserva sin devolución.
 
-No sustituyas un resultado confirmado por un `202 PENDING` tardío ni uses el cierre de pantalla como prueba de cancelación.
+No sustituyas un resultado confirmado por un `202 WAITING_RESULT` tardío de `/authorize` ni uses el cierre de pantalla como prueba de cancelación.

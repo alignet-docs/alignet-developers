@@ -14,10 +14,10 @@ Esta página reúne la información ambigua, incompleta o dependiente de cada im
 
 | Punto | Referencia disponible | Validación requerida |
 | --- | --- | --- |
-| Espera interna de Pay-me PinPAD | `90` segundos en desarrollo. | Valor definitivo por ambiente. |
+| Espera interna de Pay-me PinPAD | Aproximadamente `90` segundos para los POST, según la guía 1.3.25. | Valor definitivo por ambiente. |
 | Timeout del cliente HTTP | Al menos `100–110` segundos con la espera de referencia. | Valor definitivo, siempre superior a la espera del terminal. |
 | Frecuencia de consulta | HTTP `202` incluye `Retry-After: 2`. | Backoff y tiempo máximo de consulta por ambiente. |
-| Operación no resuelta | No iniciar otro cobro ante `PENDING`, `PROCESSING` o `UNKNOWN`. | Procedimiento de inmovilización, escalamiento y decisión de negocio. |
+| Operación no resuelta | No iniciar otro cobro ante consulta fallida o incierta (`200/03`, `404/05`, `503` o `504`). | Procedimiento de inmovilización, escalamiento y decisión de negocio. |
 | Reinicio durante un extorno | Puede producir `UNKNOWN`. | Confirmar si el procesador recibió la reversa y cómo conciliarla. |
 | Cancelación con resultado incierto | `POST /cancel` puede responder `202` con `Retry-After`, o perderse la conexión antes de recibir el resultado. | Consultar el cobro original con `GET /payments/{operationNumber}`; no existe consulta de cancelación. Acordar revisión si el cobro continúa sin resolver. |
 
@@ -25,33 +25,32 @@ Esta página reúne la información ambigua, incompleta o dependiente de cada im
 
 | Punto | Referencia disponible | Validación requerida |
 | --- | --- | --- |
-| `operationNumber` | La página de parámetros declara `6–12` dígitos; referencias previas declaraban `1–64`. | Contrastar la longitud con ECR vigente. Mantener la tabla de parámetros sin alterar restricciones hasta confirmar. |
+| `operationNumber` | String de 1–64 caracteres sin espacios; la ruta GET no admite `/` adicional. | Acordar el formato del comercio. La guía no define la consulta por ruta de referencias que contengan `/`. |
 | Referencia reutilizada con otro body | No está documentado. | Comportamiento de Pay-me PinPAD; hasta entonces, reenvía exactamente el mismo payload. |
 | `additionalFields` | Objeto opcional; todos sus valores son String. | El comercio define las claves que necesita enviar como información complementaria. |
 | Monedas | PEN usa `currency: "604"`. | Otras monedas habilitadas para el comercio y el ambiente. |
 | Métodos de pago | El contrato admite `CARD` y `QR`, uno por solicitud. | Métodos efectivamente habilitados para el comercio y el ambiente. |
-| Códigos financieros | `APPROVED/00` es aprobación; `01` es ejemplo de rechazo. | Catálogo completo por operación y método; `00` aislado no confirma un cobro. |
+| Códigos financieros | Autorización: `success: true`, `00` y `result.state: "AUTORIZADO"`. Consulta: `00` indica encontrada; leer `transaction.state`. | La guía no enumera todos los estados financieros de la pasarela; validar literales por método. `00` aislado no confirma un cobro. |
 | Cancelación validada | `CANCELLED` con `00`, `16` o `17`; `DENIED/14` no confirma éxito. | Verificar que la versión instalada aplique el [mapeo vigente](/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos#c%C3%B3digos-confirmados). |
 | Validación fallida de `/cancel` | Si no se ejecutó o el resultado pertenece a otra operación, devolver error, sin informar éxito. | La matriz recibida no especifica HTTP, código ni cuerpo de este error de validación; desarrollo debe definirlos. |
-| SDK `05` o `07` en cancelación/extorno | Se clasifican como HTTP `404`. La matriz de cancelación indica `NOT_FOUND`, pero la regla general conserva códigos SDK. | Confirmar qué `resultCode` entrega el cuerpo; no normalizarlo en el cliente. |
+| SDK `07` en consulta del cobro | La tabla general de la guía menciona `404`; el mapeo específico de `/payments` reporta otros códigos SDK con `200`. | Aplicar el mapeo específico y confirmar la discrepancia en el entorno. Cancelación/extorno usan `404 ERROR/NOT_FOUND` ante `05/07`. |
 | Recepción y corte visual | El PinPAD corta el flujo visual cuando recibe y procesa la solicitud. | Validar fallos de conexión sin presumir recepción o cierre; distinguirlos de fallos internos tras la recepción. |
 | Cancelación QR | Solo inhabilita el código; no devuelve pagos. | Evidencia de cancelación ejecutada y correspondencia con la referencia solicitada. |
-| `tollData` | Datos estructurados del peaje, con campos String definidos en parámetros. | Confirmar aceptación y restricciones adicionales; no trasladar sus campos a `additionalFields`. |
+| `tollData` | Datos de peaje con valores String; se fusionan con `additionalFields` y prevalece `tollData`. | Acordar claves y convenciones por comercio, sin convertirlas en restricciones del servidor. |
 
 ## Extornos
 
 | Punto | Referencia disponible | Validación requerida |
 | --- | --- | --- |
-| Extorno tras cancelación fallida | Si el cobro CARD está `APPROVED`, se evalúa `POST /reversals` como acción independiente. | Evidencia del extorno y conciliación cuando no se confirma éxito. |
-| Discrepancia de cancelación QR | Solo se cancela o inhabilita el código. Ni `/cancel` ni refund devuelven pagos QR; `APPROVED/00` se conserva como aprobado. | Definir evidencias, responsables y revisión de discrepancias; no generar refund ni reversa. |
+| Extorno tras cancelación fallida | Si el cobro CARD se encuentra con `transaction.state: "AUTORIZADO"`, se evalúa `POST /reversals` como acción independiente. | Evidencia del extorno y conciliación cuando no se confirma éxito. |
+| Discrepancia de cancelación QR | Solo se cancela o inhabilita el código. Ni `/cancel` ni refund devuelven pagos QR; un QR encontrado con `transaction.state: "AUTORIZADO"` se conserva como aprobado. | Definir evidencias, responsables y revisión de discrepancias; no generar refund ni reversa. |
 | Presentación de tarjeta | El extorno explícito puede requerir interacción con el PinPAD. | Obligatoriedad por versión, uso de tarjeta original y pasos reales. |
-| Prevención de duplicados | No extornar si hay un extorno completado o en curso. | Evidencia y consulta para descartar ambos antes de una reversa adicional. |
+| Prevención de duplicados | No repetir `REVERSED`, `NOT_FOUND` ni un extorno en curso. Tras `DENIED`, `UNKNOWN` o `ERROR` finales, un nuevo POST puede ejecutar otro intento; no es un reintento automático. | Evidencia y consulta para descartar ambos antes de una reversa adicional. |
 
 Confirma también:
 
 - la ventana máxima para solicitar un extorno;
 - el tratamiento de ventas cerradas o liquidadas;
-- la respuesta de una venta que ya fue extornada;
 - cuándo se refleja la reversa para el tarjetahabiente y cuál es su efecto contable;
 - la semántica y el procedimiento de conciliación de `UNKNOWN` después de un reinicio;
 - los códigos del procesador que permiten reintentar una reversa.

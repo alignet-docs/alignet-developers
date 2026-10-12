@@ -15,24 +15,26 @@ El POST espera un resultado hasta agotar su tiempo de espera. La transacción QR
 
 ## Después de cancelar
 
-Para ambos métodos, el PinPAD corta el flujo visual cuando recibe y procesa `/cancel`. Si falla la conexión, no puedes asegurar recepción ni cierre visual. Reconoce la cancelación confirmada y validada en la respuesta del POST. Ante fallo, timeout o incertidumbre, consulta el cobro original con `GET /payments/{operationNumber}`. Un cobro CARD aprobado permite evaluar un extorno independiente. Si QR aparece `APPROVED/00` después de solicitar cancelación, conserva el pago aprobado y registra la discrepancia; no solicites refund ni reversa. Aplica la [tabla de resolución](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
+Para ambos métodos, el PinPAD corta el flujo visual cuando recibe y procesa `/cancel`. Si falla la conexión, no puedes asegurar recepción ni cierre visual. Reconoce la cancelación confirmada y validada en la respuesta del POST. Ante fallo, timeout o incertidumbre, consulta el cobro original con `GET /payments/{operationNumber}`. Un cobro CARD aprobado permite evaluar un extorno independiente. Si QR aparece `transaction.state: "AUTORIZADO"` en una consulta `200/00` después de solicitar cancelación, conserva el pago aprobado y registra la discrepancia; no solicites refund ni reversa. Aplica la [tabla de resolución](/procesamiento-fisico/alignet-transit/cancelacion#verificar-el-resultado-final).
 
 En QR, la cancelación solo inhabilita el código; ni `/cancel` ni refund devuelven un monto pagado. Ante timeout, desconexión o fallo del backend, el frontend muestra **Cancelación no confirmada** y consulta el estado.
 
-Sin solicitud de cancelación, un QR `APPROVED/00` confirma el pago y permite ejecutar la acción de negocio. Los ciclos de consulta repiten únicamente el GET; no reenvían `/cancel`.
+Sin solicitud de cancelación, un QR `transaction.state: "AUTORIZADO"` en una consulta `200/00` confirma el pago y permite ejecutar la acción de negocio. Los ciclos de consulta repiten únicamente el GET; no reenvían `/cancel`.
 
-No inicies una nueva transacción mientras la anterior siga sin resolverse. Un `202 PENDING` tardío de `/authorize` no reemplaza un resultado final confirmado.
+No inicies una nueva transacción mientras la anterior siga sin resolverse. Un `202 WAITING_RESULT` tardío de `/authorize` no reemplaza un resultado final confirmado.
 
 ## Timeouts
 
-La espera interna documentada de Pay-me PinPAD es de **90 segundos** como valor de referencia en desarrollo. Este valor se ajustará antes de producción.
+Los POST de autorización, cancelación y extorno esperan al PinPAD aproximadamente **90 segundos**, según la guía 1.3.25. Configura un timeout superior y valida la duración en tu ambiente.
 
 Configura el timeout de lectura del cliente HTTP por encima de la espera del terminal:
 
 ```text
-Espera interna de Pay-me PinPAD: 90 s, referencia de desarrollo
+Espera aproximada de los POST: 90 s
 Timeout HTTP del sistema central: al menos 100–110 s
 ```
+
+`GET /payments` puede esperar aproximadamente 12–15 segundos por la pasarela; usa, por ejemplo, 20 segundos de timeout. `GET /health` y `GET /reversals` responden inmediatamente. Todas las respuestas incluyen `Connection: close`: abre una conexión por petición, sin keep-alive.
 
 Un cobro puede tomar decenas de segundos. No uses el mismo timeout corto que aplicarías a una API convencional.
 
@@ -44,23 +46,25 @@ El valor definitivo de la espera interna, el timeout del sistema central y el ti
 
 ## Recuperación de una operación incierta
 
-Usa `GET /payments/{operationNumber}` para recuperar el cobro original. No existe consulta de cancelación. Para un extorno CARD, usa `GET /reversals/{operationNumber}`; HTTP `502 UNKNOWN` termina esa solicitud sin confirmar éxito y requiere revisión financiera.
+Usa `GET /payments/{operationNumber}` para consultar el cobro original **en la pasarela**. Devuelve `success`, `resultCode`, `resultMessage` y `transaction`, sin `status` propio; `00` indica encontrada y el desenlace financiero se lee en `transaction.state`. No existe consulta de cancelación. Para un extorno CARD, usa `GET /reversals/{operationNumber}`; HTTP `502 UNKNOWN` termina esa solicitud sin confirmar éxito y requiere revisión financiera.
 
 Consulta cuando ocurra cualquiera de estos casos:
 
-- `POST /authorize` devuelve HTTP `202` con `PROCESSING`, `PENDING` o `UNKNOWN`;
+- `POST /authorize` devuelve HTTP `202` con `WAITING_RESULT` y `result: null`;
 - el timeout del cliente HTTP vence sin recibir respuesta;
 - la conexión se interrumpe durante el cobro;
 - el sistema central se reinicia con una operación abierta;
-- el estado recuperado es `PROCESSING` o `UNKNOWN`.
+- la consulta no verifica el cobro (`200/03`, `404/05`, `503` o `504`) o su estado financiero no permite concluir.
 
 ```mermaid
 flowchart TD
-    A[Guardar referencia] --> B[Consultar cobro]
-    B -->|Aprobado o rechazado| C[Registrar resultado]
-    B -->|Sin confirmar| D[Esperar 2 segundos]
+    A[Guardar referencia] --> B[Consultar pasarela: GET payments]
+    B -->|200 y 00: encontrada| C[Interpretar transaction.state]
+    C -->|Desenlace confirmado| F[Registrar resultado financiero]
+    C -->|Sin confirmar| D[Esperar según política de consulta]
+    B -->|03 o 05 o 503 o 504: no verificado| D
     D --> B
-    B -->|Error de consulta| E[Revisar con Alignet]
+    D -->|Límite alcanzado| E[Escalar sin otro cobro]
 ```
 
 Procedimiento:
@@ -69,17 +73,17 @@ Procedimiento:
 2. Mantén la operación como no resuelta en el sistema central.
 3. No ejecutes la acción de negocio asociada ni marques un rechazo definitivo.
 4. Ejecuta `GET /payments/{operationNumber}`.
-5. Si recibes `202`, espera los dos segundos indicados por `Retry-After: 2`.
+5. Si el POST previo devolvió `202`, respeta `Retry-After: 2` antes del primer GET. Este GET no devuelve `202`; interpreta su [tabla HTTP](/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos#consulta-de-estado).
 6. Sigue consultando hasta conocer el resultado del cobro o alcanzar el límite de espera acordado.
-7. Si alcanzas ese límite con `PENDING`, `PROCESSING` o `UNKNOWN`, escala la operación para resolución. No inicies automáticamente otro cobro.
+7. Si alcanzas ese límite sin verificar el resultado financiero, escala la operación para resolución. No inicies automáticamente otro cobro.
 
 ## Idempotencia
 
-`operationNumber` es la clave de idempotencia de Pay-me PinPAD.
+`operationNumber` es la clave de idempotencia del cobro. Esta tabla aplica a `/authorize`; el [extorno](/procesamiento-fisico/alignet-transit/extorno#recuperaci%C3%B3n-e-idempotencia) permite otro intento tras `DENIED`, `UNKNOWN` o `ERROR` finales.
 
 | Escenario | Comportamiento garantizado |
 | --- | --- |
-| Misma referencia mientras se procesa | No se inicia un segundo cobro. Pay-me PinPAD responde HTTP `202` con el estado actual. |
+| Misma referencia mientras se procesa | No se inicia un segundo cobro. Pay-me PinPAD responde HTTP `202` sin iniciar otro cargo; interpreta `WAITING_RESULT` y `result: null`. |
 | Misma referencia ya finalizada | No se inicia un segundo cobro. Pay-me PinPAD responde HTTP `200` con el resultado almacenado. |
 | Resultado perdido por el sistema central | El sistema central puede consultar o reenviar la misma referencia para recuperar el resultado existente. |
 | Nueva operación real | El sistema central debe generar una referencia nueva. |
@@ -109,7 +113,7 @@ Al iniciar, recupera las operaciones guardadas cuyo resultado aún no conoces y 
 
 ### Reinicio del Wiseasy P5L durante el cobro
 
-La operación en curso queda en `UNKNOWN`. No la marques como aprobada ni rechazada. Consulta la referencia y solicita revisión si no logras conocer el resultado dentro del límite de espera acordado.
+El resultado del cobro puede quedar sin verificar. La guía no define un estado de respuesta específico para el reinicio. No marques la operación como aprobada ni rechazada. Consulta la referencia y solicita revisión si no logras conocer el resultado dentro del límite de espera acordado.
 
 ## Flujo recomendado del sistema central
 
@@ -117,21 +121,22 @@ La operación en curso queda en `UNKNOWN`. No la marques como aprobada ni rechaz
 1. GET /health para confirmar disponibilidad.
 2. Generar y persistir un operationNumber único.
 3. POST /authorize con timeout de al menos 100–110 s.
-4. Evaluar el código HTTP, status y resultCode.
-5. Confirmar solo 200 + APPROVED + 00 en el flujo normal.
+4. Evaluar HTTP, success, resultCode y result.state.
+5. Confirmar autorización con 200 + success true + 00 + AUTORIZADO.
+   En consulta 200/00, leer transaction.state; 00 solo significa encontrada.
    Reconocer cancelación validada en la respuesta de POST /cancel.
    Si falla y el cobro CARD está aprobado, evaluar un extorno independiente.
    Conservar QR aprobado sin refund ni reversa; registrar la discrepancia.
 6. Ante 202, timeout o desconexión, consultar la referencia original.
-7. Reintentar una operación DENIED o CANCELLED solo como una nueva venta,
+7. Iniciar otro cobro solo después de confirmar el desenlace financiero anterior,
    con un operationNumber nuevo y después de la decisión del usuario.
 ```
 
 ## Decisión de negocio
 
-Define antes de producción qué hará el comercio cuando todavía no sabe si se cobró. No confirmes la venta ni ejecutes una acción irreversible —por ejemplo, abrir una barrera— hasta recibir `APPROVED` con `resultCode: "00"`.
+Define antes de producción qué hará el comercio cuando todavía no sabe si se cobró. No confirmes la venta ni ejecutes una acción irreversible —por ejemplo, abrir una barrera— hasta confirmar `success: true`, `resultCode: "00"` y `result.state: "AUTORIZADO"` en autorización, o una consulta `200/00` con `transaction.state: "AUTORIZADO"`.
 
-La política final para `PENDING` y `UNKNOWN`, incluido el escalamiento manual, requiere acuerdo entre el integrador y Alignet.
+La política para operaciones sin verificar, incluido el escalamiento manual, requiere acuerdo entre el integrador y Alignet.
 
 ## Persistencia mínima
 
@@ -144,12 +149,13 @@ currency
 paymentMethod
 tollData
 additionalFields
-HTTP status
-status
-resultCode
-resultMessage
-authorizationCode
-completedAt
+código HTTP
+success y result.state (autorización)
+success y transaction.state (consulta a pasarela)
+status (cancelación y extorno)
+resultCode y resultMessage, o message en extorno 502 UNKNOWN
+identificador de transacción y código de autorización, cuando existan
+completedAt (cancelación o extorno, cuando exista)
 fecha y hora de cada solicitud y respuesta
 ```
 

@@ -27,11 +27,11 @@ Completa esta información antes de ejecutar las pruebas conjuntas. Evita inclui
 
 ### Operación
 
-- formato utilizado para `operationNumber`, según [Parámetros](/procesamiento-fisico/alignet-transit/parametros-de-envio), con longitud contrastada contra ECR;
+- formato utilizado para `operationNumber`, según [Parámetros](/procesamiento-fisico/alignet-transit/parametros-de-envio), de 1–64 caracteres sin espacios;
 - regla que garantiza unicidad por operación real;
 - montos y referencias de prueba;
 - datos estructurados del peaje en `tollData` y claves complementarias en `additionalFields`, si aplica;
-- decisión de negocio para `APPROVED`, `DENIED`, `CANCELLED`, `PENDING`, `PROCESSING`, `UNKNOWN` y `ERROR`;
+- decisión de negocio según `result.state` en autorización, `transaction.state` en consulta a pasarela y `status` en cancelación/extorno;
 - formato de comprobante y datos de conciliación.
 
 ### Observabilidad y soporte
@@ -53,7 +53,6 @@ Alignet debe confirmar antes de la salida a producción:
 - catálogo aplicable de códigos por método y operación;
 - versión instalada conforme al mapeo de códigos de cobro, cancelación y extorno;
 - HTTP, código y cuerpo del error cuando la cancelación no se ejecutó o corresponde a otra operación;
-- `resultCode` del cuerpo HTTP `404` ante códigos SDK `05` o `07` en cancelación y extorno;
 - evidencia y revisión de discrepancias cuando QR sigue aprobado tras solicitar cancelación, sin refund ni reversa;
 - presentación de tarjeta en el extorno explícito CARD;
 - monedas y medios de pago habilitados;
@@ -88,8 +87,8 @@ El registro completo, incluida la semántica pendiente de extornos y referencias
 - resultado de `/cancel`, consultas del cobro ante fallo o incertidumbre y resultado del extorno CARD independiente, si se solicitó;
 - mensaje **Cancelación no confirmada** ante timeout, desconexión o fallo del backend;
 - solicitud y respuesta sanitizadas;
-- código HTTP, `Cache-Control: no-store` y `Retry-After: 2` en HTTP `202`;
-- campos del cuerpo normal; en extorno `502 UNKNOWN`, solo `operationNumber`, `status` y `message`;
+- código HTTP, `Connection: close`, `Cache-Control: no-store` y `Retry-After: 2` en HTTP `202`;
+- campos del contrato correspondiente a cada endpoint; en extorno `502 UNKNOWN`, solo `operationNumber`, `status` y `message`;
 - tiempos de inicio, respuesta y consultas;
 - resultado esperado, resultado observado y conformidad.
 

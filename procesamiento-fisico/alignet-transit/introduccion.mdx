@@ -4,12 +4,12 @@ description: "Integración local con Pay-me PinPAD para cobros CARD y QR."
 icon: "road"
 ---
 
-Alignet Transit conecta tu sistema central con Pay-me PinPAD en el Wiseasy P5L mediante HTTP/JSON en la red local.
+Esta documentación corresponde a **Pay-me PinPAD 1.3.25**. Alignet Transit conecta tu sistema central con Pay-me PinPAD en el Wiseasy P5L mediante HTTP/JSON en la red local.
 
 | Método | Inicio del flujo | Confirmación |
 | --- | --- | --- |
-| CARD | `POST /authorize` solicita la tarjeta. | Pago aprobado con `APPROVED` + `00`. |
-| QR | `POST /authorize` genera el QR y crea una transacción pendiente. | Confirmación del pago; mostrar el QR no confirma el cobro. |
+| CARD | `POST /authorize` solicita la tarjeta. | `success: true`, `resultCode: "00"` y `result.state: "AUTORIZADO"`. |
+| QR | `POST /authorize` genera el QR y crea una transacción pendiente. | La misma aprobación de autorización; mostrar el QR no confirma el cobro. |
 
 `POST /cancel` solicita cancelar una autorización activa y devuelve su resultado. Ante fallo, timeout o incertidumbre, consulta el cobro original; el cierre de pantalla no confirma cancelación. El [extorno](/procesamiento-fisico/alignet-transit/extorno) es independiente y aplica solo a CARD. En QR solo cancelas o inhabilitas el código, sin devolver un monto pagado.
 

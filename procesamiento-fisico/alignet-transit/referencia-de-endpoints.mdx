@@ -18,16 +18,16 @@ El puerto predeterminado es `8080`. Confirma la IP y el puerto de cada terminal 
 | --- | --- | --- | --- |
 | `GET` | `/health` | Verificar que Pay-me PinPAD esté accesible. | `200` |
 | `POST` | `/authorize` | Iniciar CARD o QR; generar el QR crea la transacción pendiente. | `200`, `202`, `400`, `409`, `503` |
-| `GET` | `/payments/{operationNumber}` | Consultar el cobro original. | `200`, `202`, `400`, `404` |
+| `GET` | `/payments/{operationNumber}` | Consultar el cobro en la pasarela. | `200`, `400`, `404`, `503`, `504` |
 | `POST` | `/cancel` | Solicitar cancelar una autorización activa. | `200`, `202`, `400`, `404`, `409`, `503` |
 | `POST` | `/reversals` | Solicitar un extorno explícito de una venta CARD aprobada. No aplica a QR. | `200`, `202`, `400`, `404`, `409`, `502`, `503` |
-| `GET` | `/reversals/{operationNumber}` | Consultar el extorno CARD. | `200`, `202`, `400`, `404`, `502` |
+| `GET` | `/reversals/{operationNumber}` | Consultar el estado local del extorno CARD. | `200`, `202`, `400`, `404`, `502` |
 
 <Note>
   `POST /cancel` y `POST /reversals` son operaciones distintas. Ambas usan el `operationNumber` de la autorización original y se consumen en el mismo host y puerto que `POST /authorize`.
 </Note>
 
-No existe un endpoint de consulta de cancelación. Su desenlace se devuelve solo en `POST /cancel`; `/payments` consulta el cobro original. Todas las respuestas incluyen `Cache-Control: no-store` y HTTP `202` añade `Retry-After: 2`.
+No existe un endpoint de consulta de cancelación. Su desenlace se devuelve solo en `POST /cancel`; `/payments` consulta el cobro original. Todas las respuestas incluyen `Connection: close` y `Cache-Control: no-store`; abre una conexión por petición. Solo HTTP `202` añade `Retry-After: 2`.
 
 ## Verificar disponibilidad
 
@@ -36,7 +36,7 @@ GET /health
 ```
 
 ```bash
-curl "http://<IP_DEL_PINPAD>:<PUERTO>/health"
+curl --header "Connection: close" "http://<IP_DEL_PINPAD>:<PUERTO>/health"
 ```
 
 Respuesta esperada:
@@ -48,16 +48,16 @@ Respuesta esperada:
 }
 ```
 
-Usa `GET /health` al configurar el terminal y antes de iniciar operaciones cuando necesites comprobar disponibilidad. Una respuesta satisfactoria confirma la aplicación local; no confirma por sí sola que el procesador aprobará pagos.
+Usa `GET /health` al configurar el terminal y antes de iniciar operaciones cuando necesites comprobar disponibilidad. Una respuesta satisfactoria confirma la aplicación local; no confirma que el SDK esté inicializado ni que el procesador aprobará pagos.
 
 ## Autorizar y consultar un pago
 
 `POST /authorize` requiere un cuerpo JSON. Consulta [Solicitud de autorización](/procesamiento-fisico/alignet-transit/parametros-de-envio) para conocer los campos, las validaciones y los ejemplos.
 
-`GET /payments/{operationNumber}` no lleva cuerpo. Usa exactamente la referencia enviada en la autorización:
+`POST /authorize` devuelve `success`, `resultCode`, `resultMessage` y `result`, sin `status` propio. `GET /payments/{operationNumber}` consulta la pasarela y devuelve `success`, `resultCode`, `resultMessage` y `transaction`, también sin `status` propio. `00` significa encontrada: lee `transaction.state`. Este GET no devuelve `202`; consulta el [contrato y la tabla HTTP](/procesamiento-fisico/alignet-transit/respuesta-estados-y-codigos#consulta-de-estado). No lleva cuerpo. Usa exactamente la referencia enviada en la autorización:
 
 ```bash
-curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528"
+curl -i --header "Connection: close" --max-time 20 "http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528"
 ```
 
 ## Cancelar una autorización activa
@@ -66,7 +66,7 @@ curl -i "http://<IP_DEL_PINPAD>:<PUERTO>/payments/44992528"
 
 Ante fallo, timeout o incertidumbre, consulta el cobro original; no hay un GET de cancelación. El cierre de pantalla no acredita el resultado. Revisa las [respuestas y acciones de cancelación](/procesamiento-fisico/alignet-transit/cancelacion).
 
-En QR solo se cancela o inhabilita el código; ni `/cancel` ni refund devuelven pagos. Un QR `APPROVED/00` conserva el pago aprobado, sin reversa.
+En QR solo se cancela o inhabilita el código; ni `/cancel` ni refund devuelven pagos. Un QR encontrado con `transaction.state: "AUTORIZADO"` conserva el pago aprobado, sin reversa.
 
 ## Extornar una venta aprobada
 
@@ -78,7 +78,7 @@ Consulta [Extorno de una venta CARD aprobada](/procesamiento-fisico/alignet-tran
 
 Una ruta válida con método incorrecto devuelve HTTP `405` y `METHOD_NOT_ALLOWED`; una ruta desconocida devuelve HTTP `404` y `NOT_FOUND`.
 
-No uses `/payment`, `/api/v1/payments`, `/api/v1/payments/{operationNumber}` ni `DELETE /charges` para esta integración. Tampoco diseñes el cliente alrededor de una respuesta anidada en `result.state`, los códigos locales `P01–P21` o campos como `transactionID`: pertenecen a especificaciones anteriores o a otros productos.
+No uses `/payment`, `/api/v1/payments`, `/api/v1/payments/{operationNumber}` ni `DELETE /charges` para esta integración. La autorización vigente sí incluye `result.state` y puede incluir `transactionID`, `processorResponse` y `lifecycle`. No traslades a esta interfaz los códigos locales `P01–P21` de otras especificaciones.
 
 <CardGroup cols={2}>
   <Card title="Solicitud de autorización" icon="file-export" href="/procesamiento-fisico/alignet-transit/parametros-de-envio">
