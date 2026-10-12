@@ -452,6 +452,7 @@
                         "pages": [
                           "procesamiento-fisico/alignet-transit/referencia-de-endpoints",
                           "procesamiento-fisico/alignet-transit/parametros-de-envio",
+                          "procesamiento-fisico/alignet-transit/cancelacion",
                           "procesamiento-fisico/alignet-transit/extorno"
                         ]
                       },
@@ -538,7 +539,7 @@
   },
   "integrations": {
     "ga4": {
-      "measurementId": "G-J0QWNY81SK"
+      "measurementId": "G-H7BWFCWK8R"
     }
   },
   "redirects": [
@@ -1103,10 +1104,7 @@
   "search": {
     "prompt": "Buscar en la guía…"
   },
-  "favicon": {
-    "light": "/icon/IconoOscuroPayMe.png",
-    "dark": "/icon/IconoClaroPayMe.png"
-  }
+  "favicon": "/payme-favicon.svg"
 }
 
 

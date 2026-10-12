@@ -1,5 +1,3 @@
-import { useState, useEffect } from "react";
-
 export const PaymentStateMap = ({ locale = "es" }) => {
   const en = locale === "en";
   const t = (es, english) => en ? english : es;
