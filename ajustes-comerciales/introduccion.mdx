@@ -1,0 +1,106 @@
+---
+title: "Ajustes comerciales"
+description: "Aplica descuentos o recargos al total de una compra con tarjeta según reglas comerciales y consulta su trazabilidad."
+icon: "tags"
+---
+
+El **Motor de Ajustes Comerciales** permite definir descuentos, recargos o precios diferenciados sobre el monto total de una compra, según las condiciones de la tarjeta y las cuotas elegidas. Configura las reglas en **Command Center** para que el cliente conozca el monto final antes de confirmar el pago.
+
+El alcance comprende pagos con tarjeta (`CARD`) y las plataformas **Command Center, VPOS Flex y Metrix**.
+
+<Note>
+Esta guía describe el alcance del documento funcional. Confirma con [Integraciones Pay-me](mailto:equipo.integraciones@pay-me.com) la disponibilidad para tu comercio antes de configurar una campaña. No presupone que el servicio esté habilitado en todas las cuentas.
+</Note>
+
+## Qué puedes aplicar
+
+<CardGroup cols={2}>
+  <Card title="Descuentos" icon="tag">
+    Reduce el total de la compra mediante un porcentaje o un monto fijo, según las condiciones de la regla.
+  </Card>
+  <Card title="Recargos" icon="plus">
+    Incrementa el total mediante un porcentaje o un monto fijo. El cliente ve el ajuste antes de confirmar.
+  </Card>
+</CardGroup>
+
+Los precios diferenciados resultan de las reglas de descuento o recargo que correspondan al instrumento de pago. El ajuste se aplica **antes de enviar la transacción al procesador**; no es una devolución posterior al cobro.
+
+## Define tus reglas en Command Center
+
+El alcance contempla crear, editar, pausar y dar de baja reglas. Para cada regla, define:
+
+| Condición | Qué puedes configurar |
+| --- | --- |
+| Tipo de ajuste | Descuento o recargo. |
+| Valor | Porcentaje o monto fijo, con moneda. |
+| Marca | Visa, Mastercard, Amex o Diners. |
+| Banco emisor | Uno o varios bancos, o cualquiera. |
+| Rango de BIN | Opcional, para precisar las tarjetas a las que aplica. |
+| Cuotas | Una lista exacta, como 3 y 6, o sin restricción. |
+| Vigencia | Fecha de inicio y fecha de fin. |
+| Estado | Activa o pausada, independiente de la vigencia. |
+| Prioridad | Orden de evaluación cuando coinciden varias reglas; un número menor tiene mayor prioridad. |
+
+Consulta las reglas con filtros por estado, tipo de ajuste, marca, emisor, BIN y vigencia.
+
+<Note>
+Solo se evalúan reglas activas y dentro de su vigencia. Si coinciden varias, se aplica la de mayor prioridad, incluso si una es un descuento y otra un recargo: no se suman los ajustes coincidentes.
+</Note>
+
+## Cómo lo ve tu cliente
+
+1. El checkout reconoce el BIN de la tarjeta y evalúa las condiciones de pago, incluidas las cuotas seleccionadas cuando corresponda.
+2. Muestra el precio base, el ajuste y el monto final antes de confirmar.
+3. Si el cliente cambia de tarjeta, recalcula el monto según la nueva regla aplicable.
+4. Si ninguna regla coincide, conserva el precio original sin ajuste.
+
+El servicio de Planes y Cuotas determina las combinaciones disponibles para el BIN y el comercio. El motor de ajustes complementa ese flujo aplicando las condiciones comerciales al monto total.
+
+### Ejemplo de descuento
+
+Para una compra de **S/ 100.00**, una regla aplicable de **10 % de descuento** produce el siguiente resultado:
+
+| Concepto | Importe |
+| --- | ---: |
+| Monto base | S/ 100.00 |
+| Descuento aplicado | − S/ 10.00 |
+| Monto final a cobrar | **S/ 90.00** |
+
+Este ejemplo es ilustrativo, no una campaña vigente. Si el cliente cambia a una tarjeta sin regla aplicable, el monto vuelve a **S/ 100.00** antes de confirmar.
+
+## Validación antes del cobro
+
+- El ajuste se calcula sobre el **monto total** de la compra, con redondeo estándar a dos decimales.
+- El backend recalcula el monto final antes de enviarlo al procesador.
+- Si la tarjeta o las condiciones cambiaron respecto del momento en que se mostró el ajuste, la transacción se bloquea.
+- El importe que se envía al banco para el cobro es el monto final.
+
+<Warning>
+No tomes el monto mostrado en el checkout como prueba de un pago aprobado. Revisa el resultado de la transacción; el ajuste comercial no sustituye la autorización del pago.
+</Warning>
+
+## Consulta el ajuste de una transacción
+
+El alcance de la vista de transacciones contempla las columnas **Ajuste comercial** y **Monto a cobrar**. En el detalle se registran:
+
+- Monto base.
+- Tipo de ajuste y valor aplicado.
+- Monto final.
+- Referencia a la regla que originó el ajuste.
+
+La regla aplicada se conserva como registro de la transacción, aunque posteriormente se modifique su configuración. La exportación en **CSV y Excel** permite revisar la información y apoyar la conciliación.
+
+<Note>
+Si una operación tiene varios intentos con distintas tarjetas, el monto mostrado a nivel de operación corresponde al **último intento**. Los intentos anteriores conservan su propio detalle; revisa cada resultado antes de interpretar el importe de la operación como un cobro.
+</Note>
+
+## Continúa en las guías de operación
+
+<CardGroup cols={2}>
+  <Card title="Command Center" icon="desktop" href="/command-center/introduccion">
+    Conoce los módulos y el alcance de los accesos de tu organización.
+  </Card>
+  <Card title="Transacciones e intentos" icon="receipt" href="/command-center/transacciones">
+    Consulta resultados y reconstruye el recorrido de una operación.
+  </Card>
+</CardGroup>
