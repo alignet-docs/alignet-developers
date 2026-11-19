@@ -296,6 +296,21 @@
                     "icon": "clipboard-user",
                     "pages": [
                       {
+                        "group": "Command Center",
+                        "icon": "desktop",
+                        "expanded": false,
+                        "pages": [
+                          "command-center/introduccion",
+                          "command-center/acceso",
+                          "command-center/dashboard",
+                          "command-center/transacciones",
+                          "command-center/comercios",
+                          "command-center/entidades",
+                          "command-center/catalogos",
+                          "command-center/usuarios-y-roles"
+                        ]
+                      },
+                      {
                         "group": "Dashboard",
                         "icon": "table-columns",
                         "pages": [

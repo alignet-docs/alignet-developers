@@ -1,0 +1,72 @@
+---
+title: "Usuarios y roles"
+description: "Consulta usuarios y verifica los permisos de cada rol antes de asignar accesos."
+icon: "users-gear"
+---
+
+<div className="pm-cc-guide-rail not-prose"><a href="/command-center/introduccion">← Guía de Command Center</a><span>07 / USUARIOS Y ROLES</span></div>
+
+## Consultar usuarios
+
+1. Abre **Usuarios**.
+2. Busca por nombre o correo.
+3. Filtra por estado, rol, tipo de organización, estado del acceso u organización. **Solo mi organización** limita la consulta.
+4. Verifica organización, rol, estado y seguridad antes de gestionar un acceso.
+
+## Preparar una invitación
+
+Selecciona **Nuevo usuario** para abrir el asistente de cuatro etapas. Los campos con asterisco son obligatorios.
+
+### 1. Datos generales
+
+Ingresa el **Correo** al que se enviará la invitación y el **Nombre completo** de la persona.
+
+<Frame caption="Formulario vacío, sin nombres ni correos reales.">
+  ![Primera etapa del formulario de nuevo usuario](/images/command-center/nuevo-usuario.png)
+</Frame>
+
+### 2. Organización y rol
+
+Selecciona el **Ámbito** del acceso:
+
+- **Entidad externa:** requiere seleccionar un **Adquirente**. Los campos **Facilitador de pago** y **Comercio** son opcionales. La ayuda del facilitador indica que, si se deja vacío, el usuario se crea a nivel del adquirente.
+- **Plataforma Alignet:** corresponde a un usuario interno, sin asociación a una entidad externa. La pantalla indica que el acceso se creará en la organización activa de la plataforma.
+
+Selecciona el **Rol** obligatorio. Consulta las descripciones en [Consultar un rol](#consultar-un-rol) antes de continuar.
+
+### 3. Configuración avanzada
+
+Esta etapa es opcional. Permite definir el alcance, la vigencia y la autenticación del acceso.
+
+| Ajuste | Opciones |
+| --- | --- |
+| Alcance | **Toda la descendencia** incluye la organización y las organizaciones que dependen de ella. **Organizaciones seleccionadas** limita el acceso a las organizaciones elegidas. |
+| Vence | **Sin vencimiento** mantiene el acceso sin una fecha de término. La pantalla ofrece establecer una fecha de vencimiento opcional. |
+| Autenticación y seguridad | **Con MFA (recomendado)** exige configurar una aplicación autenticadora para iniciar sesión. **Sin MFA** permite iniciar sesión sin verificación en dos pasos. |
+
+En la captura revisada estaban seleccionados **Toda la descendencia**, **Sin vencimiento** y **Con MFA**. Revisa estas opciones para el acceso concreto que estás preparando.
+
+### 4. Revisión
+
+El asistente incluye una etapa final de **Revisión**. Su contenido y el control final de envío están pendientes de documentar. Usa **Anterior** y **Siguiente** para recorrer las etapas disponibles.
+
+<Warning>Antes de enviar una invitación, confirma destinatario, organización y rol con el responsable. Asigna únicamente los permisos necesarios.</Warning>
+
+<Note>
+Las capturas del 10 de noviembre de 2026 permiten describir las tres primeras etapas. No se enviaron invitaciones ni se validaron el guardado, la aceptación o la configuración de MFA. También quedan pendientes los campos que aparecen al elegir organizaciones específicas o una fecha de vencimiento.
+</Note>
+
+## Consultar un rol
+
+1. Abre **Roles** y busca por nombre o descripción.
+2. Selecciona **Ver**.
+3. Consulta los permisos agrupados por recurso. Puedes buscar un permiso y contraer los grupos.
+
+| Rol | Descripción mostrada |
+| --- | --- |
+| Admin | Gestiona usuarios y accesos dentro de su alcance. |
+| Operator | Opera recursos de negocio; no administra usuarios ni roles. |
+| Viewer | Consulta información. |
+| Auditor | Consulta información para auditoría. |
+
+La pantalla indica que los roles base son fijos y no se pueden modificar. Consulta siempre el detalle vigente de permisos antes de asignar uno.

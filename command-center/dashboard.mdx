@@ -1,0 +1,68 @@
+---
+title: "Dashboard ejecutivo"
+description: "Selecciona un período y consulta las vistas de seguimiento de la operación."
+icon: "chart-line"
+---
+
+<div className="pm-cc-guide-rail not-prose"><a href="/command-center/introduccion">← Guía de Command Center</a><span>02 / DASHBOARD EJECUTIVO</span></div>
+
+El tablero reúne información de la operación. Antes de interpretar los resultados, comprueba el período y la organización que muestra el contexto del dashboard.
+
+## Elegir un período y moneda
+
+1. Abre **Dashboard ejecutivo**.
+2. Selecciona **7 días**, **30 días**, **90 días** o **Personalizado**.
+3. Selecciona **PEN** o **USD** para consultar los importes en la moneda elegida.
+4. Comprueba la organización indicada en **Viendo** y el período de comparación.
+5. Pulsa **Actualizar** para refrescar la información. La cabecera muestra cuándo se actualizó.
+
+Usa los accesos **Resumen**, **Evolución**, **Patrón semanal**, **Comercios** y **Estrategia** para recorrer el tablero.
+
+## Interpretar el resumen
+
+| Indicador | Qué representa |
+| --- | --- |
+| Operaciones | Total de operaciones del período, independientemente de su resultado. |
+| Monto procesado | Monto de operaciones aprobadas en la moneda seleccionada. No incluye comisiones. |
+| Aprobación | Operaciones aprobadas sobre las que ya tienen resultado; excluye las que siguen en curso. |
+| Ticket promedio | Monto aprobado dividido entre el número de operaciones aprobadas, en la moneda seleccionada. |
+| Rechazo | Operaciones rechazadas sobre las que ya tienen resultado. |
+| Reverso | Operaciones reversadas sobre las que ya tienen resultado. |
+| Monto reversado | Monto de operaciones reversadas en la moneda seleccionada. |
+
+Las tarjetas muestran el valor actual y, cuando existe una base de comparación, su variación frente al período anterior. **pp** significa puntos porcentuales. Una base anterior muy pequeña puede producir una variación porcentual elevada. **Sin base de comparación** indica que no se presenta una variación porcentual calculable.
+
+## Explorar la evolución
+
+1. Selecciona la métrica **Operaciones**, **Monto** o **Aprobación**.
+2. Elige **Todo el rango**, **Última semana**, **Primera mitad** o **Segunda mitad**.
+3. Activa **Comparar con período anterior** cuando necesites contrastar ambos períodos.
+4. Revisa los valores del período actual, anterior y su variación. Utiliza **Restablecer** para recuperar la vista inicial.
+
+El gráfico señala máximos, mínimos y **hoy (parcial)** cuando el día está en curso. El valor parcial todavía puede cambiar. **Ver tabla** permite consultar los datos en formato tabular.
+
+## Consultar el patrón semanal
+
+El **Mapa de calor por hora y día** muestra cantidad de operaciones por día de la semana y hora de Lima. La intensidad del color representa mayor o menor actividad; no representa montos.
+
+Consulta el detalle de cada franja, el **Pico** y la **Menor actividad**. También puedes abrir **Ver tabla**.
+
+## Analizar los comercios
+
+En **Ranking de comercios**, selecciona **Top 5**, **Top 10** o **Top 20**. Cada entrada muestra operaciones, aprobación y monto. La vista observada está ordenada por cantidad de operaciones y ofrece el selector **Ordenar por**.
+
+**Concentración por comercio** muestra la participación en cantidad de operaciones y la participación acumulada del **Top 1**, **Top 3** y **Top 5**. Esta distribución no representa montos. Ambas vistas ofrecen **Ver tabla**.
+
+## Consultar la estrategia
+
+El **Mapa estratégico de comercios** compara los 20 comercios de mayor volumen con un período anterior de igual duración. La vista revisada incluye **Comercios nuevos**, sin base anterior para comparar crecimiento, y **Sin actividad en el período**. La etiqueta de comercios nuevos describe la comparación mostrada; no acredita por sí sola una fecha de alta.
+
+**Opportunity Radar** está marcado como **Próximamente**.
+
+<Note>
+Las capturas del 10 de noviembre de 2026 muestran indicadores y gráficos cargados. Las definiciones anteriores corresponden a las etiquetas de la interfaz; no se verificaron los cálculos contra la fuente transaccional. Quedan pendientes el selector **Personalizado**, las opciones de **Ordenar por** y la definición de **Aprobación neta**.
+</Note>
+
+## Si el tablero sigue cargando
+
+No interpretes los espacios vacíos como valores cero. Revisa la conexión y el período seleccionado. Si el problema persiste, reporta el módulo, la hora y el período al equipo de soporte mediante el canal autorizado, sin adjuntar datos de clientes.
